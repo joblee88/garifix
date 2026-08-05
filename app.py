@@ -12,6 +12,10 @@ from models import User, Mechanic, ServiceRequest, Review
 app = Flask(__name__)
 app.config.from_object(Config)
 
+@app.route("/health")
+def health():
+    return "GariFix Tanzania is running", 200
+
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -553,6 +557,4 @@ def admin_reviews():
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+    app.run(debug=False)
