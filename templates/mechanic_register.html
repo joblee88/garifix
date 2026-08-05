@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Mechanic Registration - GariFix{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="fw-bold mb-1"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Jisajili Kama Fundi</h3>
+                    <p class="mb-0">Jaza taarifa zako ili uwe sehemu ya mtandao wa GariFix Tanzania.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('mechanic_register') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Jina Kamili</label>
+                                <input type="text" name="full_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Namba ya Simu</label>
+                                <input type="text" name="phone" class="form-control" placeholder="+2557XXXXXXXX" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Password</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Jina la Garage</label>
+                                <input type="text" name="garage_name" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mkoa</label>
+                                <select name="region" id="region" class="form-select" required>
+                                    <option value="">Chagua Mkoa</option>
+                                    <option>Arusha</option>
+                                    <option>Dar es Salaam</option>
+                                    <option>Dodoma</option>
+                                    <option>Geita</option>
+                                    <option>Iringa</option>
+                                    <option>Kagera</option>
+                                    <option>Katavi</option>
+                                    <option>Kigoma</option>
+                                    <option>Kilimanjaro</option>
+                                    <option>Lindi</option>
+                                    <option>Manyara</option>
+                                    <option>Mara</option>
+                                    <option>Mbeya</option>
+                                    <option>Morogoro</option>
+                                    <option>Mtwara</option>
+                                    <option>Mwanza</option>
+                                    <option>Njombe</option>
+                                    <option>Pwani</option>
+                                    <option>Rukwa</option>
+                                    <option>Ruvuma</option>
+                                    <option>Shinyanga</option>
+                                    <option>Simiyu</option>
+                                    <option>Singida</option>
+                                    <option>Songwe</option>
+                                    <option>Tabora</option>
+                                    <option>Tanga</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Wilaya</label>
+                                <select name="district" id="district" class="form-select" required>
+                                    <option value="">Chagua Wilaya</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Kata</label>
+                                <input type="text" name="ward" class="form-control" placeholder="Mfano: Kaloleni">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mtaa</label>
+                                <input type="text" name="street" class="form-control" placeholder="Mfano: Kijenge">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Picha ya Fundi</label>
+                                <input type="file" name="profile_photo" class="form-control" accept="image/*">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Utaalamu</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Engine Repair"><label class="form-check-label">Engine Repair</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Electrical"><label class="form-check-label">Electrical</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Transmission"><label class="form-check-label">Transmission</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Brake System"><label class="form-check-label">Brake System</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Suspension"><label class="form-check-label">Suspension</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Air Conditioning"><label class="form-check-label">Air Conditioning</label></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Battery"><label class="form-check-label">Battery</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Tyres"><label class="form-check-label">Tyres</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="General Service"><label class="form-check-label">General Service</label></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Miaka ya Uzoefu</label>
+                                <input type="number" name="experience" class="form-control" min="0" max="60" placeholder="8">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Maelezo Mafupi</label>
+                                <textarea name="description" rows="3" class="form-control" placeholder="Eleza huduma unazotoa na uzoefu wako."></textarea>
+                            </div>
+
+                            <div class="col-12 text-center mt-3">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">Jisajili Kama Fundi</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const districts = {
+    "Arusha": ["Arusha CC", "Arumeru", "Karatu", "Longido", "Monduli", "Ngorongoro"],
+    "Dar es Salaam": ["Ilala", "Kinondoni", "Temeke", "Ubungo", "Kigamboni"],
+    "Dodoma": ["Dodoma CC", "Bahi", "Chamwino", "Chemba", "Kondoa", "Kongwa", "Mpwapwa"],
+    "Geita": ["Geita", "Bukombe", "Chato", "Mbogwe", "Nyang'hwale"],
+    "Iringa": ["Iringa", "Kilolo", "Mufindi"],
+    "Kagera": ["Bukoba", "Missenyi", "Muleba", "Karagwe", "Ngara", "Biharamulo", "Kyerwa"],
+    "Katavi": ["Mpanda", "Mlele", "Tanganyika"],
+    "Kigoma": ["Kigoma", "Kasulu", "Kibondo", "Buhigwe", "Uvinza", "Kakonko"],
+    "Kilimanjaro": ["Moshi", "Hai", "Siha", "Rombo", "Mwanga", "Same"],
+    "Lindi": ["Lindi", "Kilwa", "Liwale", "Nachingwea", "Ruangwa"],
+    "Manyara": ["Babati", "Hanang", "Kiteto", "Mbulu", "Simanjiro"],
+    "Mara": ["Musoma", "Tarime", "Serengeti", "Bunda", "Butiama", "Rorya"],
+    "Mbeya": ["Mbeya", "Kyela", "Rungwe", "Busokelo", "Chunya", "Mbarali"],
+    "Morogoro": ["Morogoro", "Kilosa", "Kilombero", "Mlimba", "Ifakara", "Gairo"],
+    "Mtwara": ["Mtwara", "Masasi", "Nanyumbu", "Newala", "Tandahimba"],
+    "Mwanza": ["Nyamagana", "Ilemela", "Magu", "Misungwi", "Kwimba", "Ukerewe", "Sengerema"],
+    "Njombe": ["Njombe", "Makambako", "Ludewa", "Makete", "Wanging'ombe"],
+    "Pwani": ["Kibaha", "Bagamoyo", "Kisarawe", "Mkuranga", "Rufiji", "Mafia"],
+    "Rukwa": ["Sumbawanga", "Nkasi", "Kalambo"],
+    "Ruvuma": ["Songea", "Mbinga", "Namtumbo", "Nyasa", "Tunduru"],
+    "Shinyanga": ["Shinyanga", "Kahama", "Kishapu"],
+    "Simiyu": ["Bariadi", "Maswa", "Meatu", "Busega", "Itilima"],
+    "Singida": ["Singida", "Iramba", "Manyoni", "Ikungi", "Mkalama"],
+    "Songwe": ["Mbozi", "Ileje", "Momba", "Songwe"],
+    "Tabora": ["Tabora", "Nzega", "Igunga", "Kaliua", "Uyui", "Sikonge"],
+    "Tanga": ["Tanga", "Muheza", "Korogwe", "Lushoto", "Handeni", "Kilindi", "Pangani"]
+};
+
+document.getElementById("region").addEventListener("change", function () {
+    let region = this.value;
+    let district = document.getElementById("district");
+    district.innerHTML = '<option value="">Chagua Wilaya</option>';
+    if (districts[region]) {
+        districts[region].forEach(function (item) {
+            district.innerHTML += `<option value="${item}">${item}</option>`;
+        });
+    }
+});
+</script>
+{% endblock %}

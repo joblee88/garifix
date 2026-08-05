@@ -1,0 +1,585 @@
+{% extends "customer_base.html" %}
+{% block title %}Find Mechanic - GariFix{% endblock %}
+
+{% block customer_content %}
+<div class="text-center mb-4">
+    <h1 class="fw-bold"><i class="fa-solid fa-magnifying-glass me-2"></i>Tafuta Fundi wa Gari</h1>
+    <p class="text-muted">Pata fundi aliyethibitishwa karibu na eneo lako.</p>
+</div>
+
+<div class="card shadow border-0 p-4 mb-5">
+    <form id="mechanicSearchForm" method="POST" action="{{ url_for('search_mechanics') }}" onsubmit="return checkAuth(event)">
+        <div class="row g-3">
+            
+            <!-- Dropdown ya Mkoa -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Mkoa</label>
+                <select id="regionSelect" name="region" class="form-select" onchange="updateDistricts()">
+                    <option value="">-- Chagua Mkoa --</option>
+                    <option value="Arusha">Arusha</option>
+                    <option value="Dar es Salaam">Dar es Salaam</option>
+                    <option value="Dodoma">Dodoma</option>
+                    <option value="Geita">Geita</option>
+                    <option value="Iringa">Iringa</option>
+                    <option value="Kagera">Kagera</option>
+                    <option value="Katavi">Katavi</option>
+                    <option value="Kigoma">Kigoma</option>
+                    <option value="Kilimanjaro">Kilimanjaro</option>
+                    <option value="Lindi">Lindi</option>
+                    <option value="Manyara">Manyara</option>
+                    <option value="Mara">Mara</option>
+                    <option value="Mbeya">Mbeya</option>
+                    <option value="Morogoro">Morogoro</option>
+                    <option value="Mtwara">Mtwara</option>
+                    <option value="Mwanza">Mwanza</option>
+                    <option value="Njombe">Njombe</option>
+                    <option value="Pemba Kaskazini">Pemba Kaskazini</option>
+                    <option value="Pemba Kusini">Pemba Kusini</option>
+                    <option value="Pwani">Pwani</option>
+                    <option value="Rukwa">Rukwa</option>
+                    <option value="Ruvuma">Ruvuma</option>
+                    <option value="Shinyanga">Shinyanga</option>
+                    <option value="Simiyu">Simiyu</option>
+                    <option value="Singida">Singida</option>
+                    <option value="Songwe">Songwe</option>
+                    <option value="Tabora">Tabora</option>
+                    <option value="Tanga">Tanga</option>
+                    <option value="Unguja Kaskazini">Unguja Kaskazini</option>
+                    <option value="Unguja Kusini">Unguja Kusini</option>
+                    <option value="Unguja Mjini Magharibi">Unguja Mjini Magharibi</option>
+                </select>
+            </div>
+
+            <!-- Dropdown ya Wilaya -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Wilaya</label>
+                <select id="districtSelect" name="district" class="form-select" disabled>
+                    <option value="">-- Chagua Mkoa Kwanza --</option>
+                </select>
+            </div>
+
+            <!-- Dropdown ya Utaalamu -->
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Utaalamu</label>
+                <select name="specialization" class="form-select">
+                    <option value="">-- Chagua Utaalamu --</option>
+                    <option value="Engine Repair">Engine Repair (Matatizo ya Injini)</option>
+                    <option value="Auto Electrics">Auto Electrics (Mfumo wa Umeme)</option>
+                    <option value="Suspension & Brakes">Suspension & Brakes (Mfumo wa Brakes & Tairi)</option>
+                    <option value="AC & Heating">AC & Heating (Kiyoyozi cha Gari)</option>
+                    <option value="Gearbox & Transmission">Gearbox & Transmission (Gia Box)</option>
+                    <option value="Bodywork & Painting">Bodywork & Painting (Bodi na Rangi)</option>
+                    <option value="Car Diagnostics">Car Diagnostics (Ukaguzi wa Kompyuta)</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg px-5">
+                <i class="fa-solid fa-magnifying-glass me-2"></i> Tafuta Fundi
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4">
+    {% if mechanics %}
+        {% for mechanic in mechanics %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card shadow border-0 h-100">
+                {% if mechanic.profile_photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + mechanic.profile_photo) }}" class="card-img-top" style="height:230px; object-fit:cover;">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500" class="card-img-top" style="height:230px; object-fit:cover;">
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+                    <h4 class="fw-bold mb-1">{{ mechanic.user.full_name }}</h4>
+                    <p class="text-primary mb-2 fw-semibold">{{ mechanic.garage_name or 'Independent Mechanic' }}</p>
+
+                    <div class="mb-2 text-warning">
+                        {% set rate = ratings[mechanic.id]["average"]|int %}
+                        {% for i in range(rate) %}<i class="fa-solid fa-star"></i>{% endfor %}
+                        {% for i in range(5-rate) %}<i class="fa-regular fa-star"></i>{% endfor %}
+                        <span class="text-dark ms-1 small">({{ ratings[mechanic.id]["count"] }} Reviews)</span>
+                    </div>
+
+                    <p class="mb-1"><i class="fa-solid fa-location-dot text-danger me-2"></i>{{ mechanic.region }}, {{ mechanic.district }}</p>
+                    <p class="mb-3"><i class="fa-solid fa-screwdriver-wrench text-success me-2"></i>{{ mechanic.specialization }}</p>
+
+                    <div class="mt-auto d-grid gap-2">
+                        <a href="{{ url_for('mechanic_profile', mechanic_id=mechanic.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fa-solid fa-user me-1"></i> Profile
+                        </a>
+                        {% if session.get("role") == "customer" %}
+                            <button type="button" class="btn btn-primary btn-sm" onclick="openRequestModal('{{ mechanic.id }}', '{{ mechanic.user.full_name }}')">
+                                <i class="fa-solid fa-wrench me-1"></i> Omba Huduma
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center py-4">
+                <h4 class="mb-1">Hakuna fundi aliyepatikana.</h4>
+                <p class="mb-0">Tafadhali ingiza vigezo tofauti vya Mkoa, Wilaya au Utaalamu.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal ya Kuomba Huduma na Kuingiza Eneo -->
+<div class="modal fade" id="requestServiceModal" tabindex="-1" aria-labelledby="requestServiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="requestServiceModalLabel">
+                    <i class="fa-solid fa-paper-plane me-2"></i>Omba Huduma kutoka kwa <span id="modalMechanicName" class="fw-bold"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="serviceRequestForm" method="POST" action="">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalMechanicId" name="mechanic_id">
+
+                    <!-- Aina ya Gari -->
+                    <div class="mb-3">
+                        <label for="vehicleModel" class="form-label fw-semibold">Aina ya Gari (Vehicle Model)</label>
+                        <input type="text" class="form-control" id="vehicleModel" name="vehicle_model" placeholder="Mfano: Toyota IST, Nissan X-Trail" required>
+                    </div>
+
+                    <!-- SEHEMU YA ENEO LA MTEJA (Mkoa, Wilaya, Kata, Mtaa) -->
+                    <div class="card p-3 mb-3 bg-light border-0">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-location-dot me-2"></i>Eneo Ulilopo Sasa</h6>
+                        <div class="row g-3">
+                            <!-- Dropdown ya Mkoa -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">Mkoa</label>
+                                <select id="modalRegionSelect" name="req_region" class="form-select form-select-sm" onchange="updateModalDistricts()" required>
+                                    <option value="">-- Chagua Mkoa --</option>
+                                    <option value="Arusha">Arusha</option>
+                                    <option value="Dar es Salaam">Dar es Salaam</option>
+                                    <option value="Dodoma">Dodoma</option>
+                                    <option value="Geita">Geita</option>
+                                    <option value="Iringa">Iringa</option>
+                                    <option value="Kagera">Kagera</option>
+                                    <option value="Katavi">Katavi</option>
+                                    <option value="Kigoma">Kigoma</option>
+                                    <option value="Kilimanjaro">Kilimanjaro</option>
+                                    <option value="Lindi">Lindi</option>
+                                    <option value="Manyara">Manyara</option>
+                                    <option value="Mara">Mara</option>
+                                    <option value="Mbeya">Mbeya</option>
+                                    <option value="Morogoro">Morogoro</option>
+                                    <option value="Mtwara">Mtwara</option>
+                                    <option value="Mwanza">Mwanza</option>
+                                    <option value="Njombe">Njombe</option>
+                                    <option value="Pemba Kaskazini">Pemba Kaskazini</option>
+                                    <option value="Pemba Kusini">Pemba Kusini</option>
+                                    <option value="Pwani">Pwani</option>
+                                    <option value="Rukwa">Rukwa</option>
+                                    <option value="Ruvuma">Ruvuma</option>
+                                    <option value="Shinyanga">Shinyanga</option>
+                                    <option value="Simiyu">Simiyu</option>
+                                    <option value="Singida">Singida</option>
+                                    <option value="Songwe">Songwe</option>
+                                    <option value="Tabora">Tabora</option>
+                                    <option value="Tanga">Tanga</option>
+                                    <option value="Unguja Kaskazini">Unguja Kaskazini</option>
+                                    <option value="Unguja Kusini">Unguja Kusini</option>
+                                    <option value="Unguja Mjini Magharibi">Unguja Mjini Magharibi</option>
+                                </select>
+                            </div>
+
+                            <!-- Dropdown ya Wilaya -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">Wilaya</label>
+                                <select id="modalDistrictSelect" name="req_district" class="form-select form-select-sm" onchange="updateModalWards()" disabled required>
+                                    <option value="">-- Chagua Wilaya --</option>
+                                </select>
+                            </div>
+
+                            <!-- Dropdown ya Kata -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">Kata</label>
+                                <select id="modalWardSelect" name="req_ward" class="form-select form-select-sm" disabled required>
+                                    <option value="">-- Chagua Kata --</option>
+                                </select>
+                            </div>
+
+                            <!-- Mtaa / Maelezo ya Ziada -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Mtaa / Eneo au Maelezo ya Ziada</label>
+                                <input type="text" class="form-control form-control-sm" id="customerStreet" name="req_street" placeholder="Mfano: Mtaa wa Kawawa, Karibu na Msikiti/Kanisa" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Maelezo ya Tatizo -->
+                    <div class="mb-3">
+                        <label for="issueDescription" class="form-label fw-semibold">Maelezo ya Tatizo la Gari</label>
+                        <textarea class="form-control" id="issueDescription" name="problem_description" rows="3" placeholder="Eleza kwa ufupi tatizo la gari lako (mf. Gari haiwaki, Shida ya Brakes, n.k.)" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ghairi</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Tuma Ombi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const isLoggedIn = {% if session.get('user_id') or current_user.is_authenticated %} true {% else %} false {% endif %};
+
+function checkAuth(event) {
+    if (!isLoggedIn) {
+        event.preventDefault();
+        alert("Tafadhali jisajili au ingia kwanza kwenye akunti yako ili uweze kutafuta mafundi!");
+        window.location.href = "{{ url_for('customer_register') }}";
+        return false;
+    }
+    return true;
+}
+
+function openRequestModal(mechanicId, mechanicName) {
+    document.getElementById('modalMechanicId').value = mechanicId;
+    document.getElementById('modalMechanicName').textContent = mechanicName;
+    
+    const form = document.getElementById('serviceRequestForm');
+    form.action = "/request-service/" + mechanicId;
+
+    const requestModal = new bootstrap.Modal(document.getElementById('requestServiceModal'));
+    requestModal.show();
+}
+
+// ==========================================
+// DATA YA MIKOA, WILAYA NA KATA ZA TANZANIA
+// ==========================================
+const locationData = {
+    "Arusha": {
+        "Arusha Mjini": ["Baraa", "Daraja Mbili", "Elerai", "Engutoto", "Kaloleni", "Kati", "Kimandolu", "Lemara", "Levolosi", "Moshono", "Ngarenaro", "Olasiti", "Olturoto", "Sekei", "Sombetini", "Terrat", "Themi"],
+        "Arumeru": ["Akheri", "Bangata", "Bwawani", "Ilkiding'a", "Kikwe", "King'ori", "Kiranyi", "Matesvesi", "Mbuguni", "Nkoanrua", "Nkoaranga", "Poli", "Singisi", "Usa River"],
+        "Karatu": ["Baray", "Ganako", "Karatu", "Katesh", "Endabash", "Rhotia"],
+        "Longido": ["Engarenaibor", "Engushai", "Longido", "Namanga", "Olmolog", "Tingatinga"],
+        "Monduli": ["Engaruka", "Lepurko", "Makuyuni", "Monduli Mjini", "Mto wa Mbu", "Sepeko"],
+        "Ngorongoro": ["Arash", "Digodigo", "Endulen", "Loliondo", "Ngaramtoni", "Olbalbal", "Sale"]
+    },
+    "Dar es Salaam": {
+        "Ilala": ["Buguruni", "Gerezani", "Ilala", "Jangwani", "Kariakoo", "Kinyerezi", "Kipawa", "Kitunda", "Kisutu", "Mchafukoge", "Msasani", "Pugu", "Segerea", "Tabata", "Ukonga", "Upanga Mashariki", "Upanga Magharibi", "Vingunguti"],
+        "Kigamboni": ["Kimbiji", "Kigamboni", "Kibada", "Kisarawe II", "Mjimwema", "Pembamnazi", "Somangila", "Tungi", "Vijibweni"],
+        "Kinondoni": ["Bunju", "Hananasif", "Kawe", "Kijitonyama", "Kinondoni", "Kunduchi", "Magomeni", "Makumbusho", "Mbweni", "Mikocheni", "Msasani", "Mwananyamala", "Mbezi Beach", "Ndugumbi", "Tandale"],
+        "Temeke": ["Azimio", "Buza", "Chamazi", "Chang'ombe", "Charambe", "Keko", "Kilakala", "Kurasini", "Mbagala", "Mbagala Kuu", "Mtoni", "Sandali", "Tandika", "Temeke", "Toangoma"],
+        "Ubungo": ["Goba", "Kibamba", "Kimara", "Kwakhaberi", "Mabibo", "Manzese", "Mbezi", "Mburahati", "Msigani", "Saranga", "Sinza", "Ubungo"]
+    },
+    "Dodoma": {
+        "Bahi": ["Bahi", "Ibundy", "Ipeluka", "Kipanga", "Lamaiti", "Mundemu", "Mpantile", "Zanka"],
+        "Chamwino": ["Buigiri", "Chamwino", "Chilonwa", "Dabalo", "Fufu", "Ikowa", "Itiso", "Manchali", "Mvumi"],
+        "Chemba": ["Chemba", "Farkwa", "Goima", "Kondoa", "Lalta", "Mondo", "Paranga"],
+        "Dodoma Mjini": ["Bahi", "Chamwino", "Chang'ombe", "Hazina", "Ihumwa", "Ipagala", "Ipala", "Kizota", "Madale", "Majengo", "Makulu", "Mbweni", "Miyuji", "Mpwapwa", "Mtumba", "Njiapanda", "Nzuguni", "Tambukareli", "Zuzu"],
+        "Kondoa": ["Bumbuta", "Kondoa Mjini", "Kolo", "Kinyasi", "Mondo", "Pahi", "Salanka"],
+        "Kongwa": ["Hogoro", "Kibaigwa", "Kongwa", "Mlali", "Ngh'ambaku", "Sejeli", "Ugogoni"],
+        "Mpwapwa": ["Godegode", "Gulwe", "Kibakwe", "Mpwapwa Mjini", "Pwinila", "Ving'hawe"]
+    },
+    "Geita": {
+        "Bukombe": ["Buhalahala", "Busangi", "Ushirombo", "Uyovu"],
+        "Chato": ["Bwanga", "Chato", "Kachwamba", "Muganza", "Nyarugusu"],
+        "Geita Mjini": ["Bung'wangoko", "Bombambili", "Kalangalala", "Kanyala", "Mtakuja", "Nyang'hwale"],
+        "Geita Vijijini": ["Bugulula", "Busanda", "Kamena", "Kharumwa", "Kotorukwa", "Nzera"],
+        "Mbogwe": ["Ikombe", "Masumbwe", "Mbogwe", "Nyang'holongo"],
+        "Nyang'hwale": ["Bukarai", "Kharumwa", "Nyamilama", "Nyang'hwale"]
+    },
+    "Iringa": {
+        "Iringa Mjini": ["Gangilonga", "Igumbilo", "Kihesa", "Kwakilosa", "Mkwawa", "Mwangata", "Ruaha"],
+        "Iringa Vijijini": ["Izazi", "Kalenga", "Kihorogota", "Migoli", "Mlali", "Nzihi"],
+        "Kilolo": ["Ilula", "Kilolo", "Mahenge", "Mtitu", "Ruaha Mbuyuni", "Udzungwa"],
+        "Mufindi": ["Boma", "Ifunda", "Igowole", "Mafinga", "Malangali", "Sadani"]
+    },
+    "Kagera": {
+        "Biharamulo": ["Biharamulo", "Kabindi", "Kalenge", "Lusahunga", "Nyamigogo"],
+        "Bukoba Mjini": ["Bakoba", "Bilele", "Hamugembe", "Kagondo", "Kashai", "Miembeni", "Nyamidati"],
+        "Bukoba Vijijini": ["Kaibanja", "Kanyangereko", "Kyamulaile", "Mikoni", "Rubale"],
+        "Karagwe": ["Bugene", "Kayanga", "Kibarizo", "Nyakakika", "Nyaishozi"],
+        "Kyerwa": ["Bugomora", "Isingiro", "Kaisho", "Kyerwa", "Nkwenda"],
+        "Misenyi": ["Bunazi", "Kasambya", "Kyaka", "Mutukula", "Nsunga"],
+        "Muleba": ["Biirabo", "Kamachumu", "Magata", "Muleba", "Nshamba", "Rulenge"],
+        "Ngara": ["Bugarama", "Kanazi", "Kabanga", "Ngara Mjini", "Rulenge"]
+    },
+    "Katavi": {
+        "Mlele": ["Inyonga", "Ilela", "Kamsisi", "Mlele"],
+        "Mpanda Mjini": ["Ilembo", "Kawanzugi", "Kashaulili", "Magamba", "Mpanda Hotel", "Shanwe"],
+        "Mpanda Vijijini": ["Kabungu", "Karema", "Katuma", "Mishamo", "Sibwesa"],
+        "Nsimbo": ["Katumba", "Litapunga", "Nsimbo", "Sitalike"]
+    },
+    "Kigoma": {
+        "Buhigwe": ["Buhigwe", "Juhudi", "Munaze", "Muyama"],
+        "Kakonko": ["Gwarama", "Kakonko", "Kasanda", "Nyamtukuza"],
+        "Kasulu Mjini": ["Kigoma Road", "Murubona", "Nyumbigwa", "Kasingirima"],
+        "Kasulu Vijijini": ["Heru Juu", "Kagera", "Makere", "Muzye", "Ruhita"],
+        "Kibondo": ["Kibondo Mjini", "Mabamba", "Murungu", "Rugongowe"],
+        "Kigoma Mjini": ["Bangwe", "Buzebazeba", "Gungu", "Kigoma", "Kipampa", "Mwanga", "Ujiji"],
+        "Kigoma Vijijini": ["Kandaga", "Matyazo", "Mwamgongo", "Nsimbo"],
+        "Uvinza": ["Basanza", "Ilagala", "Nguruka", "Uvinza"]
+    },
+    "Kilimanjaro": {
+        "Hai": ["Bomang'ombe", "Machame Kaskazini", "Machame Mashariki", "Machame Magharibi", "Masama", "Weruweru"],
+        "Moshi Mjini": ["Bomambuzi", "Kiboriloni", "Korongoni", "Majengo", "Mawenzi", "Miembeni", "Njoro", "Pasua", "Rau", "Shantyo"],
+        "Moshi Vijijini": ["Kibosho", "Kimochi", "Kirimanjaro", "Marangu Kaskazini", "Marangu Kusini", "Uru", "Vunjo"],
+        "Mwanga": ["Jipe", "Kifaru", "Lembeni", "Mwanga", "Shighatini", "Ugweno"],
+        "Rombo": ["Himo", "Muu", "Mkuu", "Mashati", "Tarakea", "Useri"],
+        "Same": ["Hedaru", "Kalema", "Mbaga", "Same Mjini", "Suji"],
+        "Siha": ["Biriri", "Karansi", "Kashashi", "Sanya Juu", "Siha"]
+    },
+    "Lindi": {
+        "Kilwa": ["Kipatimu", "Kilwa Masoko", "Kilwa Kivinje", "Lihimalao", "Mingumbi", "Songosongo"],
+        "Lindi Mjini": ["Jamhuri", "Makonda", "Matopeni", "Mikindani", "Mwenge", "Nachingwea", "Rahaleo"],
+        "Lindi Vijijini": ["Kiwalala", "Mchinga", "Mtama", "Nyangamara", "Soga"],
+        "Liwale": ["Liwale Mjini", "Mirui", "Mpigamiti", "Nangando"],
+        "Nachingwea": ["Kiluwa", "Marambo", "Mbondo", "Nachingwea Mjini", "Stesheni"],
+        "Ruangwa": ["Lindi", "Mandawa", "Mnacho", "Nyangao", "Ruangwa Mjini"]
+    },
+    "Manyara": {
+        "Babati Mjini": ["Babati", "Bonga", "Maisaka", "Nangara", "Singe"],
+        "Babati Vijijini": ["Dareda", "Duru", "Gallapo", "Gorowa", "Magugu", "Qash"],
+        "Hanang": ["Endasak", "Katesh", "Nangwa", "Ngasinyi", "Sirop"],
+        "Kiteto": ["Bwawani", "Engusero", "Kibaya", "Matui", "Ndedo"],
+        "Mbulu": ["Dongobesh", "Haydom", "Mbulu Mjini", "Tabora", "Yaeda Ampa"],
+        "Simanjiro": ["Emboreet", "Mirerani", "Naberera", "Orkesumet", "Terrat"]
+    },
+    "Mara": {
+        "Bunda": ["Bunda Stoo", "Bunda Mjini", "Guta", "Kibara", "Nansimo", "Sazira"],
+        "Butiama": ["Butiama", "Kiabakari", "Kyamanyanja", "Mirwa", "Nyamimange"],
+        "Musoma Mjini": ["Bwasi", "Iringo", "Kamunyonge", "Kitaji", "Mukendo", "Mwisenge", "Nyasho", "Nyabisare"],
+        "Musoma Vijijini": ["Bwasi", "Etaro", "Mugango", "Nyang'oma", "Suguti"],
+        "Rorya": ["Bukura", "Kinesi", "Kowak", "Nyamagaro", "Roche", "Shirati"],
+        "Serengeti": ["Ikoma", "Issenye", "Mugumu", "Natta", "Rung'abure"],
+        "Tarime": ["Bumera", "Gorong'a", "Nyamwaga", "Sirari", "Tarime Mjini", "Turwa"]
+    },
+    "Mbeya": {
+        "Chunya": ["Chunya Mjini", "Chunguruma", "Ifumbo", "Itewe", "Matundasi", "Sangambi"],
+        "Mbarali": ["Chimala", "Igurusi", "Igawa", "Lujewa", "Mbarali", "Rujewa", "Ubaruku"],
+        "Mbeya Mjini": ["Forest", "Ghana", "Iyunga", "Iziwa", "Maanga", "Mbalizi Road", "Mwanjelwa", "Nsalaga", "Ruanda", "Simbawanga", "Soweto", "Uyole"],
+        "Mbeya Vijijini": ["Ikuti", "Inyala", "Iziwa", "Mbalizi", "Utengule", "Tembela"],
+        "Rungwe": ["Ilimba", "Kiwira", "Lufilyo", "Tukuyu Mjini", "Ushirika"]
+    },
+    "Morogoro": {
+        "Gairo": ["Chagongwe", "Gairo", "Idibo", "Kinyolisi", "Madege"],
+        "Kilombero": ["Ifakara", "Kidatu", "Kibatini", "Mang'ula", "Mlimba", "Mbingu", "Sanje"],
+        "Kilosa": ["Chakwale", "Kimamba", "Kidodi", "Kilosa Mjini", "Mikumi", "Magole", "Ulaya"],
+        "Morogoro Mjini": ["Boma", "Bwagala", "Kichangani", "Kingolwira", "Mazimbu", "Mbuyuni", "Mlimani", "Mwembesongo", "Sabasaba", "Sultani Area", "Tushurye"],
+        "Morogoro Vijijini": ["Duthumi", "Kiroka", "Matombo", "Mvuha", "Ngerengere"],
+        "Mvomero": ["Dakawa", "Hembeti", "Mhonda", "Mlali", "Mvomero", "Turiani"],
+        "Ulanga": ["Isongo", "Lupiro", "Mahenge", "Mwaya", "Vigoi"],
+        "Malinyi": ["Inebwe", "Itete", "Lutukila", "Malinyi", "Ngoheranga"]
+    },
+    "Mtwara": {
+        "Masasi Mjini": ["Juhudi", "Mkomaindo", "Masasi Mjini", "Mwenge", "Nyasa", "Sululu"],
+        "Masasi Vijijini": ["Lulindi", "Mchaururu", "Mbuyuni", "Nanjota", "Ndanda"],
+        "Mtwara Mjini": ["Chikongola", "Chuno", "Jangwani", "Likoni", "Majengo", "Mitengo", "Naliendele", "Rahaleo", "Shangani", "Ufukoni"],
+        "Mtwara Vijijini": ["Kitaya", "Mayanga", "Mahurunga", "Nanguruwe", "Ziwani"],
+        "Nanyumbu": ["Lumesule", "Mangaka", "Nanyumbu", "Ndemba"],
+        "Newala": ["Luchingu", "Makote", "Mcholi", "Newala Mjini", "Nambali"],
+        "Tandahimba": ["Kitama", "Luagala", "Mahuta", "Mdimba", "Tandahimba Mjini"]
+    },
+    "Mwanza": {
+        "Ilemela": ["Buzuruga", "Ilemela", "Kahama", "Kirumba", "Kitangiri", "Kiseke", "Mecco", "Nyamanoro", "Nyasaka", "Pasiansi", "Pasiansi Mashariki", "Sangabuye"],
+        "Kwimba": ["Bhung'wangoko", "Igongwa", "Ngudu", "Ng'hundi", "Sumve"],
+        "Magu": ["Kahangara", "Kisesa", "Lugeye", "Magu Mjini", "Nyanguge"],
+        "Misungwi": ["Fella", "Idietiya", "Kisesa", "Misungwi", "Usagara"],
+        "Nyamagana": ["Buhongwa", "Butimba", "Igogo", "Igoma", "Isamilo", "Kishiri", "Luchelele", "Mahina", "Mirongo", "Mkolani", "Mwatulole", "Nyamagana", "Nyegezi", "Pamba"],
+        "Sengerema": ["Busisi", "Katunguru", "Mizizini", "Sengerema Mjini", "Tabaruka"],
+        "Ukerewe": ["Bwiro", "Kagunguli", "Murutunguru", "Nansio", "Ushirika"]
+    },
+    "Njombe": {
+        "Ludewa": ["Islowa", "Ludewa", "Manda", "Mlangali", "Mowembe"],
+        "Makambako Mjini": ["Kipaganda", "Kitandililo", "Mjimwema", "Makambako", "Uwemba"],
+        "Makete": ["Iwipe", "Iwawa", "Kitulo", "Lupila", "Matamba", "Uwimbi"],
+        "Njombe Mjini": ["Ihalula", "Kimbila", "Lugenge", "Njombe Mjini", "Ramadhani", "Uwemba"],
+        "Njombe Vijijini": ["Ikondo", "Kichiwa", "Matola", "Mtwango"],
+        "Wanging'ombe": ["Igwachanya", "Kidugala", "Lupembe", "Wanging'ombe"]
+    },
+    "Pemba Kaskazini": {
+        "Micheweni": ["Kiwuyu", "Micheweni", "Maziwangwa", "Wingwi"],
+        "Wete": ["Gando", "Kojani", "Mtambwe", "Piki", "Utaani", "Wete Mjini"]
+    },
+    "Pemba Kusini": {
+        "Chake Chake": ["Chake Chake Mjini", "Chonga", "Konde", "Ndagoni", "Wawi"],
+        "Mkoani": ["Kangani", "Kengeja", "Makombeni", "Mkoani Mjini", "Mtambile"]
+    },
+    "Pwani": {
+        "Bagamoyo": ["Dunda", "Fukayosi", "Kerege", "Kiwangwa", "Mapinga", "Yombo", "Zinga"],
+        "Kibaha Mjini": ["Kibaha", "Kongowe", "Maili Moja", "Mlandizi", "Picha ya Ndege", "Tumbi", "Visiga"],
+        "Kibaha Vijijini": ["Bokomnemela", "Gwata", "Kikula", "Magindu", "Ruvu"],
+        "Kibiti": ["Bungu", "Kibiti", "Kiongoroni", "Mkuranga", "Salale"],
+        "Kisarawe": ["Kazimzumbwi", "Kisarawe", "Kuruhi", "Maneromango", "Vikindu"],
+        "Mafia": ["Baleni", "Kilindoni", "Kirongwe", "Kolekole"],
+        "Mkuranga": ["Kisiju", "Kimanzichana", "Lukanga", "Mkuranga Mjini", "Vikindu", "Vianzi"],
+        "Rufiji": ["Ikwiriri", "Kibiti", "Mohoro", "Utete Mjini"]
+    },
+    "Rukwa": {
+        "Kalambo": ["Kasanga", "Matai", "Mwimbi", "Sopa"],
+        "Sumbawanga Mjini": ["Katandala", "Kizwite", "Majengo", "Malay", "Milanzi", "Sumbawanga Mjini"],
+        "Sumbawanga Vijijini": ["Kaengesa", "Laela", "Mfyoma", "Muze", "Sandulula"],
+        "Nkasi": ["Kabwe", "Kirando", "Korongwe", "Namanyere", "Ninde"]
+    },
+    "Ruvuma": {
+        "Mbinga": ["Kipapa", "Lituhi", "Mbinga Mjini", "Mbamba Bay", "Nyoni"],
+        "Songea Mjini": ["Bombambili", "Majengo", "Matogoro", "Mshangano", "Ruvuma", "Subira", "Town Center"],
+        "Songea Vijijini": ["Gumbiro", "Lilambo", "Maguu", "Peramiho", "Wino"],
+        "Tunduru": ["Litunguru", "Masonya", "Mathias", "Mlingoti", "Tunduru Mjini"],
+        "Namtumbo": ["Hanga", "Luchili", "Mgombasi", "Namtumbo Mjini"],
+        "Nyasa": ["Kipili", "Kilosa", "Liuli", "Mbamba Bay", "Tinguni"]
+    },
+    "Shinyanga": {
+        "Kahama Mjini": ["Busoka", "Isagehe", "Kahama Mjini", "Kagongwa", "Majengo", "Mhongolo", "Nyihogo", "Zongomera"],
+        "Kahama Vijijini": ["Isaka", "Lunguya", "Mwingiro", "Ntobo", "Ukune"],
+        "Kishapu": ["Bubinza", "Kishapu", "Mununwa", "Mwadui Mine", "Songwa"],
+        "Shinyanga Mjini": ["Ibinzamata", "Kambarage", "Kitangiri", "Kizumbi", "Masekelo", "Ndembezi", "Shinyanga Mjini", "Uzini"],
+        "Shinyanga Vijijini": ["Iselamagazi", "Luhumbo", "Lyabusalu", "Samuye", "Solwa"]
+    },
+    "Simiyu": {
+        "Bariadi": ["Bariadi Mjini", "Bunamhala", "Giriadi", "Guduwi", "Nyakabindi", "Somanda"],
+        "Busega": ["Kabita", "Kalemela", "Lamadi", "Mkula", "Ngasamo"],
+        "Itilima": ["Bumera", "Chinamili", "Lagangabilili", "Migato", "Nkoma"],
+        "Maswa": ["Badi", "Binza", "Isanga", "Maswa Mjini", "Nyabubinza", "Shanwa"],
+        "Meatu": ["Kisesa", "Mwanhuzi", "Mwamapalala", "Mwubugi", "Tindabuligi"]
+    },
+    "Singida": {
+        "Iramba": ["Kiomboi", "Kinampanda", "Mshelanga", "Nduguti", "Ulepwa"],
+        "Ikungi": ["Dung'unyi", "Ihanja", "Ikungi", "Mgungira", "Sepuka"],
+        "Manyoni": ["Chikuyu", "Hewe", "Kintinku", "Manyoni Mjini", "Solya"],
+        "Mkalama": ["Gumanga", "Ibaga", "Kinyangiri", "Mkalama", "Nduguti"],
+        "Singida Mjini": ["Ipembe", "Kindai", "Majengo", "Mandewa", "Mitunduruni", "Mungumaji", "Sewe", "Utemini"],
+        "Singida Vijijini": ["Ilongero", "Kinyamwenda", "Mgori", "Mudida", "Ughandi"]
+    },
+    "Songwe": {
+        "Ileje": ["Itumba", "Isongole", "Kasyabone", "Nyalwela", "Bupigu"],
+        "Mbozi": ["Ichelo", "Isangati", "Iyula", "Mlowo", "Vwawa Mjini"],
+        "Momba": ["Chitete", "Kamsamba", "Mkulwe", "Ndala", "Tunduma Mjini"],
+        "Songwe": ["Kanga", "Mbangala", "Mwambani", "Saza"]
+    },
+    "Tabora": {
+        "Igunga": ["Igunga Mjini", "Igurubi", "Kinungu", "Nkinga", "Simbo", "Sungwizi"],
+        "Kaliua": ["Kaliua Mjini", "Kamukenge", "Kazaroho", "Milambo", "Urambo"],
+        "Nzega": ["Bukene", "Lusu", "Ndala", "Nzega Mjini", "Puge", "Tinde"],
+        "Sikonge": ["Chitemo", "Kitunda", "Miseno", "Sikonge Mjini", "Tutuo"],
+        "Tabora Mjini": ["Cheyo", "Isevya", "Itonbula", "Kabila", "Kanyenye", "Kidatu", "Kitete", "Mpangala", "Nyamwezi", "Tambukareli", "Tabora"],
+        "Urambo": ["Imalamakoye", "Muungano", "Songambele", "Urambo Mjini", "Usoke"],
+        "Uyui": ["Igalula", "Ikongolo", "Lupeta", "Magiri", "Upuge"]
+    },
+    "Tanga": {
+        "Handeni Mjini": ["Chanika", "Kwedizinga", "Mabanda", "Malezi", "Mnyuzi", "Vuruni"],
+        "Handeni Vijijini": ["Kabuku", "Kivala", "Kwamatuku", "Kwang'andu", "Mziha"],
+        "Kilindi": ["Kibirashi", "Kwediboma", "Songe Mjini", "Tunguli"],
+        "Korogwe": ["Kwahumu", "Korogwe Mjini", "Magoma", "Majengo", "Manundu", "Mombo", "Mtimbwani"],
+        "Lushoto": ["Bumbuli", "Funta", "Lushoto Mjini", "Malindi", "Mlalo", "Soni", "Uamboi"],
+        "Mkinga": ["Duga", "Maramba", "Moa", "Mkinga Mjini", "Parungu Kasera"],
+        "Muheza": ["Amani", "Bwembwera", "Kicheba", "Muheza Mjini", "Tingeni"],
+        "Pangani": ["Bweni", "Kipumbwi", "Mwera", "Pangani Mjini", "Ubwini"],
+        "Tanga Jiji": ["Chumbageni", "Central", "Dabalo", "Donge", "Kisemvule", "Kiomoni", "Mabayani", "Mazingara", "Mnyanjani", "Mwambani", "Ngamiani Kaskazini", "Ngamiani Kusini", "Niajema", "Pongwe", "Usagara"]
+    },
+    "Unguja Kaskazini": {
+        "Kaskazini A": ["Chaani", "Gambrowa", "Kinyasini", "Mkokotoni", "Nungwi", "Tumbatu"],
+        "Kaskazini B": ["Bumbwini", "Donge", "Kitope", "Mahonda", "Misufini"]
+    },
+    "Unguja Kusini": {
+        "Kati": ["Bambi", "Dunga", "Jumbi", "Mitakawani", "Uroa"],
+        "Kusini": ["Jambiani", "Kizimkazi", "Makunduchi", "Paje", "Unguja Ukuu"]
+    },
+    "Unguja Mjini Magharibi": {
+        "Magharibi A": ["Bububu", "Chuini", "Kama", "Mtoni", "Welezo"],
+        "Magharibi B": ["Fumba", "Fuoni", "Kiembe Samaki", "Mwanakerekwe", "Shakani"],
+        "Mjini": ["Kikwajuni", "Malindi", "Mchangani", "Shangani", "Stone Town", "Vuga"]
+    }
+};
+
+// ==========================================
+// LOGIC YA MIKOA NA WILAYA KUTAFUTA FUNDI
+// ==========================================
+function updateDistricts() {
+    const regionSelect = document.getElementById("regionSelect");
+    const districtSelect = document.getElementById("districtSelect");
+    const selectedRegion = regionSelect.value;
+
+    districtSelect.innerHTML = '<option value="">-- Chagua Wilaya --</option>';
+
+    if (selectedRegion && locationData[selectedRegion]) {
+        districtSelect.disabled = false;
+        Object.keys(locationData[selectedRegion]).forEach(function(district) {
+            const option = document.createElement("option");
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+        });
+    } else {
+        districtSelect.disabled = true;
+        districtSelect.innerHTML = '<option value="">-- Chagua Mkoa Kwanza --</option>';
+    }
+}
+
+// ==========================================
+// LOGIC YA MODAL (MKOA -> WILAYA -> KATA)
+// ==========================================
+function updateModalDistricts() {
+    const regionSelect = document.getElementById("modalRegionSelect");
+    const districtSelect = document.getElementById("modalDistrictSelect");
+    const wardSelect = document.getElementById("modalWardSelect");
+
+    const selectedRegion = regionSelect.value;
+
+    districtSelect.innerHTML = '<option value="">-- Chagua Wilaya --</option>';
+    wardSelect.innerHTML = '<option value="">-- Chagua Kata Kwanza --</option>';
+    wardSelect.disabled = true;
+
+    if (selectedRegion && locationData[selectedRegion]) {
+        districtSelect.disabled = false;
+        Object.keys(locationData[selectedRegion]).forEach(function(district) {
+            const option = document.createElement("option");
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+        });
+    } else {
+        districtSelect.disabled = true;
+    }
+}
+
+function updateModalWards() {
+    const regionSelect = document.getElementById("modalRegionSelect");
+    const districtSelect = document.getElementById("modalDistrictSelect");
+    const wardSelect = document.getElementById("modalWardSelect");
+
+    const selectedRegion = regionSelect.value;
+    const selectedDistrict = districtSelect.value;
+
+    wardSelect.innerHTML = '<option value="">-- Chagua Kata --</option>';
+
+    if (selectedRegion && selectedDistrict && locationData[selectedRegion][selectedDistrict]) {
+        wardSelect.disabled = false;
+        const wards = locationData[selectedRegion][selectedDistrict];
+        
+        wards.forEach(function(ward) {
+            const option = document.createElement("option");
+            option.value = ward;
+            option.textContent = ward;
+            wardSelect.appendChild(option);
+        });
+        
+        // Option ya "Nyingine" ikiwa kata ya mteja haimo kwenye orodha
+        const otherOption = document.createElement("option");
+        otherOption.value = "Nyingine";
+        otherOption.textContent = "-- Kata Nyingine (Iandike kwenye Mtaa) --";
+        wardSelect.appendChild(otherOption);
+    } else {
+        wardSelect.disabled = true;
+    }
+}
+</script>
+{% endblock %}

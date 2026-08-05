@@ -1,0 +1,72 @@
+{% extends "mechanic_base.html" %}
+{% block title %}{{ mechanic.user.full_name }} - Profile{% endblock %}
+
+{% block mechanic_content %}
+<div class="row g-4">
+    <!-- Kadi ya Picha na Jina la Fundi -->
+    <div class="col-md-4">
+        <div class="card shadow border-0 text-center p-4">
+            {% if mechanic.profile_photo %}
+                <img src="{{ url_for('static', filename='uploads/' + mechanic.profile_photo) }}" class="rounded-circle mx-auto mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+            {% else %}
+                <i class="fa-solid fa-user-circle fa-6x text-secondary mb-3"></i>
+            {% endif %}
+
+            <h3 class="fw-bold">{{ mechanic.user.full_name }}</h3>
+            <p class="text-muted mb-2"><i class="fa-solid fa-warehouse text-primary me-1"></i> {{ mechanic.garage_name or 'Independent Mechanic' }}</p>
+
+            {% if average_rating %}
+                <h4 class="text-warning mb-1">⭐ {{ "%.1f"|format(average_rating) }} / 5</h4>
+                <p class="text-muted small">({{ review_count }} Reviews)</p>
+            {% else %}
+                <p class="text-muted small">Hakuna Rating Bado</p>
+            {% endif %}
+
+            <span class="badge bg-success px-3 py-2 w-50 mx-auto mb-3">✓ Verified</span>
+
+            {% if session.get("role") == "customer" %}
+                <a href="{{ url_for('request_service', mechanic_id=mechanic.id) }}" class="btn btn-primary w-100">
+                    <i class="fa-solid fa-wrench me-2"></i> Omba Huduma
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Taarifa za Ziada na Reviews -->
+    <div class="col-md-8">
+        <div class="card shadow border-0 p-4 mb-4">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-id-card text-primary me-2"></i>Taarifa za Fundi</h4>
+            <hr>
+            <p class="mb-2"><strong>📍 Mkoa:</strong> {{ mechanic.region }}</p>
+            <p class="mb-2"><strong>🏙 Wilaya:</strong> {{ mechanic.district }}</p>
+            <p class="mb-2"><strong>🔧 Utaalamu:</strong> {{ mechanic.specialization }}</p>
+            <p class="mb-2"><strong>📞 Simu:</strong> {{ mechanic.user.phone }}</p>
+            <p class="mb-2"><strong>🧰 Uzoefu:</strong> {{ mechanic.experience }} Years</p>
+            <p class="mb-1"><strong>📝 Maelezo:</strong></p>
+            <p class="text-muted mb-0">{{ mechanic.description or 'Hakuna maelezo ya ziada.' }}</p>
+        </div>
+
+        <div class="card shadow border-0 p-4">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-comments text-primary me-2"></i>Reviews za Wateja</h4>
+            <hr>
+            {% if reviews %}
+                {% for review in reviews %}
+                <div class="card shadow-sm mb-3 p-3 bg-light border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-primary">{{ review.customer.full_name }}</span>
+                        <span class="text-warning">
+                            {% for i in range(review.rating|int) %}<i class="fa-solid fa-star"></i>{% endfor %}
+                            {% for i in range(5 - (review.rating|int)) %}<i class="fa-regular fa-star"></i>{% endfor %}
+                        </span>
+                    </div>
+                    <p class="mb-1 text-muted">{{ review.comment }}</p>
+                    <small class="text-secondary">{{ review.created_at.strftime('%d %b %Y') if review.created_at else '' }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info mb-0">Hakuna review za mteja zilizowekwa bado.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

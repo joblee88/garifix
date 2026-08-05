@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+{% block title %}Manage Requests - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fa-solid fa-list-check me-2"></i>Service Requests</h2>
+    <a href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}" class="btn btn-dark"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+</div>
+
+<div class="card shadow border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Mteja</th>
+                    <th>Simu</th>
+                    <th>Fundi</th>
+                    <th>Gari</th>
+                    <th>Tatizo</th>
+                    <th>Eneo</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td>{{ req.customer.full_name if req.customer else 'Unknown' }}</td>
+                    <td>{{ req.customer.phone if req.customer else '-' }}</td>
+                    <td>{{ req.mechanic.user.full_name if req.mechanic else 'Haijawekwa' }}</td>
+                    <td>{{ req.vehicle_model }}</td>
+                    <td>{{ req.problem_description }}</td>
+                    <td>{{ req.location }}</td>
+                    <td>
+                        {% if req.status == "pending" %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif req.status == "accepted" %}
+                            <span class="badge bg-success">Accepted</span>
+                        {% elif req.status == "completed" %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.status == "accepted" %}
+                            <a href="{{ url_for('complete_request', id=req.id) }}" class="btn btn-primary btn-sm me-1"><i class="fa fa-check"></i> Complete</a>
+                        {% endif %}
+                        {% if req.status != "cancelled" and req.status != "completed" %}
+                            <a href="{{ url_for('cancel_request', id=req.id) }}" class="btn btn-danger btn-sm"><i class="fa fa-xmark"></i> Cancel</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">Hakuna maombi ya huduma.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

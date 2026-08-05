@@ -1,0 +1,25 @@
+{% extends "mechanic_base.html" %}
+{% block title %}Customer Reviews - Mechanic{% endblock %}
+
+{% block mechanic_content %}
+<h2 class="fw-bold mb-4"><i class="fa-solid fa-star text-warning me-2"></i>Customer Feedback & Reviews</h2>
+
+<div class="row g-3">
+    {% for review in reviews %}
+    <div class="col-md-6">
+        <div class="card shadow p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold mb-0 text-primary">{{ review.customer.full_name }}</h5>
+                <span class="badge bg-warning text-dark">⭐ {{ review.rating }}/5</span>
+            </div>
+            <p class="text-muted mb-3">"{{ review.comment }}"</p>
+            <small class="text-secondary mt-auto">{{ review.created_at.strftime('%d %b %Y') if review.created_at else '' }}</small>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-4">Bado haujapokea review yoyote kutoka kwa wateja.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
