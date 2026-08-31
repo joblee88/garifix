@@ -1,0 +1,59 @@
+{% extends "customer_base.html" %}
+{% block title %}Customer Dashboard - GariFix{% endblock %}
+
+{% block customer_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold">Karibu, {{ user.full_name }}</h2>
+        <p class="text-muted">Simamia huduma zako za GariFix hapa.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-car fa-3x text-primary mb-3"></i>
+            <h3 class="fw-bold">{{ total_requests }}</h3>
+            <p class="text-muted mb-0">Maombi Yote</p>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-clock fa-3x text-warning mb-3"></i>
+            <h3 class="fw-bold">{{ pending_requests }}</h3>
+            <p class="text-muted mb-0">Pending</p>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
+            <h3 class="fw-bold">{{ accepted_requests }}</h3>
+            <p class="text-muted mb-0">Accepted</p>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-square-check fa-3x text-info mb-3"></i>
+            <h3 class="fw-bold">{{ completed_requests }}</h3>
+            <p class="text-muted mb-0">Completed</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow p-4 h-100">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i>Tafuta Fundi</h4>
+            <p class="text-muted">Tafuta fundi aliyethibitishwa karibu na eneo lako na utume ombi la msaada.</p>
+            <a href="{{ url_for('search_mechanics') }}" class="btn btn-primary mt-auto">Tafuta Fundi Sasa</a>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow p-4 h-100">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-list-check me-2 text-success"></i>Maombi Yangu</h4>
+            <p class="text-muted">Angalia maendeleo ya maombi yako yote ya matengenezo na status zao.</p>
+            <a href="{{ url_for('customer_requests') }}" class="btn btn-success mt-auto">Fungua Maombi Yangu</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

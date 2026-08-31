@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}GariFix Tanzania - Smart Roadside Assistance{% endblock %}
+
+{% block content %}
+<div class="row align-items-center py-5">
+    <div class="col-lg-6">
+        <span class="badge bg-primary mb-3 px-3 py-2 fs-6">Tanzania's Smart Roadside Assistance</span>
+        <h1 class="display-4 fw-bold mb-4">Pata Fundi wa Gari Haraka Popote Ulipo</h1>
+        <p class="lead text-muted mb-4">
+            GariFix inakuunganisha na mafundi waliothibitishwa waliopo karibu nawe ili upate huduma za haraka, salama na za kuaminika.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            
+            <!-- Logic ya Flask/Jinja: Angalia kama mtumiaji yupo kwenye session -->
+            {% if session.get('user_id') %}
+                <!-- Kama ameingia, anaenda moja kwa moja kutafuta -->
+                <a href="{{ url_for('search_mechanics') }}" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-magnifying-glass me-2"></i> Tafuta Fundi
+                </a>
+            {% else %}
+                <!-- Kama hajajisajili, anapelekwa kwanza kwenye Usajili -->
+                <a href="{{ url_for('customer_register') }}" class="btn btn-primary btn-lg" onclick="alert('Tafadhali jisajili au ingia kwanza ili uweze kumtafuta fundi!');">
+                    <i class="fa-solid fa-magnifying-glass me-2"></i> Tafuta Fundi
+                </a>
+                <a href="{{ url_for('customer_register') }}" class="btn btn-outline-dark btn-lg">Jisajili Sasa</a>
+            {% endif %}
+
+        </div>
+    </div>
+    <div class="col-lg-6 text-center mt-5 mt-lg-0">
+        <img src="{{ url_for('static', filename='images/car.jpg') }}" class="img-fluid rounded-4 shadow-lg" alt="GariFix" onerror="this.src='https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800'">
+    </div>
+</div>
+
+<div class="row g-4 mt-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-user-gear fa-3x text-primary mb-3"></i>
+            <h2 class="fw-bold text-dark">{{ total_mechanics }}</h2>
+            <p class="text-muted mb-0">Total Mechanics</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
+            <h2 class="fw-bold text-dark">{{ approved_mechanics }}</h2>
+            <p class="text-muted mb-0">Verified Mechanics</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-users fa-3x text-info mb-3"></i>
+            <h2 class="fw-bold text-dark">{{ total_customers }}</h2>
+            <p class="text-muted mb-0">Registered Customers</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <i class="fa-solid fa-car fa-3x text-danger mb-3"></i>
+            <h2 class="fw-bold text-dark">{{ total_requests }}</h2>
+            <p class="text-muted mb-0">Service Requests</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

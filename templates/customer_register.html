@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Customer Register - GariFix{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-lg p-4 p-md-5">
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-user-plus fa-4x text-primary"></i>
+                <h2 class="fw-bold mt-3">Jisajili kama Mteja</h2>
+                <p class="text-muted">Fungua akaunti ili uweze kupata huduma za mafundi wa magari.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('customer_register') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Jina la Kwanza</label>
+                        <input type="text" name="first_name" class="form-control" placeholder="Jina la kwanza" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Jina la Mwisho</label>
+                        <input type="text" name="last_name" class="form-control" placeholder="Jina la mwisho" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Namba ya Simu</label>
+                    <input type="text" name="phone" class="form-control" placeholder="07XXXXXXXX" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="example@gmail.com">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Weka password" required minlength="6">
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">Rudia Password</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Rudia password" required minlength="6">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fa-solid fa-user-plus me-2"></i> Jisajili
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <p>Tayari una akaunti? <a href="{{ url_for('login') }}">Ingia hapa</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

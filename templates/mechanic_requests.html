@@ -1,0 +1,59 @@
+{% extends "mechanic_base.html" %}
+{% block title %}Service Requests - GariFix{% endblock %}
+
+{% block mechanic_content %}
+<h2 class="fw-bold mb-4"><i class="fa-solid fa-list-check me-2"></i>Maombi Yote ya Huduma</h2>
+
+<div class="card shadow border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Mteja</th>
+                    <th>Simu</th>
+                    <th>Gari</th>
+                    <th>Tatizo</th>
+                    <th>Eneo</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.customer.full_name }}</td>
+                    <td>{{ req.customer.phone }}</td>
+                    <td>{{ req.vehicle_model }}</td>
+                    <td>{{ req.problem_description }}</td>
+                    <td>{{ req.location }}</td>
+                    <td>
+                        {% if req.status == "pending" %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif req.status == "accepted" %}
+                            <span class="badge bg-success">Accepted</span>
+                        {% elif req.status == "completed" %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.status == "pending" %}
+                            <a href="{{ url_for('accept_request', id=req.id) }}" class="btn btn-success btn-sm">Kubali</a>
+                        {% elif req.status == "accepted" %}
+                            <span class="badge bg-light text-dark border">Inasubiri mteja athibitishe</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Hakuna maombi ya huduma yaliyopatikana.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

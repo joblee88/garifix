@@ -1,0 +1,33 @@
+{% extends "customer_base.html" %}
+{% block title %}Weka Review - GariFix{% endblock %}
+
+{% block customer_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow p-4">
+            <h3 class="fw-bold mb-3 text-center"><i class="fa-solid fa-star text-warning me-2"></i>Mpe {{ mechanic.user.full_name }} Rating</h3>
+            <p class="text-muted text-center">{{ mechanic.garage_name or '' }}</p>
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Rating (1 - 5 Stars)</label>
+                    <select name="rating" class="form-select form-select-lg" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Maoni yako (Comment)</label>
+                    <textarea name="comment" class="form-control" rows="4" placeholder="Andika uzoefu wako kuhusu huduma uliyopokea..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">Tuma Review</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

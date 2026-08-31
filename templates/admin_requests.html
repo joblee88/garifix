@@ -1,0 +1,117 @@
+{% extends "admin_base.html" %}
+{% block title %}Manage Requests - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fa-solid fa-list-check me-2"></i>Service Requests</h2>
+    <a href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}" class="btn btn-dark"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+</div>
+
+<div class="card shadow border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Mteja</th>
+                    <th>Fundi</th>
+                    <th>Gari</th>
+                    <th>Eneo</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td>{{ req.customer.full_name if req.customer else 'Unknown' }}</td>
+                    <td>{{ req.mechanic.user.full_name if req.mechanic else 'Haijawekwa' }}</td>
+                    <td>{{ req.vehicle_model }}</td>
+                    <td>{{ req.location }}</td>
+                    <td>
+                        {% if req.status == "pending" %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif req.status == "accepted" %}
+                            <span class="badge bg-success">Accepted</span>
+                        {% elif req.status == "completed" %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#detailsModal{{ req.id }}">
+                            <i class="fa fa-eye"></i> Taarifa
+                        </button>
+                        {% if req.status == "accepted" %}
+                            <a href="{{ url_for('complete_request', id=req.id) }}" class="btn btn-primary btn-sm me-1"><i class="fa fa-check"></i> Complete</a>
+                        {% endif %}
+                        {% if req.status != "cancelled" and req.status != "completed" %}
+                            <a href="{{ url_for('cancel_request', id=req.id) }}" class="btn btn-danger btn-sm"><i class="fa fa-xmark"></i> Cancel</a>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Modal ya Taarifa Kamili za Ombi #{{ req.id }} -->
+                <div class="modal fade" id="detailsModal{{ req.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold">Taarifa za Ombi #{{ req.id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold text-primary"><i class="fa-solid fa-user me-2"></i>Taarifa za Mteja</h6>
+                                        {% if req.customer %}
+                                        <ul class="list-unstyled small">
+                                            <li><strong>Jina:</strong> {{ req.customer.full_name }}</li>
+                                            <li><strong>Simu:</strong> {{ req.customer.phone }}</li>
+                                            <li><strong>Email:</strong> {{ req.customer.email or '-' }}</li>
+                                        </ul>
+                                        {% else %}
+                                        <p class="text-muted small">Taarifa za mteja hazipatikani.</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold text-success"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Taarifa za Fundi</h6>
+                                        {% if req.mechanic %}
+                                        <ul class="list-unstyled small">
+                                            <li><strong>Jina:</strong> {{ req.mechanic.user.full_name }}</li>
+                                            <li><strong>Simu:</strong> {{ req.mechanic.user.phone }}</li>
+                                            <li><strong>Email:</strong> {{ req.mechanic.user.email or '-' }}</li>
+                                            <li><strong>Garage:</strong> {{ req.mechanic.garage_name or '-' }}</li>
+                                            <li><strong>Utaalamu:</strong> {{ req.mechanic.specialization }}</li>
+                                            <li><strong>Uzoefu:</strong> {{ req.mechanic.experience or 0 }} miaka</li>
+                                            <li><strong>Eneo la Fundi:</strong> {{ req.mechanic.region }}, {{ req.mechanic.district }}</li>
+                                        </ul>
+                                        {% else %}
+                                        <p class="text-muted small">Bado hakuna fundi aliyewekwa kwenye ombi hili.</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <h6 class="fw-bold text-dark"><i class="fa-solid fa-car me-2"></i>Taarifa za Ombi</h6>
+                                        <ul class="list-unstyled small">
+                                            <li><strong>Aina ya Gari:</strong> {{ req.vehicle_model }}</li>
+                                            <li><strong>Tatizo:</strong> {{ req.problem_description }}</li>
+                                            <li><strong>Eneo la Huduma:</strong> {{ req.location }}</li>
+                                            <li><strong>Tarehe:</strong> {{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '-' }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Hakuna maombi ya huduma.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

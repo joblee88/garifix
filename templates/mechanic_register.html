@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Mechanic Registration - GariFix{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="fw-bold mb-1"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Jisajili Kama Fundi</h3>
+                    <p class="mb-0">Jaza taarifa zako ili uwe sehemu ya mtandao wa GariFix Tanzania.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('mechanic_register') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Jina la Kwanza</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Jina la Mwisho</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Namba ya Simu</label>
+                                <input type="text" name="phone" class="form-control" placeholder="+2557XXXXXXXX" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Password</label>
+                                <input type="password" name="password" class="form-control" required minlength="6">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Rudia Password</label>
+                                <input type="password" name="confirm_password" class="form-control" required minlength="6">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Jina la Garage</label>
+                                <input type="text" name="garage_name" class="form-control">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mkoa</label>
+                                <select name="region" id="region" class="form-select" onchange="updateMechDistricts()" required>
+                                    <option value="">Chagua Mkoa</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Wilaya</label>
+                                <select name="district" id="district" class="form-select" onchange="updateMechWards()" disabled required>
+                                    <option value="">Chagua Mkoa Kwanza</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Kata</label>
+                                <select name="ward" id="ward" class="form-select" disabled required>
+                                    <option value="">Chagua Wilaya Kwanza</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mtaa</label>
+                                <input type="text" name="street" class="form-control" placeholder="Mfano: Kijenge">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Picha ya Fundi</label>
+                                <input type="file" name="profile_photo" class="form-control" accept="image/*">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Utaalamu</label>
+                                <!-- MUHIMU: majina haya YANAFANANA kabisa na yale ya ukurasa wa
+                                     kutafuta fundi (search_mechanics.html) ili utafutaji kwa
+                                     utaalamu ufanye kazi ipasavyo. -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Engine Repair"><label class="form-check-label">Engine Repair (Matatizo ya Injini)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Auto Electrics"><label class="form-check-label">Auto Electrics (Mfumo wa Umeme)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Suspension & Brakes"><label class="form-check-label">Suspension & Brakes (Brakes & Tairi)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="AC & Heating"><label class="form-check-label">AC & Heating (Kiyoyozi cha Gari)</label></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Gearbox & Transmission"><label class="form-check-label">Gearbox & Transmission (Gia Box)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Bodywork & Painting"><label class="form-check-label">Bodywork & Painting (Bodi na Rangi)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="specialization" value="Car Diagnostics"><label class="form-check-label">Car Diagnostics (Ukaguzi wa Kompyuta)</label></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Miaka ya Uzoefu</label>
+                                <input type="number" name="experience" class="form-control" min="0" max="60" placeholder="8">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Maelezo Mafupi</label>
+                                <textarea name="description" rows="3" class="form-control" placeholder="Eleza huduma unazotoa na uzoefu wako."></textarea>
+                            </div>
+
+                            <div class="col-12 text-center mt-3">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">Jisajili Kama Fundi</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/tz_locations.js') }}"></script>
+<script>
+const regionSelect = document.getElementById("region");
+Object.keys(locationData).forEach(function (region) {
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    regionSelect.appendChild(option);
+});
+
+function updateMechDistricts() {
+    const region = document.getElementById("region").value;
+    const districtSelect = document.getElementById("district");
+    const wardSelect = document.getElementById("ward");
+
+    districtSelect.innerHTML = '<option value="">Chagua Wilaya</option>';
+    wardSelect.innerHTML = '<option value="">Chagua Wilaya Kwanza</option>';
+    wardSelect.disabled = true;
+
+    if (region && locationData[region]) {
+        districtSelect.disabled = false;
+        Object.keys(locationData[region]).forEach(function (district) {
+            const option = document.createElement("option");
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+        });
+    } else {
+        districtSelect.disabled = true;
+    }
+}
+
+function updateMechWards() {
+    const region = document.getElementById("region").value;
+    const district = document.getElementById("district").value;
+    const wardSelect = document.getElementById("ward");
+
+    wardSelect.innerHTML = '<option value="">Chagua Kata</option>';
+
+    if (region && district && locationData[region][district]) {
+        wardSelect.disabled = false;
+        locationData[region][district].forEach(function (ward) {
+            const option = document.createElement("option");
+            option.value = ward;
+            option.textContent = ward;
+            wardSelect.appendChild(option);
+        });
+
+        const otherOption = document.createElement("option");
+        otherOption.value = "Nyingine";
+        otherOption.textContent = "-- Kata Nyingine --";
+        wardSelect.appendChild(otherOption);
+    } else {
+        wardSelect.disabled = true;
+    }
+}
+</script>
+{% endblock %}

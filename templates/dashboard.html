@@ -1,0 +1,92 @@
+{% extends "mechanic_base.html" %}
+{% block title %}Mechanic Dashboard - GariFix{% endblock %}
+
+{% block mechanic_content %}
+<h2 class="fw-bold mb-4"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Karibu {{ user.full_name }}</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <i class="fa-solid fa-car fa-3x text-primary mb-3"></i>
+            <h3 class="fw-bold">{{ requests|length }}</h3>
+            <p class="text-muted mb-0">Total Service Requests</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
+            <h3 class="fw-bold text-capitalize">{{ mechanic.verified }}</h3>
+            <p class="text-muted mb-0">Account Verification Status</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <i class="fa-solid fa-phone fa-3x text-dark mb-3"></i>
+            <h3 class="fw-bold fs-4">{{ user.phone }}</h3>
+            <p class="text-muted mb-0">Registered Contact</p>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-header bg-primary text-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i>Incoming Service Requests</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mteja</th>
+                        <th>Simu</th>
+                        <th>Gari</th>
+                        <th>Tatizo</th>
+                        <th>Eneo</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td class="fw-semibold">{{ req.customer.full_name }}</td>
+                        <td>{{ req.customer.phone }}</td>
+                        <td>{{ req.vehicle_model }}</td>
+                        <td>{{ req.problem_description }}</td>
+                        <td>{{ req.location }}</td>
+                        <td>
+                            {% if req.status == "pending" %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif req.status == "accepted" %}
+                                <span class="badge bg-success">Accepted</span>
+                            {% elif req.status == "completed" %}
+                                <span class="badge bg-primary">Completed</span>
+                            {% else %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == "pending" %}
+                                <a href="{{ url_for('accept_request', id=req.id) }}" class="btn btn-success btn-sm">
+                                    <i class="fa fa-check me-1"></i> Accept
+                                </a>
+                            {% elif req.status == "accepted" %}
+                                <span class="badge bg-light text-dark border">
+                                    <i class="fa fa-hourglass-half me-1"></i> Inasubiri mteja athibitishe
+                                </span>
+                            {% else %}
+                                <button class="btn btn-sm btn-light" disabled>-</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Hakuna Service Requests zilizopatikana.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "admin_base.html" %}
+{% block title %}Taarifa za {{ mechanic.user.full_name }} - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Taarifa za Fundi</h2>
+    <a href="{{ url_for('admin_mechanics') }}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-1"></i> Rudi</a>
+</div>
+
+<div class="card shadow border-0 p-4 mb-4">
+    <div class="row g-3">
+        <div class="col-md-3"><strong>Jina:</strong><br>{{ mechanic.user.full_name }}</div>
+        <div class="col-md-3"><strong>Simu:</strong><br>{{ mechanic.user.phone }}</div>
+        <div class="col-md-3"><strong>Email:</strong><br>{{ mechanic.user.email or '-' }}</div>
+        <div class="col-md-3"><strong>Garage:</strong><br>{{ mechanic.garage_name or '-' }}</div>
+        <div class="col-md-3"><strong>Mkoa/Wilaya:</strong><br>{{ mechanic.region }}, {{ mechanic.district }}</div>
+        <div class="col-md-3"><strong>Kata/Mtaa:</strong><br>{{ mechanic.ward or '-' }}, {{ mechanic.street or '-' }}</div>
+        <div class="col-md-3"><strong>Utaalamu:</strong><br>{{ mechanic.specialization }}</div>
+        <div class="col-md-3"><strong>Uzoefu:</strong><br>{{ mechanic.experience or 0 }} miaka</div>
+        <div class="col-md-3">
+            <strong>Status:</strong><br>
+            {% if mechanic.verified == "pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+            {% elif mechanic.verified == "approved" %}
+                <span class="badge bg-success">Approved</span>
+            {% else %}
+                <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+        </div>
+        <div class="col-md-3"><strong>Rating Wastani:</strong><br>⭐ {{ "%.1f"|format(average_rating) if average_rating else 0 }} / 5</div>
+    </div>
+</div>
+
+<h4 class="fw-bold mb-3"><i class="fa-solid fa-list-check me-2"></i>Huduma Zote Alizowahi Kuhudumia ({{ requests|length }})</h4>
+<div class="card shadow border-0 mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Mteja</th>
+                    <th>Simu ya Mteja</th>
+                    <th>Gari</th>
+                    <th>Eneo la Huduma</th>
+                    <th>Status</th>
+                    <th>Tarehe</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td>{{ req.customer.full_name if req.customer else 'Unknown' }}</td>
+                    <td>{{ req.customer.phone if req.customer else '-' }}</td>
+                    <td>{{ req.vehicle_model }}</td>
+                    <td><i class="fa-solid fa-location-dot text-danger me-1"></i>{{ req.location }}</td>
+                    <td>
+                        {% if req.status == "pending" %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif req.status == "accepted" %}
+                            <span class="badge bg-success">Accepted</span>
+                        {% elif req.status == "completed" %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-danger">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Fundi huyu bado hajawahi kupata ombi la huduma.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h4 class="fw-bold mb-3"><i class="fa-solid fa-star me-2"></i>Reviews Alizopokea ({{ reviews|length }})</h4>
+<div class="row g-3">
+    {% for review in reviews %}
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <div class="d-flex justify-content-between">
+                <strong>{{ review.customer.full_name }}</strong>
+                <span class="text-warning">⭐ {{ review.rating }}/5</span>
+            </div>
+            <p class="text-muted mb-0 mt-1">{{ review.comment }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="alert alert-info">Bado hajapokea review yoyote.</div></div>
+    {% endfor %}
+</div>
+{% endblock %}
