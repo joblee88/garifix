@@ -255,6 +255,16 @@ Approve
 {% endif %}
 
 
+{% if mechanic.id_document %}
+<a href="{{ url_for('view_id_document', mechanic_id=mechanic.id) }}" target="_blank"
+class="btn btn-outline-primary btn-sm mb-1">
+<i class="fa-solid fa-id-card"></i>
+Ona Kitambulisho
+</a>
+{% else %}
+<span class="badge bg-secondary mb-1">Hana Kitambulisho</span>
+{% endif %}
+
 
 
 {% if mechanic.verified != "rejected" %}

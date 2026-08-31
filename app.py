@@ -1,13 +1,17 @@
 import os
+import uuid
 from functools import wraps
-from flask import Flask, render_template, request, redirect, session, flash, url_for
+from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from sqlalchemy import func
+from sqlalchemy import func, or_
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
 # 1. Import Config na extensions
 from config import Config
 from extensions import db
+from notifications import send_notification
+from mailer import send_verification_email, send_password_reset_email
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -15,10 +19,17 @@ app = Flask(__name__)
 # 2. Pakia Configuration KWANZA kabla ya db.init_app
 app.config.from_object(Config)
 
-# Mipangilio ya upload ya picha
+# Mipangilio ya upload ya picha (PROFILE - ya wazi/public)
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Mipangilio ya upload ya VITAMBULISHO vya mafundi (NIDA/Leseni/Kura) - PRIVATE,
+# HAIKO ndani ya "static/" hivyo mtu HAWEZI kufikia moja kwa moja kwa URL -
+# Admin pekee ndiye anaweza kuona (kupitia route iliyolindwa hapa chini).
+PRIVATE_UPLOAD_FOLDER = os.path.join(app.root_path, "private_uploads", "id_documents")
+app.config["PRIVATE_UPLOAD_FOLDER"] = PRIVATE_UPLOAD_FOLDER
+os.makedirs(PRIVATE_UPLOAD_FOLDER, exist_ok=True)
 
 # 3. Unganisha Database na App
 db.init_app(app)
@@ -72,6 +83,31 @@ def role_required(*roles):
     return decorator
 
 
+# --- Uthibitisho wa Email na Reset Password (token salama, yenye muda) ---
+def get_serializer():
+    return URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
+
+def send_email_verification(user):
+    """Tuma barua pepe ya uthibitisho kwa mtumiaji (customer au mechanic)."""
+    if not user.email:
+        return
+    token = get_serializer().dumps(user.email, salt="email-verify-salt")
+    verify_url = url_for("verify_email", token=token, _external=True)
+    send_verification_email(user, verify_url)
+
+
+def save_uploaded_image(file_storage, folder):
+    """Hifadhi picha kwa jina la kipekee (uuid) ili kuepuka mgongano wa majina."""
+    if not file_storage or file_storage.filename == "":
+        return None
+    ext = os.path.splitext(secure_filename(file_storage.filename))[1]
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    os.makedirs(folder, exist_ok=True)
+    file_storage.save(os.path.join(folder, unique_name))
+    return unique_name
+
+
 # Context Processor kwa ajili ya taarifa za mtumiaji aliyeingia
 @app.context_processor
 def inject_user():
@@ -100,10 +136,12 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        phone = request.form.get("phone", "").strip()
+        identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
 
-        user = User.query.filter_by(phone=phone).first()
+        user = User.query.filter(
+            or_(User.phone == identifier, User.email == identifier)
+        ).first()
 
         if user and check_password_hash(user.password, password):
             if user.role == "mechanic":
@@ -127,7 +165,7 @@ def login():
             else:
                 return redirect(url_for("customer_dashboard"))
 
-        flash("Namba ya simu au nenosiri si sahihi.", "danger")
+        flash("Namba ya simu/Email au nenosiri si sahihi.", "danger")
 
     return render_template("login.html")
 
@@ -137,6 +175,24 @@ def logout():
     session.clear()
     flash("Umetoka kwenye mfumo kikamilifu.", "info")
     return redirect(url_for("login"))
+
+
+@app.route("/api/register-fcm-token", methods=["POST"])
+@login_required
+def register_fcm_token():
+    """App ya Android inatuma FCM token hapa baada ya mtumiaji ku-login,
+    ili mfumo uweze kumtumia push notifications."""
+    if request.is_json:
+        token = (request.get_json(silent=True) or {}).get("fcm_token")
+    else:
+        token = request.form.get("fcm_token")
+
+    user = db.session.get(User, session["user_id"])
+    if token and user:
+        user.fcm_token = token
+        db.session.commit()
+        return {"status": "ok"}, 200
+    return {"status": "error", "message": "fcm_token haipo"}, 400
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
@@ -193,6 +249,170 @@ def reset_password():
     return render_template("reset_password.html", user=user)
 
 
+@app.route("/verify-email/<token>")
+def verify_email(token):
+    try:
+        email = get_serializer().loads(token, salt="email-verify-salt", max_age=86400)  # Saa 24
+    except SignatureExpired:
+        flash("Link ya uthibitisho imeisha muda (masaa 24). Ingia kisha bofya 'Tuma Tena' kwenye dashboard.", "warning")
+        return redirect(url_for("login"))
+    except BadSignature:
+        flash("Link ya uthibitisho si sahihi.", "danger")
+        return redirect(url_for("login"))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash("Akaunti haikupatikana.", "danger")
+        return redirect(url_for("login"))
+
+    user.email_verified = True
+    db.session.commit()
+    flash("Hongera! Email yako imethibitishwa kikamilifu. Sasa unaweza kuingia.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/resend-verification")
+@login_required
+def resend_verification():
+    user = db.session.get(User, session["user_id"])
+    if not user.email:
+        flash("Huna email iliyowekwa kwenye akaunti yako.", "warning")
+    elif user.email_verified:
+        flash("Email yako tayari imethibitishwa.", "info")
+    else:
+        send_email_verification(user)
+        flash("Barua ya uthibitisho imetumwa tena. Tafadhali angalia email/spam yako.", "success")
+
+    if user.role == "mechanic":
+        return redirect(url_for("mechanic_dashboard"))
+    elif user.role == "admin":
+        return redirect(url_for("admin_dashboard", user_id=user.id))
+    return redirect(url_for("customer_dashboard"))
+
+
+@app.route("/forgot-password-email", methods=["GET", "POST"])
+def forgot_password_email():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            token = get_serializer().dumps(user.email, salt="password-reset-salt")
+            user.reset_token = token
+            db.session.commit()
+            reset_url = url_for("reset_password_email", token=token, _external=True)
+            send_password_reset_email(user, reset_url)
+
+        # Ujumbe uleule hata kama email haipo - kuzuia mtu kugundua ni email
+        # zipi zimesajiliwa kwenye mfumo (email enumeration).
+        flash("Kama email hiyo ipo kwenye mfumo wetu, tumekutumia link ya kubadilisha password. Angalia inbox/spam yako.", "info")
+        return redirect(url_for("login"))
+
+    return render_template("forgot_password_email.html")
+
+
+@app.route("/reset-password-email/<token>", methods=["GET", "POST"])
+def reset_password_email(token):
+    try:
+        email = get_serializer().loads(token, salt="password-reset-salt", max_age=3600)  # Saa 1
+    except SignatureExpired:
+        flash("Link ya kubadilisha password imeisha muda (saa 1). Omba mpya.", "warning")
+        return redirect(url_for("forgot_password_email"))
+    except BadSignature:
+        flash("Link si sahihi.", "danger")
+        return redirect(url_for("forgot_password_email"))
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.reset_token != token:
+        flash("Link hii tayari imetumika au si sahihi. Omba mpya.", "danger")
+        return redirect(url_for("forgot_password_email"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if len(password) < 6:
+            flash("Password lazima iwe na urefu wa herufi 6 au zaidi.", "danger")
+            return redirect(request.url)
+
+        if password != confirm_password:
+            flash("Password na Rudia Password hazifanani.", "danger")
+            return redirect(request.url)
+
+        user.password = generate_password_hash(password)
+        user.reset_token = None
+        db.session.commit()
+
+        flash("Password yako imebadilishwa kikamilifu! Sasa unaweza kuingia.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("reset_password_email.html", user=user)
+
+
+@app.route("/setup-admin", methods=["GET", "POST"])
+def setup_admin():
+    """
+    Njia mbadala ya kutengeneza akaunti ya kwanza ya ADMIN bila kuhitaji
+    ufikiaji wa 'Shell' (Render free tier mara nyingi haina Shell access,
+    hivyo amri ya 'flask create-admin' haiwezi kutumika huko).
+
+    JINSI YA KUTUMIA:
+    1. Kwenye Render, weka Environment Variable: ADMIN_SETUP_KEY=weka-siri-ndefu-hapa
+    2. Fungua: https://your-app.onrender.com/setup-admin?key=weka-siri-ndefu-hapa
+    3. Jaza fomu kutengeneza akaunti ya admin
+
+    Kama ADMIN_SETUP_KEY haijawekwa kabisa (haipo), ukurasa huu haufanyi kazi
+    kabisa - hii inazuia mtu yeyote kutengeneza admin bila ruhusa.
+    """
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key:
+        flash("Kipengele hiki hakijawezeshwa kwenye server hii.", "danger")
+        return redirect(url_for("login"))
+
+    provided_key = request.args.get("key") or request.form.get("key")
+    if provided_key != setup_key:
+        flash("Ufunguo (key) si sahihi au haujawekwa kwenye URL (?key=...).", "danger")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        full_name = f"{first_name} {last_name}".strip()
+        phone = request.form.get("phone", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not first_name or not last_name or not phone or not email:
+            flash("Tafadhali jaza taarifa zote.", "danger")
+            return redirect(url_for("setup_admin", key=setup_key))
+
+        if password != confirm_password:
+            flash("Password na Rudia Password hazifanani.", "danger")
+            return redirect(url_for("setup_admin", key=setup_key))
+
+        if User.query.filter(or_(User.phone == phone, User.email == email)).first():
+            flash("Namba ya simu au email tayari inatumika.", "danger")
+            return redirect(url_for("setup_admin", key=setup_key))
+
+        admin = User(
+            full_name=full_name,
+            phone=phone,
+            email=email,
+            password=generate_password_hash(password),
+            role="admin",
+            status="active",
+            email_verified=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+
+        flash(f"Admin '{full_name}' ameundwa kikamilifu! Sasa unaweza kuingia kwa email au namba ya simu.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("setup_admin.html", setup_key=setup_key)
+
+
 # CUSTOMER ROUTES
 @app.route("/customer/register", methods=["GET", "POST"])
 def customer_register():
@@ -201,12 +421,16 @@ def customer_register():
         last_name = request.form.get("last_name", "").strip()
         full_name = f"{first_name} {last_name}".strip()
         phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip() or None
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
         if not first_name or not last_name:
             flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
+            return redirect(url_for("customer_register"))
+
+        if not email:
+            flash("Tafadhali weka email - tunatumia kutuma uthibitisho wa akaunti yako.", "danger")
             return redirect(url_for("customer_register"))
 
         if password != confirm_password:
@@ -217,7 +441,7 @@ def customer_register():
             flash("Namba hii ya simu tayari imesajiliwa.", "danger")
             return redirect(url_for("customer_register"))
 
-        if email and User.query.filter_by(email=email).first():
+        if User.query.filter_by(email=email).first():
             flash("Barua pepe hii tayari imesajiliwa.", "danger")
             return redirect(url_for("customer_register"))
 
@@ -232,7 +456,9 @@ def customer_register():
         db.session.add(new_customer)
         db.session.commit()
 
-        flash("Usajili umefanikiwa! Ingia sasa.", "success")
+        send_email_verification(new_customer)
+
+        flash("Usajili umefanikiwa! Tumekutumia email ya uthibitisho - tafadhali ithibitishe, kisha ingia.", "success")
         return redirect(url_for("login"))
 
     return render_template("customer_register.html")
@@ -286,7 +512,7 @@ def mechanic_register():
         last_name = request.form.get("last_name", "").strip()
         full_name = f"{first_name} {last_name}".strip()
         phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip() or None
+        email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
@@ -299,28 +525,39 @@ def mechanic_register():
         description = request.form.get("description", "").strip()
         specializations = request.form.getlist("specialization")
         specialization = ", ".join(specializations)
+        id_document_type = request.form.get("id_document_type", "").strip()
 
         if not first_name or not last_name:
             flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
+            return redirect(url_for("mechanic_register"))
+
+        if not email:
+            flash("Tafadhali weka email - tunatumia kutuma uthibitisho wa akaunti yako.", "danger")
             return redirect(url_for("mechanic_register"))
 
         if password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("mechanic_register"))
 
+        id_doc_file = request.files.get("id_document")
+        if not id_doc_file or id_doc_file.filename == "":
+            flash("Tafadhali ambatanisha kitambulisho (NIDA, Leseni ya Udereva, au Kadi ya Mpiga Kura).", "danger")
+            return redirect(url_for("mechanic_register"))
+
+        if not id_document_type:
+            flash("Tafadhali chagua aina ya kitambulisho ulichoambatanisha.", "danger")
+            return redirect(url_for("mechanic_register"))
+
         if User.query.filter_by(phone=phone).first():
             flash("Namba hii ya simu tayari imesajiliwa.", "danger")
             return redirect(url_for("mechanic_register"))
 
-        if email and User.query.filter_by(email=email).first():
+        if User.query.filter_by(email=email).first():
             flash("Barua pepe hii tayari imesajiliwa.", "danger")
             return redirect(url_for("mechanic_register"))
 
-        filename = None
-        photo = request.files.get("profile_photo")
-        if photo and photo.filename != "":
-            filename = secure_filename(photo.filename)
-            photo.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+        id_document_filename = save_uploaded_image(id_doc_file, app.config["PRIVATE_UPLOAD_FOLDER"])
 
         hashed_password = generate_password_hash(password)
         new_user = User(
@@ -344,12 +581,16 @@ def mechanic_register():
             experience=experience,
             description=description,
             profile_photo=filename,
+            id_document_type=id_document_type,
+            id_document=id_document_filename,
             verified="pending"
         )
         db.session.add(new_mechanic)
         db.session.commit()
 
-        flash("Usajili umefanikiwa! Subiri uthibitisho kutoka kwa Admin.", "success")
+        send_email_verification(new_user)
+
+        flash("Usajili umefanikiwa! Tumekutumia email ya uthibitisho. Akaunti yako pia inasubiri uthibitisho wa Admin (baada ya kukagua kitambulisho chako).", "success")
         return redirect(url_for("login"))
 
     return render_template("mechanic_register.html")
@@ -432,6 +673,12 @@ def accept_request(id):
     if mechanic and service.mechanic_id == mechanic.id:
         service.status = "accepted"
         db.session.commit()
+        send_notification(
+            service.customer,
+            title="Fundi Amekubali Ombi Lako - GariFix",
+            body=f"{mechanic.user.full_name} amekubali kukusaidia na {service.vehicle_model}. Anakuja!",
+            data={"type": "request_accepted", "request_id": service.id}
+        )
         flash("Umekubali ombi hili la huduma.", "success")
     else:
         flash("Hauruhusiwi kutenda kitendo hiki.", "danger")
@@ -457,6 +704,13 @@ def complete_request(id):
             return redirect(url_for("customer_requests"))
         service_request.status = "completed"
         db.session.commit()
+        if service_request.mechanic:
+            send_notification(
+                service_request.mechanic.user,
+                title="Huduma Imethibitishwa Kukamilika - GariFix",
+                body=f"{user.full_name} amethibitisha kuwa kazi ya {service_request.vehicle_model} imekamilika. Ahsante!",
+                data={"type": "request_completed", "request_id": service_request.id}
+            )
         flash("Hongera! Umethibitisha kuwa huduma imekamilika.", "success")
         return redirect(url_for("customer_requests"))
 
@@ -542,6 +796,13 @@ def request_service(mechanic_id):
         db.session.add(new_request)
         db.session.commit()
 
+        send_notification(
+            mechanic.user,
+            title="Ombi Jipya la Huduma - GariFix",
+            body=f"Mteja {session.get('user_id') and db.session.get(User, session['user_id']).full_name} ana tatizo la {vehicle_model}. Bofya kuona zaidi.",
+            data={"type": "new_request", "request_id": new_request.id}
+        )
+
         flash("Ombi lako limetumwa kwa fundi kikamilifu!", "success")
         return redirect(url_for("customer_requests"))
 
@@ -566,6 +827,13 @@ def add_review(mechanic_id):
         )
         db.session.add(review)
         db.session.commit()
+
+        send_notification(
+            mechanic.user,
+            title="Umepata Review Mpya - GariFix",
+            body=f"{db.session.get(User, session['user_id']).full_name} amekupa rating ya {rating}/5.",
+            data={"type": "new_review", "mechanic_id": mechanic.id}
+        )
 
         flash("Maoni yako yamehifadhiwa!", "success")
         return redirect(url_for("mechanic_profile", mechanic_id=mechanic.id))
@@ -613,6 +881,19 @@ def admin_mechanics():
     return render_template("admin_mechanics.html", mechanics=mechanics)
 
 
+@app.route("/admin/id-document/<int:mechanic_id>")
+@login_required
+@role_required("admin")
+def view_id_document(mechanic_id):
+    """Onesha kitambulisho cha fundi (NIDA/Leseni/Kura) - Admin PEKEE anaweza
+    kufikia (faili haliko chini ya /static/ hivyo halifikiki na mtu mwingine)."""
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    if not mechanic.id_document:
+        flash("Fundi huyu hajapakia kitambulisho.", "warning")
+        return redirect(url_for("admin_mechanic_detail", id=mechanic_id))
+    return send_from_directory(app.config["PRIVATE_UPLOAD_FOLDER"], mechanic.id_document)
+
+
 @app.route("/admin/approve-mechanic/<int:id>")
 @login_required
 @role_required("admin")
@@ -620,6 +901,12 @@ def approve_mechanic(id):
     mechanic = Mechanic.query.get_or_404(id)
     mechanic.verified = "approved"
     db.session.commit()
+    send_notification(
+        mechanic.user,
+        title="Umeidhinishwa - GariFix",
+        body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
+        data={"type": "mechanic_approved"}
+    )
     flash("Fundi ameidhinishwa!", "success")
     return redirect(url_for("admin_mechanics"))
 
@@ -721,6 +1008,7 @@ def create_admin():
         password=generate_password_hash(password),
         role="admin",
         status="active",
+        email_verified=True,
     )
     db.session.add(admin)
     db.session.commit()

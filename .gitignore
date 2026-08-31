@@ -5,3 +5,7 @@ __pycache__/
 instance/
 .env
 venv/
+firebase-credentials.json
+
+# Nyaraka za faragha za mafundi (NIDA/Leseni/Kura) - USIPANDISHE GITHUB
+private_uploads/

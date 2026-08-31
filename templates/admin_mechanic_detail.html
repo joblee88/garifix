@@ -11,7 +11,16 @@
     <div class="row g-3">
         <div class="col-md-3"><strong>Jina:</strong><br>{{ mechanic.user.full_name }}</div>
         <div class="col-md-3"><strong>Simu:</strong><br>{{ mechanic.user.phone }}</div>
-        <div class="col-md-3"><strong>Email:</strong><br>{{ mechanic.user.email or '-' }}</div>
+        <div class="col-md-3"><strong>Email:</strong><br>
+            {{ mechanic.user.email or '-' }}
+            {% if mechanic.user.email %}
+                {% if mechanic.user.email_verified %}
+                    <span class="badge bg-success">Imethibitishwa</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Haijathibitishwa</span>
+                {% endif %}
+            {% endif %}
+        </div>
         <div class="col-md-3"><strong>Garage:</strong><br>{{ mechanic.garage_name or '-' }}</div>
         <div class="col-md-3"><strong>Mkoa/Wilaya:</strong><br>{{ mechanic.region }}, {{ mechanic.district }}</div>
         <div class="col-md-3"><strong>Kata/Mtaa:</strong><br>{{ mechanic.ward or '-' }}, {{ mechanic.street or '-' }}</div>
@@ -28,6 +37,17 @@
             {% endif %}
         </div>
         <div class="col-md-3"><strong>Rating Wastani:</strong><br>⭐ {{ "%.1f"|format(average_rating) if average_rating else 0 }} / 5</div>
+        <div class="col-md-6">
+            <strong>Kitambulisho:</strong><br>
+            {% if mechanic.id_document %}
+                <span class="badge bg-info text-dark mb-1">{{ mechanic.id_document_type or 'Haijulikani' }}</span>
+                <a href="{{ url_for('view_id_document', mechanic_id=mechanic.id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-id-card me-1"></i> Ona Kitambulisho
+                </a>
+            {% else %}
+                <span class="badge bg-secondary">Hajapakia Kitambulisho</span>
+            {% endif %}
+        </div>
     </div>
 </div>
 

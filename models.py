@@ -10,6 +10,14 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="customer")  # customer, mechanic, admin
     status = db.Column(db.String(20), default="active")
+    fcm_token = db.Column(db.String(255), nullable=True)  # Token ya Firebase Cloud Messaging (App ya Android)
+
+    # --- Uthibitisho wa Email (Email Verification) ---
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+
+    # --- Reset Password kwa Email (token yenye muda wa kuisha) ---
+    reset_token = db.Column(db.String(255), nullable=True, index=True)
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # Relationships
@@ -35,6 +43,11 @@ class Mechanic(db.Model):
     longitude = db.Column(db.Numeric(11, 8))
     verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
     profile_photo = db.Column(db.String(255))
+
+    # --- Kitambulisho cha Fundi (kwa ukaguzi wa Admin) ---
+    id_document_type = db.Column(db.String(30), nullable=True)   # "NIDA", "Leseni", "Kadi ya Mpiga Kura"
+    id_document = db.Column(db.String(255), nullable=True)       # jina la faili lililopakiwa
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # Relationships

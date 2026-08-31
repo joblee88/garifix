@@ -2,6 +2,12 @@
 {% block title %}Customer Dashboard - GariFix{% endblock %}
 
 {% block customer_content %}
+{% if current_user and current_user.email and not current_user.email_verified %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>Bado hujathibitisha email yako ({{ current_user.email }}).</span>
+    <a href="{{ url_for('resend_verification') }}" class="btn btn-sm btn-warning">Tuma Tena Barua ya Uthibitisho</a>
+</div>
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold">Karibu, {{ user.full_name }}</h2>

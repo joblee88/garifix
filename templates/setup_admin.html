@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Tengeneza Admin - GariFix{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-lg-6 col-md-9">
+        <div class="card shadow-lg p-4">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fa-solid fa-user-shield fa-4x text-danger"></i>
+                    <h3 class="fw-bold mt-3">Tengeneza Akaunti ya Admin</h3>
+                    <p class="text-muted">Ukurasa huu umelindwa na ufunguo (key) wa siri.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('setup_admin', key=setup_key) }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Jina la Kwanza</label>
+                            <input type="text" name="first_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Jina la Mwisho</label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Namba ya Simu</label>
+                            <input type="text" name="phone" class="form-control" placeholder="07XXXXXXXX" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Password</label>
+                            <input type="password" name="password" class="form-control" required minlength="6">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Rudia Password</label>
+                            <input type="password" name="confirm_password" class="form-control" required minlength="6">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger btn-lg w-100 mt-2">
+                        <i class="fa-solid fa-user-shield me-2"></i> Tengeneza Admin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

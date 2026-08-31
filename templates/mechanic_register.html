@@ -27,8 +27,8 @@
                                 <input type="text" name="phone" class="form-control" placeholder="+2557XXXXXXXX" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Email</label>
-                                <input type="email" name="email" class="form-control">
+                                <label class="form-label fw-semibold">Email (tunatuma uthibitisho hapa)</label>
+                                <input type="email" name="email" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Password</label>
@@ -73,6 +73,29 @@
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-semibold">Picha ya Fundi</label>
                                 <input type="file" name="profile_photo" class="form-control" accept="image/*">
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-warning small">
+                                    <i class="fa-solid fa-shield-halved me-1"></i>
+                                    <strong>Kitambulisho ni cha LAZIMA</strong> - Admin atakikagua kabla ya
+                                    kukuidhinisha (approve) uweze kuanza kupokea maombi ya wateja.
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Aina ya Kitambulisho</label>
+                                <select name="id_document_type" class="form-select" required>
+                                    <option value="">-- Chagua Aina --</option>
+                                    <option value="NIDA">Kitambulisho cha Taifa (NIDA)</option>
+                                    <option value="Leseni ya Udereva">Leseni ya Udereva</option>
+                                    <option value="Kadi ya Mpiga Kura">Kadi ya Mpiga Kura</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Pakia Picha ya Kitambulisho</label>
+                                <input type="file" name="id_document" class="form-control" accept="image/*,.pdf" required>
                             </div>
 
                             <div class="col-md-12 mb-3">
