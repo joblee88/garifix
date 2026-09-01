@@ -117,6 +117,35 @@ def inject_user():
     return dict(current_user=None)
 
 
+# Endpoints zinazoruhusiwa hata kama email BADO haijathibitishwa.
+# Kila endpoint nyingine (dashboard, search, request-service, n.k) itazuiwa
+# mpaka mtumiaji (customer AU mechanic) athibitishe email yake kwanza.
+_ALLOWED_WHILE_UNVERIFIED = {
+    "static", "home", "login", "logout",
+    "verify_email", "verify_pending", "resend_verification",
+    "customer_register", "mechanic_register", "register_choice",
+    "forgot_password", "forgot_password_email",
+    "reset_password", "reset_password_email",
+}
+
+
+@app.before_request
+def enforce_email_verification():
+    if "user_id" not in session:
+        return  # hajaingia - hakuna cha kuzuia
+
+    if request.endpoint is None or request.endpoint in _ALLOWED_WHILE_UNVERIFIED:
+        return
+
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        return
+
+    if user.role in ("customer", "mechanic") and not user.email_verified:
+        flash("Tafadhali thibitisha email yako kwanza kabla ya kuendelea kutumia akaunti yako.", "warning")
+        return redirect(url_for("verify_pending"))
+
+
 @app.route("/")
 def home():
     total_mechanics = db.session.query(Mechanic).count()
@@ -258,7 +287,7 @@ def verify_email(token):
     try:
         email = get_serializer().loads(token, salt="email-verify-salt", max_age=86400)  # Saa 24
     except SignatureExpired:
-        flash("Link ya uthibitisho imeisha muda (masaa 24). Ingia kisha bofya 'Tuma Tena' kwenye dashboard.", "warning")
+        flash("Link ya uthibitisho imeisha muda (masaa 24). Bofya 'Tuma Tena' kupata mpya.", "warning")
         return redirect(url_for("login"))
     except BadSignature:
         flash("Link ya uthibitisho si sahihi.", "danger")
@@ -271,8 +300,22 @@ def verify_email(token):
 
     user.email_verified = True
     db.session.commit()
-    flash("Hongera! Email yako imethibitishwa kikamilifu. Sasa unaweza kuingia.", "success")
-    return redirect(url_for("login"))
+    flash("Hongera! Email yako imethibitishwa kikamilifu.", "success")
+    return redirect(url_for("verify_pending"))
+
+
+@app.route("/verify-pending")
+@login_required
+def verify_pending():
+    user = db.session.get(User, session["user_id"])
+    if user.email_verified or user.role not in ("customer", "mechanic"):
+        # Tayari amethibitishwa (au ni admin) - mpeleke moja kwa moja dashboard yake
+        if user.role == "mechanic":
+            return redirect(url_for("mechanic_dashboard"))
+        elif user.role == "admin":
+            return redirect(url_for("admin_dashboard", user_id=user.id))
+        return redirect(url_for("customer_dashboard"))
+    return render_template("verify_pending.html", user=user)
 
 
 @app.route("/resend-verification")
@@ -287,11 +330,7 @@ def resend_verification():
         send_email_verification(user)
         flash("Barua ya uthibitisho imetumwa tena. Tafadhali angalia email/spam yako.", "success")
 
-    if user.role == "mechanic":
-        return redirect(url_for("mechanic_dashboard"))
-    elif user.role == "admin":
-        return redirect(url_for("admin_dashboard", user_id=user.id))
-    return redirect(url_for("customer_dashboard"))
+    return redirect(url_for("verify_pending"))
 
 
 @app.route("/forgot-password-email", methods=["GET", "POST"])
