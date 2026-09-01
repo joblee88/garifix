@@ -22,8 +22,10 @@ class User(db.Model):
 
     # Relationships
     mechanic_profile = db.relationship("Mechanic", backref="user", uselist=False, cascade="all, delete-orphan")
+    seller_profile = db.relationship("Seller", backref="user", uselist=False, cascade="all, delete-orphan")
     service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id", cascade="all, delete-orphan")
     reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id", cascade="all, delete-orphan")
+    seller_reviews_written = db.relationship("SellerReview", backref="customer", foreign_keys="SellerReview.customer_id", cascade="all, delete-orphan")
 
 
 class Mechanic(db.Model):
@@ -74,6 +76,53 @@ class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     mechanic_id = db.Column(db.Integer, db.ForeignKey("mechanics.id"), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+class Seller(db.Model):
+    """Muuzaji wa Spea za Magari na Lubricants (duka)."""
+    __tablename__ = "sellers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    shop_name = db.Column(db.String(150), nullable=False)
+    region = db.Column(db.String(100), nullable=False, index=True)
+    district = db.Column(db.String(100), nullable=False, index=True)
+    ward = db.Column(db.String(100))
+    street = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    shop_photo = db.Column(db.String(255))
+    verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relationships
+    products = db.relationship("Product", backref="seller", cascade="all, delete-orphan")
+    reviews = db.relationship("SellerReview", backref="seller", cascade="all, delete-orphan")
+
+
+class Product(db.Model):
+    """Bidhaa (spea au lubricant) anayouza muuzaji."""
+    __tablename__ = "products"
+
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    category = db.Column(db.String(50))  # "Spea za Magari" au "Lubricants/Mafuta"
+    price = db.Column(db.Numeric(12, 2), nullable=False)
+    description = db.Column(db.Text)
+    photo = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+class SellerReview(db.Model):
+    """Rating/review ya customer kwa muuzaji."""
+    __tablename__ = "seller_reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

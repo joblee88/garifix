@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Seller Registration - GariFix{% endblock %}
+
+{% block content %}
+<div class="auth-page-bg">
+<div class="container py-4">
+    <div class="row justify-content-center w-100">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg glass-card">
+                <div class="card-header bg-warning text-dark text-center py-4" style="border-radius: 22px 22px 0 0 !important;">
+                    <h3 class="fw-bold mb-1"><i class="fa-solid fa-shop me-2"></i>Jisajili Kama Muuzaji</h3>
+                    <p class="mb-0">Fungua duka lako la spea za magari na lubricants kwenye GariFix.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('seller_register') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Jina la Kwanza</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Jina la Mwisho</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Namba ya Simu</label>
+                                <input type="text" name="phone" class="form-control" placeholder="+2557XXXXXXXX" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Password</label>
+                                <input type="password" name="password" class="form-control" required minlength="6">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Rudia Password</label>
+                                <input type="password" name="confirm_password" class="form-control" required minlength="6">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Jina la Duka</label>
+                                <input type="text" name="shop_name" class="form-control" placeholder="Mfano: Juma Auto Spares" required>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Picha ya Duka (Hiari)</label>
+                                <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mkoa</label>
+                                <select name="region" id="region" class="form-select" onchange="updateSellerDistricts()" required>
+                                    <option value="">Chagua Mkoa</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Wilaya</label>
+                                <select name="district" id="district" class="form-select" onchange="updateSellerWards()" disabled required>
+                                    <option value="">Chagua Mkoa Kwanza</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Kata</label>
+                                <select name="ward" id="ward" class="form-select" disabled required>
+                                    <option value="">Chagua Wilaya Kwanza</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mtaa</label>
+                                <input type="text" name="street" class="form-control" placeholder="Mfano: Mtaa wa Kaloleni">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Maelezo ya Duka</label>
+                                <textarea name="description" rows="3" class="form-control" placeholder="Eleza bidhaa unazouza (spea, lubricants, n.k)"></textarea>
+                            </div>
+
+                            <div class="col-12 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="agree_terms" id="agreeTerms" required>
+                                    <label class="form-check-label" for="agreeTerms">
+                                        Nakubaliana na <a href="{{ url_for('terms') }}" target="_blank">Vigezo na Masharti</a> ya GariFix
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 text-center mt-3">
+                                <button type="submit" class="btn btn-warning btn-lg px-5 text-dark fw-bold">Jisajili Kama Muuzaji</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="{{ url_for('static', filename='js/tz_locations.js') }}"></script>
+<script>
+const regionSelect = document.getElementById("region");
+Object.keys(locationData).forEach(function (region) {
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    regionSelect.appendChild(option);
+});
+
+function updateSellerDistricts() {
+    const region = document.getElementById("region").value;
+    const districtSelect = document.getElementById("district");
+    const wardSelect = document.getElementById("ward");
+
+    districtSelect.innerHTML = '<option value="">Chagua Wilaya</option>';
+    wardSelect.innerHTML = '<option value="">Chagua Wilaya Kwanza</option>';
+    wardSelect.disabled = true;
+
+    if (region && locationData[region]) {
+        districtSelect.disabled = false;
+        Object.keys(locationData[region]).forEach(function (district) {
+            const option = document.createElement("option");
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+        });
+        const otherDistrictOpt = document.createElement("option");
+        otherDistrictOpt.value = "Nyingine";
+        otherDistrictOpt.textContent = "-- Wilaya Nyingine (haipo hapa) --";
+        districtSelect.appendChild(otherDistrictOpt);
+    } else {
+        districtSelect.disabled = true;
+    }
+}
+
+function updateSellerWards() {
+    const region = document.getElementById("region").value;
+    const district = document.getElementById("district").value;
+    const wardSelect = document.getElementById("ward");
+
+    wardSelect.innerHTML = '<option value="">Chagua Kata</option>';
+
+    if (region && district) {
+        wardSelect.disabled = false;
+
+        if (locationData[region][district]) {
+            locationData[region][district].forEach(function (ward) {
+                const option = document.createElement("option");
+                option.value = ward;
+                option.textContent = ward;
+                wardSelect.appendChild(option);
+            });
+        }
+
+        const otherOption = document.createElement("option");
+        otherOption.value = "Nyingine";
+        otherOption.textContent = "-- Kata Nyingine --";
+        wardSelect.appendChild(otherOption);
+    } else {
+        wardSelect.disabled = true;
+    }
+}
+</script>
+{% endblock %}

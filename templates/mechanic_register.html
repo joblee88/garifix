@@ -2,11 +2,12 @@
 {% block title %}Mechanic Registration - GariFix{% endblock %}
 
 {% block content %}
+<div class="auth-page-bg">
 <div class="container py-4">
-    <div class="row justify-content-center">
+    <div class="row justify-content-center w-100">
         <div class="col-lg-9">
-            <div class="card border-0 shadow-lg">
-                <div class="card-header bg-primary text-white text-center py-4">
+            <div class="card border-0 shadow-lg glass-card">
+                <div class="card-header bg-primary text-white text-center py-4 rounded-top" style="border-radius: 22px 22px 0 0 !important;">
                     <h3 class="fw-bold mb-1"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Jisajili Kama Fundi</h3>
                     <p class="mb-0">Jaza taarifa zako ili uwe sehemu ya mtandao wa GariFix Tanzania.</p>
                 </div>
@@ -130,6 +131,15 @@
                                 <textarea name="description" rows="3" class="form-control" placeholder="Eleza huduma unazotoa na uzoefu wako."></textarea>
                             </div>
 
+                            <div class="col-12 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="agree_terms" id="agreeTerms" required>
+                                    <label class="form-check-label" for="agreeTerms">
+                                        Nakubaliana na <a href="{{ url_for('terms') }}" target="_blank">Vigezo na Masharti</a> ya GariFix
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="col-12 text-center mt-3">
                                 <button type="submit" class="btn btn-primary btn-lg px-5">Jisajili Kama Fundi</button>
                             </div>
@@ -139,6 +149,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script src="{{ url_for('static', filename='js/tz_locations.js') }}"></script>

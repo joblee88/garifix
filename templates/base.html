@@ -24,6 +24,7 @@
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('search_mechanics') }}">Find Mechanic</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sellers_list') }}">Duka la Spea</a></li>
 
                 {% if not session.get("user_id") %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('register_choice') }}">Jisajili</a></li>
@@ -83,15 +84,14 @@
                 <ul class="list-unstyled">
                     <li><a href="{{ url_for('home') }}" class="text-white text-decoration-none">Home</a></li>
                     <li><a href="{{ url_for('search_mechanics') }}" class="text-white text-decoration-none">Find Mechanic</a></li>
-                    <li><a href="{{ url_for('customer_register') }}" class="text-white text-decoration-none">Customer Sign Up</a></li>
-                    <li><a href="{{ url_for('mechanic_register') }}" class="text-white text-decoration-none">Mechanic Sign Up</a></li>
+                    <li><a href="{{ url_for('register_choice') }}" class="text-white text-decoration-none">Jisajili</a></li>
+                    <li><a href="{{ url_for('terms') }}" class="text-white text-decoration-none">Vigezo na Masharti</a></li>
                 </ul>
             </div>
             <div class="col-md-4 mb-3">
                 <h5>Contact</h5>
-                <p><i class="fa-solid fa-location-dot me-2"></i> Dar es Salaam, Tanzania</p>
-                <p><i class="fa-solid fa-phone me-2"></i> +255 768 650 901</p>
-                <p><i class="fa-solid fa-envelope me-2"></i> support@garifix.co.tz</p>
+                <p><i class="fa-solid fa-location-dot me-2"></i> Arusha, Tanzania</p>
+                <p><i class="fa-solid fa-envelope me-2"></i> garifixtz@gmail.com</p>
             </div>
         </div>
         <hr>

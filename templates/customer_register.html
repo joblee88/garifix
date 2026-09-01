@@ -2,9 +2,10 @@
 {% block title %}Customer Register - GariFix{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center py-4">
+<div class="auth-page-bg">
+<div class="row justify-content-center w-100">
     <div class="col-lg-6 col-md-8">
-        <div class="card shadow-lg p-4 p-md-5">
+        <div class="card glass-card p-4 p-md-5">
             <div class="text-center mb-4">
                 <i class="fa-solid fa-user-plus fa-4x text-primary"></i>
                 <h2 class="fw-bold mt-3">Jisajili kama Mteja</h2>
@@ -44,6 +45,13 @@
                     </div>
                 </div>
 
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" name="agree_terms" id="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                        Nakubaliana na <a href="{{ url_for('terms') }}" target="_blank">Vigezo na Masharti</a> ya GariFix
+                    </label>
+                </div>
+
                 <button type="submit" class="btn btn-primary btn-lg w-100">
                     <i class="fa-solid fa-user-plus me-2"></i> Jisajili
                 </button>
@@ -54,5 +62,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

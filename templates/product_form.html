@@ -1,0 +1,55 @@
+{% extends "seller_base.html" %}
+{% block title %}{{ 'Hariri Bidhaa' if product else 'Ongeza Bidhaa' }} - GariFix{% endblock %}
+
+{% block seller_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow border-0 p-4">
+            <h4 class="fw-bold mb-3">
+                <i class="fa-solid fa-box me-2"></i>{{ 'Hariri Bidhaa' if product else 'Ongeza Bidhaa Mpya' }}
+            </h4>
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Jina la Bidhaa</label>
+                    <input type="text" name="name" class="form-control" placeholder="Mfano: Brake Pads - Toyota" value="{{ product.name if product else '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Aina</label>
+                    <select name="category" class="form-select">
+                        <option value="">-- Chagua Aina --</option>
+                        <option value="Spea za Magari" {% if product and product.category == 'Spea za Magari' %}selected{% endif %}>Spea za Magari</option>
+                        <option value="Lubricants/Mafuta" {% if product and product.category == 'Lubricants/Mafuta' %}selected{% endif %}>Lubricants/Mafuta</option>
+                        <option value="Tairi/Matairi" {% if product and product.category == 'Tairi/Matairi' %}selected{% endif %}>Tairi/Matairi</option>
+                        <option value="Battery" {% if product and product.category == 'Battery' %}selected{% endif %}>Battery</option>
+                        <option value="Nyingine" {% if product and product.category == 'Nyingine' %}selected{% endif %}>Nyingine</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Bei (TZS)</label>
+                    <input type="number" name="price" step="0.01" min="0" class="form-control" placeholder="15000" value="{{ product.price if product else '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Picha ya Bidhaa</label>
+                    {% if product and product.photo %}
+                        <div class="mb-2"><img src="{{ url_for('static', filename='uploads/' + product.photo) }}" style="width:100px;height:100px;object-fit:cover;border-radius:10px;"></div>
+                    {% endif %}
+                    <input type="file" name="photo" class="form-control" accept="image/*" capture="environment">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Maelezo</label>
+                    <textarea name="description" rows="3" class="form-control" placeholder="Eleza kuhusu bidhaa hii...">{{ product.description if product else '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold text-dark">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> {{ 'Hifadhi Mabadiliko' if product else 'Ongeza Bidhaa' }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

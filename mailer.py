@@ -5,49 +5,85 @@ Msaidizi wa kutuma BARUA PEPE (Email) kwa ajili ya:
   1. Uthibitisho wa email (Email Verification) baada ya usajili
   2. Kubadilisha password (Password Reset) kwa kutumia email
 
-JINSI YA KUWEZESHA (SETUP) - Kwenye Render (au server yako):
-Weka Environment Variables zifuatazo:
+===========================================================================
+MUHIMU KUHUSU RENDER (Free Tier):
+Tangu Septemba 2025, Render imezuia (block) KABISA muunganisho wa SMTP
+(bandari 25, 465, 587) kwa huduma za bure (free web services) - hata
+ukiweka SMTP_HOST/USER/PASSWORD sahihi kabisa, kutuma kutashindikana na
+hitilafu "[Errno 101] Network is unreachable". Hii ni sera ya Render
+yenyewe, siyo tatizo la usanidi wako. (Chanzo: render.com/changelog)
 
-    SMTP_HOST      = smtp.gmail.com          (mfano ukitumia Gmail)
+SULUHISHO (bila kulipa Render): Tumia BREVO (zamani Sendinblue) - hii
+inatuma barua pepe kupitia HTTPS API (bandari 443) badala ya SMTP, hivyo
+HAIZUILIWI na Render free tier. Brevo ina free tier ya barua pepe 300/siku.
+===========================================================================
+
+NJIA A - BREVO (Inapendekezwa kwa Render Free Tier):
+Weka Environment Variables:
+
+    BREVO_API_KEY  = xkeysib-xxxxxxxxxxxxxxxxxxxxx   (kutoka Brevo Dashboard
+                                                        -> SMTP & API -> API Keys)
+    MAIL_FROM      = GariFix Tanzania <yourapp@gmail.com>
+                     (barua pepe hii LAZIMA iwe "Verified Sender" kwenye
+                      akaunti yako ya Brevo - Senders, Domains & Dedicated IPs)
+
+NJIA B - SMTP ya Kawaida (kwa server ya KULIPIWA / computer yako binafsi -
+haitafanya kazi kwenye Render free tier):
+
+    SMTP_HOST      = smtp.gmail.com
     SMTP_PORT      = 587
     SMTP_USER      = yourapp@gmail.com
-    SMTP_PASSWORD  = app-password-yako        (SIYO password ya kawaida ya Gmail -
-                                                tengeneza "App Password" kwenye
-                                                Google Account Security settings)
-    MAIL_FROM      = GariFix Tanzania <yourapp@gmail.com>   (hiari)
-    APP_BASE_URL   = https://garifix.onrender.com            (bila "/" mwishoni -
-                                                                inatumika kutengeneza
-                                                                link za email)
+    SMTP_PASSWORD  = app-password-yako (SIYO password ya kawaida ya Gmail)
+    MAIL_FROM      = GariFix Tanzania <yourapp@gmail.com>
 
-Kama huna Gmail App Password, unaweza kutumia huduma nyingine yoyote ya SMTP
-(SendGrid, Mailgun, Brevo/Sendinblue - zote zina free tier) - ingiza tu
-SMTP_HOST/PORT/USER/PASSWORD wanazokupa.
-
-Kama HUJAWEKA hizi env variables, mfumo UTAENDELEA KUFANYA KAZI KAWAIDA -
-send_email() itaandika tu ujumbe kwenye console/logs badala ya kuvunja
-(crash) app nzima, na usajili/reset password bado vitafanya kazi (mtumiaji
-ataona ujumbe akijulishwa kuwa email haikutumwa).
+Kama BREVO_API_KEY ipo, mfumo utaitumia KWANZA (inafanya kazi kila mahali,
+ikiwemo Render free tier). Kama haipo, mfumo utajaribu SMTP ya kawaida.
+Kama hakuna hata moja iliyosanidiwa, mfumo UTAENDELEA KUFANYA KAZI KAWAIDA
+bila kuvunjika (crash) - itaandika tu ujumbe kwenye logs.
 """
 
 import os
+import json
 import smtplib
+import urllib.request
+import urllib.error
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# --- Njia A: Brevo (HTTPS API) ---
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
+# --- Njia B: SMTP ya kawaida ---
 SMTP_HOST = os.environ.get("SMTP_HOST")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+
 MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USER or "no-reply@garifix.co.tz")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-_mail_configured = bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
+_brevo_configured = bool(BREVO_API_KEY)
+_smtp_configured = bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
 
-if _mail_configured:
-    print("[Mailer] SMTP IMEWEZESHWA - barua pepe zitatumwa kupitia", SMTP_HOST)
+if _brevo_configured:
+    print("[Mailer] BREVO API IMEWEZESHWA - barua pepe zitatumwa kupitia Brevo (HTTPS)")
+elif _smtp_configured:
+    print("[Mailer] SMTP IMEWEZESHWA - barua pepe zitatumwa kupitia", SMTP_HOST,
+          "(Kumbuka: hii haifanyi kazi kwenye Render FREE tier)")
 else:
-    print("[Mailer] SMTP_HOST/SMTP_USER/SMTP_PASSWORD hazijawekwa - "
+    print("[Mailer] Hakuna BREVO_API_KEY wala SMTP iliyosanidiwa - "
           "kutuma barua pepe kumezimwa (mfumo utaendelea kufanya kazi kawaida).")
+
+
+def _parse_mail_from(mail_from):
+    """Geuza 'Jina <email@x.com>' kuwa (jina, email) - Brevo inahitaji vitenganishwa."""
+    mail_from = (mail_from or "").strip()
+    if "<" in mail_from and mail_from.endswith(">"):
+        name = mail_from.split("<")[0].strip().strip('"')
+        email = mail_from.split("<")[1].rstrip(">").strip()
+        return name or "GariFix Tanzania", email
+    return "GariFix Tanzania", mail_from
 
 
 def get_base_url():
@@ -55,18 +91,45 @@ def get_base_url():
     return APP_BASE_URL
 
 
-def send_email(to_email, subject, html_body, text_body=None):
-    """
-    Tuma barua pepe moja. Haivunji programu kama SMTP haijasanidiwa au
-    kama kutuma kumeshindikana - inarudisha True/False tu.
-    """
-    if not to_email:
+def _send_via_brevo(to_email, subject, html_body, text_body=None):
+    sender_name, sender_email = _parse_mail_from(MAIL_FROM)
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_body,
+    }
+    if text_body:
+        payload["textContent"] = text_body
+
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        BREVO_API_URL,
+        data=data,
+        method="POST",
+        headers={
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": BREVO_API_KEY,
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            resp.read()
+        return True
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        print(f"[Mailer-ERROR][Brevo] Imeshindikana kutuma kwa {to_email}: "
+              f"HTTP {e.code} - {body}")
+        return False
+    except Exception as e:
+        print(f"[Mailer-ERROR][Brevo] Imeshindikana kutuma kwa {to_email}: {e}")
         return False
 
-    if not _mail_configured:
-        print(f"[Mailer-SKIPPED] Kwa {to_email}: {subject}\n{text_body or html_body}")
-        return False
 
+def _send_via_smtp(to_email, subject, html_body, text_body=None):
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -86,8 +149,27 @@ def send_email(to_email, subject, html_body, text_body=None):
 
         return True
     except Exception as e:
-        print(f"[Mailer-ERROR] Imeshindikana kutuma kwa {to_email}: {e}")
+        print(f"[Mailer-ERROR][SMTP] Imeshindikana kutuma kwa {to_email}: {e}")
         return False
+
+
+def send_email(to_email, subject, html_body, text_body=None):
+    """
+    Tuma barua pepe moja. Haivunji programu kama mfumo wa email haijasanidiwa
+    au kama kutuma kumeshindikana - inarudisha True/False tu.
+    Inajaribu Brevo kwanza (ikiwa imesanidiwa), kisha SMTP ya kawaida.
+    """
+    if not to_email:
+        return False
+
+    if _brevo_configured:
+        return _send_via_brevo(to_email, subject, html_body, text_body)
+
+    if _smtp_configured:
+        return _send_via_smtp(to_email, subject, html_body, text_body)
+
+    print(f"[Mailer-SKIPPED] Kwa {to_email}: {subject}\n{text_body or html_body}")
+    return False
 
 
 def send_verification_email(user, verify_url):

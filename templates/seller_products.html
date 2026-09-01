@@ -1,0 +1,46 @@
+{% extends "seller_base.html" %}
+{% block title %}Bidhaa Zangu - GariFix{% endblock %}
+
+{% block seller_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fa-solid fa-boxes-stacked me-2"></i>Bidhaa Zangu</h2>
+    <a href="{{ url_for('add_product') }}" class="btn btn-warning fw-bold text-dark"><i class="fa fa-plus me-1"></i> Ongeza Bidhaa</a>
+</div>
+
+<div class="row g-4">
+    {% for p in products %}
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            {% if p.photo %}
+                <img src="{{ url_for('static', filename='uploads/' + p.photo) }}" class="card-img-top" style="height:180px;object-fit:cover;">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px;">
+                    <i class="fa-solid fa-image fa-3x text-secondary"></i>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="fw-bold">{{ p.name }}</h5>
+                <span class="badge bg-secondary mb-2">{{ p.category or 'Bidhaa' }}</span>
+                <p class="fw-bold text-success fs-5">TZS {{ "{:,.0f}".format(p.price) }}</p>
+                <p class="text-muted small">{{ p.description or '' }}</p>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('edit_product', id=p.id) }}" class="btn btn-outline-primary btn-sm flex-fill">
+                        <i class="fa fa-pen"></i> Hariri
+                    </a>
+                    <a href="{{ url_for('delete_product', id=p.id) }}" class="btn btn-outline-danger btn-sm flex-fill" onclick="return confirm('Una uhakika unataka kufuta bidhaa hii?');">
+                        <i class="fa fa-trash"></i> Futa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-5">
+            <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+            <p class="mb-0">Bado hujaongeza bidhaa yoyote. Bofya "Ongeza Bidhaa" kuanza.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

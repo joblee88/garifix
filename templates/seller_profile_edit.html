@@ -1,0 +1,55 @@
+{% extends "seller_base.html" %}
+{% block title %}Taarifa za Duka - GariFix{% endblock %}
+
+{% block seller_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow border-0 p-4">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-store me-2"></i>Taarifa za Duka Lako</h4>
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Jina la Duka</label>
+                    <input type="text" name="shop_name" class="form-control" value="{{ seller.shop_name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Picha ya Duka</label>
+                    {% if seller.shop_photo %}
+                        <div class="mb-2"><img src="{{ url_for('static', filename='uploads/' + seller.shop_photo) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;"></div>
+                    {% endif %}
+                    <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Mkoa</label>
+                        <input type="text" name="region" class="form-control" value="{{ seller.region }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Wilaya</label>
+                        <input type="text" name="district" class="form-control" value="{{ seller.district }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Kata</label>
+                        <input type="text" name="ward" class="form-control" value="{{ seller.ward or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Mtaa</label>
+                        <input type="text" name="street" class="form-control" value="{{ seller.street or '' }}">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Maelezo ya Duka</label>
+                    <textarea name="description" rows="4" class="form-control">{{ seller.description or '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold text-dark">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Hifadhi Mabadiliko
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
