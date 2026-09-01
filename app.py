@@ -144,6 +144,10 @@ def login():
         ).first()
 
         if user and check_password_hash(user.password, password):
+            if user.status == "blocked":
+                flash("Akaunti yako imezuiwa (blocked) na Admin. Wasiliana na msimamizi wa mfumo kwa maelezo zaidi.", "danger")
+                return redirect(url_for("login"))
+
             if user.role == "mechanic":
                 mechanic = Mechanic.query.filter_by(user_id=user.id).first()
                 if mechanic:
@@ -414,6 +418,12 @@ def setup_admin():
 
 
 # CUSTOMER ROUTES
+@app.route("/register")
+def register_choice():
+    """Ukurasa wa kuchagua: Nataka kujisajili kama Mteja au kama Fundi."""
+    return render_template("register_choice.html")
+
+
 @app.route("/customer/register", methods=["GET", "POST"])
 def customer_register():
     if request.method == "POST":
@@ -949,6 +959,50 @@ def admin_mechanic_detail(id):
     reviews = Review.query.filter_by(mechanic_id=mechanic.id).order_by(Review.created_at.desc()).all()
     avg_rating = db.session.query(func.avg(Review.rating)).filter_by(mechanic_id=mechanic.id).scalar() or 0
     return render_template("admin_mechanic_detail.html", mechanic=mechanic, requests=requests, reviews=reviews, average_rating=avg_rating)
+
+
+@app.route("/admin/block-user/<int:id>")
+@login_required
+@role_required("admin")
+def block_user(id):
+    user = User.query.get_or_404(id)
+    if user.role == "admin":
+        flash("Huwezi ku-block akaunti ya admin.", "danger")
+    else:
+        user.status = "blocked"
+        db.session.commit()
+        flash(f"{user.full_name} ame-blockiwa - hataweza kuingia kwenye mfumo tena.", "warning")
+    return redirect(request.referrer or url_for("admin_customers"))
+
+
+@app.route("/admin/unblock-user/<int:id>")
+@login_required
+@role_required("admin")
+def unblock_user(id):
+    user = User.query.get_or_404(id)
+    user.status = "active"
+    db.session.commit()
+    flash(f"{user.full_name} ame-unblockiwa - anaweza kuingia tena.", "success")
+    return redirect(request.referrer or url_for("admin_customers"))
+
+
+@app.route("/admin/delete-user/<int:id>")
+@login_required
+@role_required("admin")
+def delete_user(id):
+    user = User.query.get_or_404(id)
+
+    if user.role == "admin":
+        flash("Huwezi kufuta akaunti ya admin.", "danger")
+        return redirect(request.referrer or url_for("admin_customers"))
+
+    name = user.full_name
+    role = user.role
+    db.session.delete(user)
+    db.session.commit()
+
+    flash(f"Akaunti ya {name} imefutwa kabisa kwenye mfumo.", "success")
+    return redirect(url_for("admin_mechanics") if role == "mechanic" else url_for("admin_customers"))
 
 
 @app.route("/admin/requests")

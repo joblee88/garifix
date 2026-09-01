@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Jisajili - GariFix{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-lg-9">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Karibu GariFix - Jisajili Kama Nani?</h1>
+            <p class="text-muted lead">Chagua aina ya akaunti unayotaka kufungua.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-5">
+                <a href="{{ url_for('customer_register') }}" class="text-decoration-none">
+                    <div class="card shadow-lg border-0 h-100 text-center p-4 role-card">
+                        <i class="fa-solid fa-user fa-5x text-primary mb-3"></i>
+                        <h3 class="fw-bold text-dark">Nataka Kuwa Mteja</h3>
+                        <p class="text-muted">Nitafute mafundi wa gari waliothibitishwa karibu na eneo langu.</p>
+                        <span class="btn btn-primary btn-lg mt-2">Jisajili Kama Mteja</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-5">
+                <a href="{{ url_for('mechanic_register') }}" class="text-decoration-none">
+                    <div class="card shadow-lg border-0 h-100 text-center p-4 role-card">
+                        <i class="fa-solid fa-screwdriver-wrench fa-5x text-success mb-3"></i>
+                        <h3 class="fw-bold text-dark">Nataka Kuwa Fundi</h3>
+                        <p class="text-muted">Nitangaze huduma zangu za ukarabati wa magari kwa wateja karibu nami.</p>
+                        <span class="btn btn-success btn-lg mt-2">Jisajili Kama Fundi</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p>Tayari una akaunti? <a href="{{ url_for('login') }}">Ingia hapa</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+.role-card { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+.role-card:hover { transform: translateY(-6px); box-shadow: 0 1rem 2rem rgba(0,0,0,0.15) !important; }
+</style>
+{% endblock %}

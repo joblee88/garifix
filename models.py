@@ -22,8 +22,8 @@ class User(db.Model):
 
     # Relationships
     mechanic_profile = db.relationship("Mechanic", backref="user", uselist=False, cascade="all, delete-orphan")
-    service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id")
-    reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id")
+    service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id", cascade="all, delete-orphan")
+    reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id", cascade="all, delete-orphan")
 
 
 class Mechanic(db.Model):
@@ -51,8 +51,8 @@ class Mechanic(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # Relationships
-    service_requests = db.relationship("ServiceRequest", backref="mechanic", foreign_keys="ServiceRequest.mechanic_id")
-    reviews = db.relationship("Review", backref="mechanic", foreign_keys="Review.mechanic_id", lazy=True)
+    service_requests = db.relationship("ServiceRequest", backref="mechanic", foreign_keys="ServiceRequest.mechanic_id", cascade="all, delete-orphan")
+    reviews = db.relationship("Review", backref="mechanic", foreign_keys="Review.mechanic_id", lazy=True, cascade="all, delete-orphan")
 
 
 class ServiceRequest(db.Model):

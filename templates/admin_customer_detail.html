@@ -4,7 +4,15 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold"><i class="fa-solid fa-user me-2"></i>Taarifa za Mteja</h2>
-    <a href="{{ url_for('admin_customers') }}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-1"></i> Rudi</a>
+    <div>
+        {% if customer.status == "blocked" %}
+            <a href="{{ url_for('unblock_user', id=customer.id) }}" class="btn btn-success"><i class="fa fa-unlock me-1"></i> Unblock</a>
+        {% else %}
+            <a href="{{ url_for('block_user', id=customer.id) }}" class="btn btn-warning" onclick="return confirm('Una uhakika unataka ku-block {{ customer.full_name }}?');"><i class="fa fa-lock me-1"></i> Block</a>
+        {% endif %}
+        <a href="{{ url_for('delete_user', id=customer.id) }}" class="btn btn-danger" onclick="return confirm('Una uhakika unataka KUFUTA {{ customer.full_name }} KABISA? Hii haiwezi kurudishwa!');"><i class="fa fa-trash me-1"></i> Ondoa</a>
+        <a href="{{ url_for('admin_customers') }}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-1"></i> Rudi</a>
+    </div>
 </div>
 
 <div class="card shadow border-0 p-4 mb-4">
@@ -13,6 +21,14 @@
         <div class="col-md-3"><strong>Simu:</strong><br>{{ customer.phone }}</div>
         <div class="col-md-3"><strong>Email:</strong><br>{{ customer.email or '-' }}</div>
         <div class="col-md-3"><strong>Amejisajili:</strong><br>{{ customer.created_at.strftime('%Y-%m-%d') if customer.created_at else '-' }}</div>
+        <div class="col-md-3">
+            <strong>Status:</strong><br>
+            {% if customer.status == "blocked" %}
+                <span class="badge bg-danger">Blocked</span>
+            {% else %}
+                <span class="badge bg-success">Active</span>
+            {% endif %}
+        </div>
     </div>
 </div>
 

@@ -37,8 +37,20 @@
                     </td>
                     <td>{{ customer.created_at.strftime('%Y-%m-%d') if customer.created_at else "-" }}</td>
                     <td>
-                        <a href="{{ url_for('admin_customer_detail', id=customer.id) }}" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ url_for('admin_customer_detail', id=customer.id) }}" class="btn btn-sm btn-outline-primary mb-1">
                             <i class="fa fa-eye"></i> Taarifa Zote
+                        </a>
+                        {% if customer.status == "blocked" %}
+                            <a href="{{ url_for('unblock_user', id=customer.id) }}" class="btn btn-sm btn-success mb-1">
+                                <i class="fa fa-unlock"></i> Unblock
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('block_user', id=customer.id) }}" class="btn btn-sm btn-warning mb-1" onclick="return confirm('Una uhakika unataka ku-block {{ customer.full_name }}?');">
+                                <i class="fa fa-lock"></i> Block
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('delete_user', id=customer.id) }}" class="btn btn-sm btn-danger mb-1" onclick="return confirm('Una uhakika unataka KUFUTA {{ customer.full_name }} KABISA? Hii haiwezi kurudishwa!');">
+                            <i class="fa fa-trash"></i> Ondoa
                         </a>
                     </td>
                 </tr>

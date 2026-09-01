@@ -72,7 +72,8 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-semibold">Picha ya Fundi</label>
-                                <input type="file" name="profile_photo" class="form-control" accept="image/*">
+                                <input type="file" name="profile_photo" id="profilePhotoInput" class="form-control" accept="image/*" capture="user">
+                                <div class="form-text">Unaweza kupiga picha moja kwa moja kwa kamera ya simu yako, au kuchagua kutoka kwenye picha zilizopo.</div>
                             </div>
 
                             <div class="col-12">
@@ -95,7 +96,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Pakia Picha ya Kitambulisho</label>
-                                <input type="file" name="id_document" class="form-control" accept="image/*,.pdf" required>
+                                <input type="file" name="id_document" id="idDocumentInput" class="form-control" accept="image/*" capture="environment" required>
+                                <div class="form-text">Unaweza kupiga picha ya kitambulisho moja kwa moja kwa kamera, au kupakia picha iliyopo kwenye simu yako.</div>
                             </div>
 
                             <div class="col-md-12 mb-3">
@@ -166,6 +168,10 @@ function updateMechDistricts() {
             option.textContent = district;
             districtSelect.appendChild(option);
         });
+        const otherDistrictOpt = document.createElement("option");
+        otherDistrictOpt.value = "Nyingine";
+        otherDistrictOpt.textContent = "-- Wilaya Nyingine (haipo hapa) --";
+        districtSelect.appendChild(otherDistrictOpt);
     } else {
         districtSelect.disabled = true;
     }
@@ -178,14 +184,17 @@ function updateMechWards() {
 
     wardSelect.innerHTML = '<option value="">Chagua Kata</option>';
 
-    if (region && district && locationData[region][district]) {
+    if (region && district) {
         wardSelect.disabled = false;
-        locationData[region][district].forEach(function (ward) {
-            const option = document.createElement("option");
-            option.value = ward;
-            option.textContent = ward;
-            wardSelect.appendChild(option);
-        });
+
+        if (locationData[region][district]) {
+            locationData[region][district].forEach(function (ward) {
+                const option = document.createElement("option");
+                option.value = ward;
+                option.textContent = ward;
+                wardSelect.appendChild(option);
+            });
+        }
 
         const otherOption = document.createElement("option");
         otherOption.value = "Nyingine";

@@ -95,6 +95,10 @@ function updateReqDistricts() {
             option.textContent = district;
             districtSelect.appendChild(option);
         });
+        const otherDistrictOpt = document.createElement("option");
+        otherDistrictOpt.value = "Nyingine";
+        otherDistrictOpt.textContent = "-- Wilaya Nyingine (haipo hapa) --";
+        districtSelect.appendChild(otherDistrictOpt);
     } else {
         districtSelect.disabled = true;
     }
@@ -110,14 +114,17 @@ function updateReqWards() {
 
     wardSelect.innerHTML = '<option value="">-- Chagua Kata --</option>';
 
-    if (selectedRegion && selectedDistrict && locationData[selectedRegion][selectedDistrict]) {
+    if (selectedRegion && selectedDistrict) {
         wardSelect.disabled = false;
-        locationData[selectedRegion][selectedDistrict].forEach(function (ward) {
-            const option = document.createElement("option");
-            option.value = ward;
-            option.textContent = ward;
-            wardSelect.appendChild(option);
-        });
+
+        if (locationData[selectedRegion][selectedDistrict]) {
+            locationData[selectedRegion][selectedDistrict].forEach(function (ward) {
+                const option = document.createElement("option");
+                option.value = ward;
+                option.textContent = ward;
+                wardSelect.appendChild(option);
+            });
+        }
 
         const otherOption = document.createElement("option");
         otherOption.value = "Nyingine";

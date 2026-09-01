@@ -280,6 +280,10 @@ function updateDistricts() {
             option.textContent = district;
             districtSelect.appendChild(option);
         });
+        const otherDistrictOpt = document.createElement("option");
+        otherDistrictOpt.value = "Nyingine";
+        otherDistrictOpt.textContent = "-- Wilaya Nyingine (haipo hapa) --";
+        districtSelect.appendChild(otherDistrictOpt);
     } else {
         districtSelect.disabled = true;
         districtSelect.innerHTML = '<option value="">-- Chagua Mkoa Kwanza --</option>';
@@ -308,6 +312,10 @@ function updateModalDistricts() {
             option.textContent = district;
             districtSelect.appendChild(option);
         });
+        const otherDistrictOpt = document.createElement("option");
+        otherDistrictOpt.value = "Nyingine";
+        otherDistrictOpt.textContent = "-- Wilaya Nyingine (haipo hapa) --";
+        districtSelect.appendChild(otherDistrictOpt);
     } else {
         districtSelect.disabled = true;
     }
@@ -323,18 +331,21 @@ function updateModalWards() {
 
     wardSelect.innerHTML = '<option value="">-- Chagua Kata --</option>';
 
-    if (selectedRegion && selectedDistrict && locationData[selectedRegion][selectedDistrict]) {
+    if (selectedRegion && selectedDistrict) {
         wardSelect.disabled = false;
-        const wards = locationData[selectedRegion][selectedDistrict];
-        
-        wards.forEach(function(ward) {
-            const option = document.createElement("option");
-            option.value = ward;
-            option.textContent = ward;
-            wardSelect.appendChild(option);
-        });
-        
+
+        if (locationData[selectedRegion][selectedDistrict]) {
+            const wards = locationData[selectedRegion][selectedDistrict];
+            wards.forEach(function(ward) {
+                const option = document.createElement("option");
+                option.value = ward;
+                option.textContent = ward;
+                wardSelect.appendChild(option);
+            });
+        }
+
         // Option ya "Nyingine" ikiwa kata ya mteja haimo kwenye orodha
+        // (au ikiwa Wilaya yenyewe ilikuwa "Nyingine")
         const otherOption = document.createElement("option");
         otherOption.value = "Nyingine";
         otherOption.textContent = "-- Kata Nyingine (Iandike kwenye Mtaa) --";

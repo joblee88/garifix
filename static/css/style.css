@@ -105,3 +105,66 @@ body {
         width: 100%;
     }
 }
+
+/* ==========================================
+   DARK MODE
+   Bootstrap 5.3+ inabadilisha vipengele vyake vingi (card, forms, modal,
+   alert, dropdown) kiotomatiki kupitia [data-bs-theme="dark"]. Hapa
+   tunaongeza tu rangi za vitu vyetu maalum (custom) na baadhi ya utility
+   classes za Bootstrap ambazo si "theme-aware" kwa default (bg-white,
+   bg-light, text-dark).
+   ========================================== */
+[data-bs-theme="dark"] body {
+    background: #10161f;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .stat-card {
+    background: #1a2332;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .stat-card h2,
+[data-bs-theme="dark"] .stat-card h3 {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+    background-color: #1a2332 !important;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .bg-light {
+    background-color: #1a2332 !important;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .text-dark {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] .card {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .app-content {
+    background: #10161f;
+}
+
+[data-bs-theme="dark"] .role-card:hover {
+    box-shadow: 0 1rem 2rem rgba(0,0,0,0.5) !important;
+}
+
+[data-bs-theme="dark"] a {
+    color: #6ea8fe;
+}
+
+/* Kitufe cha kubadilisha theme (Sun/Moon) */
+.theme-toggle-btn {
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
