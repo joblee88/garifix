@@ -793,6 +793,8 @@ def seller_register():
         ward = request.form.get("ward", "").strip()
         street = request.form.get("street", "").strip()
         description = request.form.get("description", "").strip()
+        business_types = request.form.getlist("business_type")
+        business_type = ", ".join(business_types)
 
         if not first_name or not last_name:
             flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
@@ -804,6 +806,10 @@ def seller_register():
 
         if not shop_name:
             flash("Tafadhali weka jina la duka lako.", "danger")
+            return redirect(url_for("seller_register"))
+
+        if not business_types:
+            flash("Tafadhali chagua unauza nini (Spea za Magari na/au Mafuta/Lubricants).", "danger")
             return redirect(url_for("seller_register"))
 
         if not request.form.get("agree_terms"):
@@ -843,6 +849,7 @@ def seller_register():
             street=street,
             description=description,
             shop_photo=shop_photo_filename,
+            business_type=business_type,
             verified="pending"
         )
         db.session.add(new_seller)
@@ -885,6 +892,7 @@ def own_seller_profile():
         seller.ward = request.form.get("ward", "").strip()
         seller.street = request.form.get("street", "").strip()
         seller.description = request.form.get("description", "").strip()
+        seller.business_type = ", ".join(request.form.getlist("business_type"))
 
         photo = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
         if photo:

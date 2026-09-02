@@ -21,6 +21,26 @@
                     <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label fw-semibold d-block">Unauza Nini?</label>
+                    <div class="d-flex gap-4 flex-wrap">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="business_type" value="Spea za Magari" id="editBtParts"
+                                {% if seller.business_type and "Spea za Magari" in seller.business_type %}checked{% endif %}>
+                            <label class="form-check-label" for="editBtParts">
+                                <i class="fa-solid fa-gears me-1"></i> Spea za Magari
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="business_type" value="Mafuta/Lubricants (Oil)" id="editBtOil"
+                                {% if seller.business_type and "Mafuta/Lubricants" in seller.business_type %}checked{% endif %}>
+                            <label class="form-check-label" for="editBtOil">
+                                <i class="fa-solid fa-oil-can me-1"></i> Mafuta ya Magari (Oil/Lubricants)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Mkoa</label>

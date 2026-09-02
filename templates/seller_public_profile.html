@@ -40,6 +40,14 @@
             <p class="mb-2"><strong>Wilaya:</strong> {{ seller.district }}</p>
             <p class="mb-2"><strong>Kata:</strong> {{ seller.ward or '-' }}</p>
             <p class="mb-2"><strong>Mtaa:</strong> {{ seller.street or '-' }}</p>
+            {% if seller.business_type %}
+            <p class="mb-2">
+                <strong>Anauza:</strong>
+                {% for bt in seller.business_type.split(', ') %}
+                    <span class="badge bg-warning text-dark">{{ bt }}</span>
+                {% endfor %}
+            </p>
+            {% endif %}
             <p class="mb-0 text-muted">{{ seller.description or '' }}</p>
         </div>
 

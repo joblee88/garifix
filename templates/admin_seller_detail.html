@@ -23,6 +23,7 @@
         <div class="col-md-3"><strong>Email:</strong><br>{{ seller.user.email or '-' }}</div>
         <div class="col-md-3"><strong>Mkoa/Wilaya:</strong><br>{{ seller.region }}, {{ seller.district }}</div>
         <div class="col-md-3"><strong>Kata/Mtaa:</strong><br>{{ seller.ward or '-' }}, {{ seller.street or '-' }}</div>
+        <div class="col-md-3"><strong>Anauza:</strong><br>{{ seller.business_type or '-' }}</div>
         <div class="col-md-3">
             <strong>Status:</strong><br>
             {% if seller.verified == "pending" %}

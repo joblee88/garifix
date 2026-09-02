@@ -39,7 +39,7 @@ body {
     text-align: center;
 }
 
-/* SIDEBAR LAYOUT FRAMEWORK (ADMIN, MECHANIC & CUSTOMER) */
+/* SIDEBAR LAYOUT FRAMEWORK (ADMIN, MECHANIC, CUSTOMER & SELLER) */
 .app-wrapper {
     display: flex;
     width: 100%;
@@ -49,21 +49,49 @@ body {
 .app-sidebar {
     width: 260px;
     min-height: 100vh;
-    background: #1e293b;
+    background: linear-gradient(160deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.94) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     color: #ffffff;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1000;
-    transition: all 0.3s ease;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
+    transition: width 0.25s ease, margin-left 0.3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .app-sidebar .sidebar-brand {
-    padding: 24px 20px;
-    text-align: center;
-    font-size: 22px;
+    padding: 22px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 20px;
     font-weight: 700;
+    white-space: nowrap;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-minimize-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.25s ease;
+}
+.sidebar-minimize-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .app-sidebar nav a {
@@ -71,17 +99,26 @@ body {
     align-items: center;
     gap: 12px;
     color: #94a3b8;
-    padding: 14px 24px;
+    padding: 13px 22px;
     text-decoration: none;
     font-size: 15px;
-    transition: background 0.2s, color 0.2s, padding-left 0.2s;
+    white-space: nowrap;
+    border-radius: 10px;
+    margin: 2px 10px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.app-sidebar nav a i {
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 16px;
 }
 
 .app-sidebar nav a:hover,
 .app-sidebar nav a.active {
-    background: #2563eb;
+    background: rgba(37, 99, 235, 0.85);
     color: #ffffff;
-    padding-left: 30px;
 }
 
 .app-content {
@@ -89,6 +126,32 @@ body {
     width: calc(100% - 260px);
     padding: 30px;
     min-height: 100vh;
+    transition: margin-left 0.25s ease, width 0.25s ease;
+}
+
+/* HALI YA "MINIMIZED" - Icons pekee, maandishi yamefichwa */
+.app-wrapper.sidebar-minimized .app-sidebar {
+    width: 78px;
+}
+.app-wrapper.sidebar-minimized .app-sidebar .sidebar-text,
+.app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand-text {
+    display: none;
+}
+.app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand {
+    justify-content: center;
+    padding: 20px 8px;
+}
+.app-wrapper.sidebar-minimized .sidebar-minimize-btn {
+    transform: rotate(180deg);
+}
+.app-wrapper.sidebar-minimized .app-sidebar nav a {
+    justify-content: center;
+    padding: 13px 8px;
+    margin: 2px 8px;
+}
+.app-wrapper.sidebar-minimized .app-content {
+    margin-left: 78px;
+    width: calc(100% - 78px);
 }
 
 /* RESPONSIVE LAYOUT BREAKPOINTS */
@@ -101,6 +164,26 @@ body {
         box-shadow: 4px 0 25px rgba(0,0,0,0.25);
     }
     .app-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    /* Kwenye simu, "minimize" haihitajiki (sidebar tayari ni overlay) */
+    .app-wrapper.sidebar-minimized .app-sidebar {
+        width: 260px;
+    }
+    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-text,
+    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand-text {
+        display: inline;
+    }
+    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand {
+        justify-content: space-between;
+        padding: 22px 18px;
+    }
+    .app-wrapper.sidebar-minimized .app-sidebar nav a {
+        justify-content: flex-start;
+        padding: 13px 22px;
+    }
+    .app-wrapper.sidebar-minimized .app-content {
         margin-left: 0;
         width: 100%;
     }

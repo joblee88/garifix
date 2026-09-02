@@ -94,6 +94,7 @@ class Seller(db.Model):
     street = db.Column(db.String(100))
     description = db.Column(db.Text)
     shop_photo = db.Column(db.String(255))
+    business_type = db.Column(db.String(100))  # "Spea za Magari", "Mafuta/Lubricants", au zote mbili
     verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
