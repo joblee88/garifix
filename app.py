@@ -385,6 +385,70 @@ def reset_password_email(token):
     return render_template("reset_password_email.html", user=user)
 
 
+@app.route("/setup-migrate")
+def setup_migrate():
+    """
+    Sawazisha (ALTER TABLE) database halisi na muundo wa sasa wa models.py.
+
+    TATIZO INAYOSULUHISHWA: db.create_all() hutengeneza majedwali MAPYA
+    yasiyokuwepo TU - haiongezi "column" mpya kwenye jedwali ambalo tayari
+    lilikuwepo. Kwa hiyo ukiongeza uwanja mpya kwenye model (mfano
+    Seller.business_type) baada ya database kuwa tayari imeshaundwa, database
+    halisi haitakuwa nayo mpaka usawazishe kwa mkono - hapa ndipo route hii
+    inasaidia.
+
+    JINSI YA KUTUMIA (bila kuhitaji Shell):
+        https://your-app.onrender.com/setup-migrate?key=ADMIN_SETUP_KEY
+
+    Salama kuita mara nyingi kadri unavyotaka - haiathiri data iliyopo,
+    inaongeza tu columns zinazokosekana (haifuti wala kubadilisha zilizopo).
+    """
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key:
+        return "Kipengele hiki hakijawezeshwa kwenye server hii.", 403
+
+    provided_key = request.args.get("key")
+    if provided_key != setup_key:
+        return "Ufunguo (key) si sahihi.", 403
+
+    from sqlalchemy import inspect, text
+
+    # Kwanza tengeneza majedwali yoyote MAPYA kabisa yasiyokuwepo bado
+    db.create_all()
+
+    inspector = inspect(db.engine)
+    added = []
+    errors = []
+
+    for table in db.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        existing_columns = {c["name"] for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in existing_columns:
+                continue
+            try:
+                col_type = column.type.compile(dialect=db.engine.dialect)
+                ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {col_type}"
+                with db.engine.begin() as conn:
+                    conn.execute(text(ddl))
+                added.append(f"{table.name}.{column.name}")
+            except Exception as e:
+                errors.append(f"{table.name}.{column.name}: {e}")
+
+    html = "<h2>Matokeo ya Database Migration</h2>"
+    if added:
+        html += "<p><strong>Columns mpya zilizoongezwa:</strong></p><ul>"
+        html += "".join(f"<li>{a}</li>" for a in added) + "</ul>"
+    else:
+        html += "<p>Database tayari inalingana na models.py - hakuna kilichohitajika.</p>"
+    if errors:
+        html += "<p style='color:red'><strong>Hitilafu (kama zipo):</strong></p><ul>"
+        html += "".join(f"<li>{e}</li>" for e in errors) + "</ul>"
+
+    return html
+
+
 @app.route("/setup-admin", methods=["GET", "POST"])
 def setup_admin():
     """
