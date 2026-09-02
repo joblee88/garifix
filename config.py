@@ -1,11 +1,25 @@
 import os
 import ssl
+from datetime import timedelta
 from urllib.parse import urlparse, urlunparse
 
 
 class Config:
     # Key ya siri kwa ajili ya session za mfumo
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'garifix-secret-key-tanzania-2026'
+
+    # --- Session Cookies ---
+    # MUHIMU: Bila hivi, session ya mtumiaji ni "session cookie" ya kawaida
+    # isiyo na tarehe dhahiri ya kuisha - baadhi ya browsers za simu
+    # huifuta pindi zinapobadilisha muktadha wa uonyeshaji (mfano "Desktop
+    # Site" mode), na kumtoa mtumiaji nje bila taarifa. Kwa kuweka muda
+    # dhahiri wa siku 7 hapa, session inakuwa cookie ya kudumu (persistent)
+    # inayodumu kwa uhakika zaidi.
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    # HTTPS pekee (Render) - lakini si kwa local dev (kawaida http://localhost)
+    SESSION_COOKIE_SECURE = os.environ.get('DATABASE_URL') is not None
 
     # --- Database ---
     # Kwa PRODUCTION (mf. Render): weka environment variable "DATABASE_URL"

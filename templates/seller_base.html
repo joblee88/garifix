@@ -13,12 +13,18 @@
 <body>
 
 <div class="app-wrapper">
+    <!-- BACKDROP (simu pekee) -->
+    <div class="sidebar-backdrop" onclick="closeGariFixMobileSidebar()"></div>
+
     <!-- SIDEBAR -->
     <div class="app-sidebar">
         <div class="sidebar-brand">
             <span class="sidebar-brand-text"><i class="fa-solid fa-shop text-warning"></i> GariFix Muuzaji</span>
-            <button type="button" class="sidebar-minimize-btn" onclick="toggleGariFixSidebar()" title="Punguza/Panua Sidebar">
+            <button type="button" class="sidebar-minimize-btn d-none d-lg-flex" onclick="toggleGariFixSidebar()" title="Punguza/Panua Sidebar">
                 <i class="fa-solid fa-angles-left"></i>
+            </button>
+            <button type="button" class="sidebar-close-btn" onclick="closeGariFixMobileSidebar()" title="Funga">
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <nav class="mt-3">
@@ -41,7 +47,7 @@
     <!-- MAIN CONTENT -->
     <div class="app-content">
         <nav class="navbar bg-white shadow-sm rounded-4 mb-4 px-4 py-3 d-flex justify-content-between">
-            <button class="btn btn-outline-primary d-lg-none" type="button" onclick="document.querySelector('.app-sidebar').classList.toggle('show')">
+            <button class="btn btn-outline-primary d-lg-none" type="button" onclick="toggleGariFixMobileSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <span class="fw-bold fs-5"><i class="fa-solid fa-shop text-warning me-2"></i> Seller Workspace</span>

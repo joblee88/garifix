@@ -187,6 +187,45 @@ body {
         margin-left: 0;
         width: 100%;
     }
+
+    /* BACKDROP - inaonekana ukifungua sidebar kwenye simu, kubonyeza nje
+       ya sidebar (au kiungo chochote ndani yake) hufunga sidebar */
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+    .sidebar-backdrop.show {
+        display: block;
+    }
+
+    /* Kitufe cha X ndani ya sidebar - kinaonekana SIMU PEKEE, kinabaki
+       kufikika hata sidebar ikiwa imefunguka kikamilifu */
+    .sidebar-close-btn {
+        display: inline-flex !important;
+    }
+}
+
+.sidebar-close-btn {
+    display: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 /* ==========================================

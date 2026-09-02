@@ -178,6 +178,7 @@ def login():
                         flash("Usajili wako umekataliwa na Admin.", "danger")
                         return redirect(url_for("login"))
 
+            session.permanent = True
             session["user_id"] = user.id
             session["role"] = user.role
 
