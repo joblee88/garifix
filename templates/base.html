@@ -11,51 +11,80 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
-    <div class="container">
-        <a class="navbar-brand fw-bold fs-3" href="{{ url_for('home') }}">
-            <i class="fa-solid fa-car-side"></i> GariFix
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3">
+    <div class="container-fluid px-3 px-md-4">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-outline-light border-0 me-2 fs-4 p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-controls="sideMenu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <a class="navbar-brand fw-bold fs-4 mb-0" href="{{ url_for('home') }}">
+                <i class="fa-solid fa-car-side"></i> GariFix
+            </a>
+        </div>
 
-        <div class="collapse navbar-collapse" id="navbar">
-            <ul class="navbar-nav ms-auto align-items-lg-center">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('search_mechanics') }}">Find Mechanic</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('sellers_list') }}">Duka la Spea</a></li>
-
-                {% if not session.get("user_id") %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('register_choice') }}">Jisajili</a></li>
-                    <li class="nav-item">
-                        <a class="btn btn-light ms-lg-3 mt-2 mt-lg-0" href="{{ url_for('login') }}">
-                            <i class="fa-solid fa-right-to-bracket"></i> Login
-                        </a>
-                    </li>
-                {% else %}
-                    {% if session.get("role") == "customer" %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('customer_dashboard') }}">Dashboard</a></li>
-                    {% elif session.get("role") == "mechanic" %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('mechanic_dashboard') }}">Dashboard</a></li>
-                    {% elif session.get("role") == "admin" %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}">Admin Panel</a></li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <a class="btn btn-danger ms-lg-3 mt-2 mt-lg-0" href="{{ url_for('logout') }}">
-                            <i class="fa-solid fa-right-from-bracket"></i> Logout
-                        </a>
-                    </li>
-                {% endif %}
-                <li class="nav-item">
-                    <button type="button" class="btn btn-outline-light theme-toggle-btn ms-lg-2 mt-2 mt-lg-0" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
-                        <i class="theme-toggle-icon fa-solid fa-moon"></i>
-                    </button>
-                </li>
-            </ul>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-light theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
+                <i class="theme-toggle-icon fa-solid fa-moon"></i>
+            </button>
+            {% if not session.get("user_id") %}
+                <a class="btn btn-light d-none d-sm-inline-flex" href="{{ url_for('login') }}">
+                    <i class="fa-solid fa-right-to-bracket me-1"></i> Login
+                </a>
+            {% else %}
+                <a class="btn btn-danger d-none d-sm-inline-flex" href="{{ url_for('logout') }}">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                </a>
+            {% endif %}
         </div>
     </div>
 </nav>
+
+<!-- SIDE MENU (Offcanvas - inatoka upande wa KUSHOTO, siyo kushuka chini) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
+    <div class="offcanvas-header bg-primary">
+        <h5 class="offcanvas-title text-white fw-bold" id="sideMenuLabel">
+            <i class="fa-solid fa-car-side"></i> GariFix
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <ul class="nav nav-pills flex-column mb-auto gap-1">
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="{{ url_for('home') }}"><i class="fa-solid fa-house me-2"></i> Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="{{ url_for('search_mechanics') }}"><i class="fa-solid fa-magnifying-glass me-2"></i> Find Mechanic</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" href="{{ url_for('sellers_list') }}"><i class="fa-solid fa-shop me-2"></i> Duka la Spea</a>
+            </li>
+
+            <li><hr class="my-2"></li>
+
+            {% if not session.get("user_id") %}
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="{{ url_for('register_choice') }}"><i class="fa-solid fa-user-plus me-2"></i> Jisajili</a>
+                </li>
+                <li class="nav-item d-sm-none">
+                    <a class="nav-link text-dark" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket me-2"></i> Login</a>
+                </li>
+            {% else %}
+                {% if session.get("role") == "customer" %}
+                    <li class="nav-item"><a class="nav-link text-dark" href="{{ url_for('customer_dashboard') }}"><i class="fa-solid fa-gauge me-2"></i> Dashboard</a></li>
+                {% elif session.get("role") == "mechanic" %}
+                    <li class="nav-item"><a class="nav-link text-dark" href="{{ url_for('mechanic_dashboard') }}"><i class="fa-solid fa-gauge me-2"></i> Dashboard</a></li>
+                {% elif session.get("role") == "seller" %}
+                    <li class="nav-item"><a class="nav-link text-dark" href="{{ url_for('seller_dashboard') }}"><i class="fa-solid fa-gauge me-2"></i> Dashboard</a></li>
+                {% elif session.get("role") == "admin" %}
+                    <li class="nav-item"><a class="nav-link text-dark" href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}"><i class="fa-solid fa-gauge me-2"></i> Admin Panel</a></li>
+                {% endif %}
+                <li class="nav-item d-sm-none">
+                    <a class="nav-link text-dark" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
 
 <div class="container py-4">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -91,6 +120,7 @@
             <div class="col-md-4 mb-3">
                 <h5>Contact</h5>
                 <p><i class="fa-solid fa-location-dot me-2"></i> Arusha, Tanzania</p>
+                <p><i class="fa-solid fa-phone me-2"></i> +255 768 650 901</p>
                 <p><i class="fa-solid fa-envelope me-2"></i> garifixtz@gmail.com</p>
             </div>
         </div>

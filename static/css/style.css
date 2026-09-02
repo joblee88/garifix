@@ -169,6 +169,16 @@ body {
     justify-content: center;
 }
 
+/* Offcanvas side menu (public navbar) */
+#sideMenu .nav-link {
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    font-weight: 500;
+}
+#sideMenu .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
 /* ==========================================
    GLASSMORPHISM - kwa kurasa za login/usajili
    ========================================== */
@@ -179,6 +189,15 @@ body {
     align-items: center;
     margin: -1.5rem -0.75rem;
     padding: 3rem 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    .auth-page-bg {
+        padding: 1.5rem 0.75rem;
+    }
+    .glass-card {
+        border-radius: 16px;
+    }
 }
 
 .glass-card {

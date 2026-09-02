@@ -4,45 +4,57 @@
 {% block content %}
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
-    <div class="col-lg-11">
-        <div class="text-center mb-5">
-            <h1 class="fw-bold text-white">Karibu GariFix - Jisajili Kama Nani?</h1>
+    <div class="col-lg-9">
+        <div class="text-center mb-4">
+            <h1 class="fw-bold text-white h2 h1-md">Karibu GariFix - Jisajili Kama Nani?</h1>
             <p class="text-white-50 lead">Chagua aina ya akaunti unayotaka kufungua.</p>
         </div>
 
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
-                <a href="{{ url_for('customer_register') }}" class="text-decoration-none">
-                    <div class="card glass-card h-100 text-center p-4 role-card">
-                        <i class="fa-solid fa-user fa-5x text-primary mb-3"></i>
-                        <h3 class="fw-bold">Nataka Kuwa Mteja</h3>
-                        <p class="text-muted">Nitafute mafundi na wauzaji wa spea waliothibitishwa karibu na eneo langu.</p>
-                        <span class="btn btn-primary btn-lg mt-2">Jisajili Kama Mteja</span>
+        <div class="d-flex flex-column gap-3">
+            <a href="{{ url_for('customer_register') }}" class="text-decoration-none">
+                <div class="card glass-card role-card p-3 p-md-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-user fa-3x text-primary flex-shrink-0"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1">Nataka Kuwa Mteja</h4>
+                                <p class="text-muted mb-0">Nitafute mafundi na wauzaji wa spea waliothibitishwa karibu na eneo langu.</p>
+                            </div>
+                        </div>
+                        <span class="btn btn-primary btn-lg ms-auto">Jisajili Kama Mteja</span>
                     </div>
-                </a>
-            </div>
+                </div>
+            </a>
 
-            <div class="col-md-4">
-                <a href="{{ url_for('mechanic_register') }}" class="text-decoration-none">
-                    <div class="card glass-card h-100 text-center p-4 role-card">
-                        <i class="fa-solid fa-screwdriver-wrench fa-5x text-success mb-3"></i>
-                        <h3 class="fw-bold">Nataka Kuwa Fundi</h3>
-                        <p class="text-muted">Nitangaze huduma zangu za ukarabati wa magari kwa wateja karibu nami.</p>
-                        <span class="btn btn-success btn-lg mt-2">Jisajili Kama Fundi</span>
+            <a href="{{ url_for('mechanic_register') }}" class="text-decoration-none">
+                <div class="card glass-card role-card p-3 p-md-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-screwdriver-wrench fa-3x text-success flex-shrink-0"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1">Nataka Kuwa Fundi</h4>
+                                <p class="text-muted mb-0">Nitangaze huduma zangu za ukarabati wa magari kwa wateja karibu nami.</p>
+                            </div>
+                        </div>
+                        <span class="btn btn-success btn-lg ms-auto">Jisajili Kama Fundi</span>
                     </div>
-                </a>
-            </div>
+                </div>
+            </a>
 
-            <div class="col-md-4">
-                <a href="{{ url_for('seller_register') }}" class="text-decoration-none">
-                    <div class="card glass-card h-100 text-center p-4 role-card">
-                        <i class="fa-solid fa-shop fa-5x text-warning mb-3"></i>
-                        <h3 class="fw-bold">Nataka Kuuza Spea/Mafuta</h3>
-                        <p class="text-muted">Nifungue duka langu la spea za magari na lubricants kwenye GariFix.</p>
-                        <span class="btn btn-warning btn-lg mt-2">Jisajili Kama Muuzaji</span>
+            <a href="{{ url_for('seller_register') }}" class="text-decoration-none">
+                <div class="card glass-card role-card p-3 p-md-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-shop fa-3x text-warning flex-shrink-0"></i>
+                            <div>
+                                <h4 class="fw-bold mb-1">Nataka Kuuza Spea/Mafuta</h4>
+                                <p class="text-muted mb-0">Nifungue duka langu la spea za magari na lubricants kwenye GariFix.</p>
+                            </div>
+                        </div>
+                        <span class="btn btn-warning btn-lg ms-auto">Jisajili Kama Muuzaji</span>
                     </div>
-                </a>
-            </div>
+                </div>
+            </a>
         </div>
 
         <div class="text-center mt-4">
@@ -54,6 +66,10 @@
 
 <style>
 .role-card { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
-.role-card:hover { transform: translateY(-6px); box-shadow: 0 1rem 2rem rgba(0,0,0,0.25) !important; }
+.role-card:hover { transform: translateY(-4px); box-shadow: 0 1rem 2rem rgba(0,0,0,0.25) !important; }
+@media (max-width: 575.98px) {
+    .role-card .btn-lg { width: 100%; margin-left: 0 !important; }
+    .role-card i.fa-3x { font-size: 2rem; }
+}
 </style>
 {% endblock %}
