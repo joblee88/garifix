@@ -2,6 +2,7 @@
 {% block title %}Nataka Kuuza Spea/Oil - GariFix{% endblock %}
 
 {% block content %}
+<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
 <div class="auth-page-bg">
 <div class="container py-4">
     <div class="row justify-content-center w-100">
@@ -25,7 +26,12 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Namba ya Simu</label>
-                                <input type="text" name="phone" class="form-control" placeholder="+2557XXXXXXXX" required>
+                                <div class="input-group">
+                                    <span class="input-group-text fw-bold">+255</span>
+                                    <input type="tel" inputmode="numeric" class="form-control" maxlength="9" placeholder="712345678" required
+                                           oninput="syncGariFixPhone(this, 'phoneHidden')">
+                                </div>
+                                <input type="hidden" name="phone" id="phoneHidden">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Email</label>

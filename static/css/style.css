@@ -454,9 +454,23 @@ body {
     left: -10%;
     transform: translateY(-58%) scaleX(-1);
     font-size: 26px;
-    color: #ffc107;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     animation: gariFixDriveAcross 7s linear infinite;
+}
+
+/* Rangi za magari - zinalingana na rangi za Customer (bluu), Fundi (kijani)
+   na Muuzaji (njano) zinazotumika mahali pengine kwenye mfumo */
+.car-customer {
+    color: #0D6EFD;
+    animation-delay: 0s;
+}
+.car-mechanic {
+    color: #198754;
+    animation-delay: 1.6s;
+}
+.car-seller {
+    color: #ffc107;
+    animation-delay: 3.2s;
 }
 
 @keyframes gariFixDriveAcross {
@@ -473,4 +487,6 @@ body {
         animation: none;
         left: 20px;
     }
+    .car-mechanic { left: 60px; }
+    .car-seller { left: 100px; }
 }
