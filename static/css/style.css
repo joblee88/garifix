@@ -242,6 +242,16 @@ body {
     color: #6ea8fe;
 }
 
+/* Kinga: btn-outline-dark isipotee dhidi ya background ya giza */
+[data-bs-theme="dark"] .btn-outline-dark {
+    color: #e9ecef;
+    border-color: #e9ecef;
+}
+[data-bs-theme="dark"] .btn-outline-dark:hover {
+    background-color: #e9ecef;
+    color: #10161f;
+}
+
 /* Kitufe cha kubadilisha theme (Sun/Moon) */
 .theme-toggle-btn {
     border-radius: 50%;
