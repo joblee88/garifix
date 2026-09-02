@@ -427,3 +427,50 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
+
+/* ==========================================
+   FOOTER - Glass + Gari Linalotembea (Animation)
+   ========================================== */
+.site-footer {
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.92) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.road-strip {
+    position: relative;
+    height: 44px;
+    overflow: hidden;
+    background:
+        linear-gradient(#334155, #334155) center/100% 3px no-repeat,
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.35) 0, rgba(255,255,255,0.35) 22px, transparent 22px, transparent 46px) center/100% 3px no-repeat;
+}
+
+.driving-car {
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    transform: translateY(-58%) scaleX(-1);
+    font-size: 26px;
+    color: #ffc107;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    animation: gariFixDriveAcross 7s linear infinite;
+}
+
+@keyframes gariFixDriveAcross {
+    from {
+        left: -10%;
+    }
+    to {
+        left: 105%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .driving-car {
+        animation: none;
+        left: 20px;
+    }
+}
