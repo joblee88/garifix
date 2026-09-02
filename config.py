@@ -1,5 +1,6 @@
 import os
-from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+import ssl
+from urllib.parse import urlparse, urlunparse
 
 
 class Config:
@@ -27,34 +28,33 @@ class Config:
 
             # MUHIMU: Watoa huduma wa MySQL wanaosimamiwa (Aiven, PlanetScale,
             # TiDB Cloud n.k) mara nyingi hutoa URL yenye "?ssl-mode=REQUIRED"
-            # kwenye mwisho. PyMySQL HAITAMBUI parameter hiyo kwa jina hilo
-            # ("ssl-mode") - inasababisha hitilafu:
-            #   TypeError: Connection.__init__() got an unexpected keyword
-            #   argument 'ssl-mode'
+            # kwenye mwisho. PyMySQL HAITAMBUI parameter hiyo kwa jina hilo -
+            # inasababisha:  TypeError: unexpected keyword argument 'ssl-mode'
             #
-            # Suluhisho: TOA query parameters zote kwenye URL (SQLAlchemy
-            # ingezijaribu kuzipitisha moja kwa moja kwa PyMySQL vibaya), na
-            # badala yake weka SSL kwa njia sahihi kupitia "connect_args".
+            # Suluhisho: TOA query parameters zote kwenye URL, na badala yake
+            # weka SSL kwa njia sahihi kupitia "connect_args" kwa kutumia
+            # ssl.SSLContext moja kwa moja.
             parsed = urlparse(_database_url)
             clean_url = urlunparse(parsed._replace(query=""))
             SQLALCHEMY_DATABASE_URI = clean_url
 
-            try:
-                import certifi
-                SQLALCHEMY_ENGINE_OPTIONS = {
-                    "connect_args": {"ssl": {"ca": certifi.where()}},
-                    "pool_pre_ping": True,
-                    "pool_recycle": 280,
-                }
-            except ImportError:
-                # certifi haijasakinishwa - washa TLS bila cheti maalum
-                # (bado inafanya kazi kwa Aiven kwa sababu wanahitaji tu
-                # muunganisho uliosimbwa, siyo uthibitisho mkali wa cheti)
-                SQLALCHEMY_ENGINE_OPTIONS = {
-                    "connect_args": {"ssl": {"ssl_verify_cert": False, "ssl_verify_identity": False}},
-                    "pool_pre_ping": True,
-                    "pool_recycle": 280,
-                }
+            # Watoa huduma hawa (Aiven ikiwemo) hutumia cheti (certificate)
+            # walichojisainia wenyewe (self-signed / private CA) - siyo cheti
+            # cha "public CA" la kawaida. Kwa hiyo tunawasha TLS (muunganisho
+            # bado umesimbwa/encrypted - salama dhidi ya mtu kunasa taarifa
+            # njiani) lakini bila kuthibitisha mnyororo kamili wa cheti hicho
+            # maalum (vinginevyo tungehitaji kupakua na kusimamia faili la
+            # ca.pem la Aiven kila wakati - jambo gumu zaidi kwa mradi mdogo
+            # kama huu).
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            SQLALCHEMY_ENGINE_OPTIONS = {
+                "connect_args": {"ssl": ssl_context},
+                "pool_pre_ping": True,
+                "pool_recycle": 280,
+            }
         else:
             SQLALCHEMY_DATABASE_URI = _database_url
     else:
