@@ -39,51 +39,91 @@ body {
     text-align: center;
 }
 
-/* SIDEBAR LAYOUT FRAMEWORK (ADMIN, MECHANIC, CUSTOMER & SELLER) */
+/* SIDEBAR LAYOUT FRAMEWORK (ADMIN, MECHANIC, CUSTOMER & SELLER)
+   Muundo: TOPBAR iliyowekwa "fixed" juu kabisa (kamwe haifunikwi), na
+   SIDEBAR inayoanzia CHINI ya topbar hiyo (siyo juu kabisa ya skrini). */
+
+.app-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    gap: 12px;
+}
+
+.app-topbar .topbar-title {
+    font-weight: 700;
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-topbar .topbar-left,
+.app-topbar .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.menu-toggle-btn {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
 .app-wrapper {
     display: flex;
     width: 100%;
     min-height: 100vh;
+    padding-top: 70px;
 }
 
 .app-sidebar {
     width: 260px;
-    min-height: 100vh;
+    height: calc(100vh - 70px);
     background: linear-gradient(160deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.94) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     color: #ffffff;
     position: fixed;
-    top: 0;
+    top: 70px;
     left: 0;
     z-index: 1000;
     box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
     transition: width 0.25s ease, margin-left 0.3s ease;
     overflow-x: hidden;
     overflow-y: auto;
-}
-
-.app-sidebar .sidebar-brand {
-    padding: 22px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 20px;
-    font-weight: 700;
-    white-space: nowrap;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 10px;
 }
 
 .sidebar-minimize-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.06);
     border: none;
-    color: #fff;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    border-radius: 8px;
+    color: inherit;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -91,7 +131,7 @@ body {
     transition: background 0.2s, transform 0.25s ease;
 }
 .sidebar-minimize-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.12);
 }
 
 .app-sidebar nav a {
@@ -125,23 +165,18 @@ body {
     margin-left: 260px;
     width: calc(100% - 260px);
     padding: 30px;
-    min-height: 100vh;
+    min-height: calc(100vh - 70px);
     transition: margin-left 0.25s ease, width 0.25s ease;
 }
 
-/* HALI YA "MINIMIZED" - Icons pekee, maandishi yamefichwa */
+/* HALI YA "MINIMIZED" - Icons pekee, maandishi yamefichwa (DESKTOP) */
 .app-wrapper.sidebar-minimized .app-sidebar {
     width: 78px;
 }
-.app-wrapper.sidebar-minimized .app-sidebar .sidebar-text,
-.app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand-text {
+.app-wrapper.sidebar-minimized .app-sidebar .sidebar-text {
     display: none;
 }
-.app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand {
-    justify-content: center;
-    padding: 20px 8px;
-}
-.app-wrapper.sidebar-minimized .sidebar-minimize-btn {
+.app-wrapper.sidebar-minimized .sidebar-minimize-btn i {
     transform: rotate(180deg);
 }
 .app-wrapper.sidebar-minimized .app-sidebar nav a {
@@ -171,13 +206,8 @@ body {
     .app-wrapper.sidebar-minimized .app-sidebar {
         width: 260px;
     }
-    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-text,
-    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand-text {
+    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-text {
         display: inline;
-    }
-    .app-wrapper.sidebar-minimized .app-sidebar .sidebar-brand {
-        justify-content: space-between;
-        padding: 22px 18px;
     }
     .app-wrapper.sidebar-minimized .app-sidebar nav a {
         justify-content: flex-start;
@@ -187,45 +217,25 @@ body {
         margin-left: 0;
         width: 100%;
     }
+    .topbar-title span.d-none-mobile {
+        display: none;
+    }
 
     /* BACKDROP - inaonekana ukifungua sidebar kwenye simu, kubonyeza nje
        ya sidebar (au kiungo chochote ndani yake) hufunga sidebar */
     .sidebar-backdrop {
         display: none;
         position: fixed;
-        top: 0;
+        top: 70px;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: calc(100% - 70px);
         background: rgba(0, 0, 0, 0.5);
         z-index: 999;
     }
     .sidebar-backdrop.show {
         display: block;
     }
-
-    /* Kitufe cha X ndani ya sidebar - kinaonekana SIMU PEKEE, kinabaki
-       kufikika hata sidebar ikiwa imefunguka kikamilifu */
-    .sidebar-close-btn {
-        display: inline-flex !important;
-    }
-}
-
-.sidebar-close-btn {
-    display: none;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #fff;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-.sidebar-close-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
 }
 
 /* ==========================================
