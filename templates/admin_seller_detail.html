@@ -5,12 +5,14 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold"><i class="fa-solid fa-shop me-2"></i>Taarifa za Muuzaji</h2>
     <div>
-        {% if seller.user.status == "blocked" %}
-            <a href="{{ url_for('unblock_user', id=seller.user.id) }}" class="btn btn-success"><i class="fa fa-unlock me-1"></i> Unblock</a>
-        {% else %}
-            <a href="{{ url_for('block_user', id=seller.user.id) }}" class="btn btn-warning" onclick="return confirm('Una uhakika unataka ku-block {{ seller.user.full_name }}? Bidhaa zake zitafichwa.');"><i class="fa fa-lock me-1"></i> Block</a>
+        {% if seller.verified == "approved" %}
+            {% if seller.user.status == "blocked" %}
+                <a href="{{ url_for('unblock_user', id=seller.user.id) }}" class="btn btn-success"><i class="fa fa-unlock me-1"></i> Unblock</a>
+            {% else %}
+                <a href="{{ url_for('block_user', id=seller.user.id) }}" class="btn btn-warning" onclick="return confirm('Una uhakika unataka ku-block {{ seller.user.full_name }}? Bidhaa zake zitafichwa.');"><i class="fa fa-lock me-1"></i> Block</a>
+            {% endif %}
+            <a href="{{ url_for('delete_user', id=seller.user.id) }}" class="btn btn-danger" onclick="return confirm('Una uhakika unataka KUFUTA {{ seller.user.full_name }} KABISA (pamoja na bidhaa zake zote)? Hii haiwezi kurudishwa!');"><i class="fa fa-trash me-1"></i> Ondoa</a>
         {% endif %}
-        <a href="{{ url_for('delete_user', id=seller.user.id) }}" class="btn btn-danger" onclick="return confirm('Una uhakika unataka KUFUTA {{ seller.user.full_name }} KABISA (pamoja na bidhaa zake zote)? Hii haiwezi kurudishwa!');"><i class="fa fa-trash me-1"></i> Ondoa</a>
         <a href="{{ url_for('admin_sellers') }}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-1"></i> Rudi</a>
     </div>
 </div>

@@ -293,18 +293,22 @@ Reject
 <a href="{{ url_for('admin_mechanic_detail', id=mechanic.id) }}" class="btn btn-outline-primary btn-sm mb-1">
 <i class="fa fa-eye"></i> Taarifa Zote
 </a>
-{% if mechanic.user.status == "blocked" %}
-<a href="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="btn btn-success btn-sm mb-1">
-<i class="fa fa-unlock"></i> Unblock
-</a>
+{% if mechanic.verified == "approved" %}
+    {% if mechanic.user.status == "blocked" %}
+    <a href="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="btn btn-success btn-sm mb-1">
+    <i class="fa fa-unlock"></i> Unblock
+    </a>
+    {% else %}
+    <a href="{{ url_for('block_user', id=mechanic.user.id) }}" class="btn btn-warning btn-sm mb-1" onclick="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
+    <i class="fa fa-lock"></i> Block
+    </a>
+    {% endif %}
+    <a href="{{ url_for('delete_user', id=mechanic.user.id) }}" class="btn btn-danger btn-sm mb-1" onclick="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');">
+    <i class="fa fa-trash"></i> Ondoa
+    </a>
 {% else %}
-<a href="{{ url_for('block_user', id=mechanic.user.id) }}" class="btn btn-warning btn-sm mb-1" onclick="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
-<i class="fa fa-lock"></i> Block
-</a>
+    <span class="badge bg-secondary mb-1 d-block">Idhinisha kwanza kabla ya Block/Ondoa</span>
 {% endif %}
-<a href="{{ url_for('delete_user', id=mechanic.user.id) }}" class="btn btn-danger btn-sm mb-1" onclick="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');">
-<i class="fa fa-trash"></i> Ondoa
-</a>
 </td>
 
 

@@ -12,7 +12,12 @@
                 <p class="text-muted">Fungua akaunti ili uweze kupata huduma za mafundi wa magari.</p>
             </div>
 
-            <form method="POST" action="{{ url_for('customer_register') }}">
+            <form method="POST" action="{{ url_for('customer_register') }}" enctype="multipart/form-data">
+                <div class="text-center mb-3">
+                    <label class="form-label d-block">Picha ya Wasifu (hiari)</label>
+                    <input type="file" name="profile_photo" class="form-control" accept="image/*" capture="user">
+                </div>
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Jina la Kwanza</label>
@@ -30,7 +35,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Email (tunatuma uthibitisho hapa)</label>
+                    <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" placeholder="example@gmail.com" required>
                 </div>
 

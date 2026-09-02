@@ -562,19 +562,22 @@ def customer_register():
             return redirect(url_for("customer_register"))
 
         hashed_password = generate_password_hash(password)
+        photo_filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+
         new_customer = User(
             full_name=full_name,
             phone=phone,
             email=email,
             password=hashed_password,
-            role="customer"
+            role="customer",
+            profile_photo=photo_filename
         )
         db.session.add(new_customer)
         db.session.commit()
 
         send_email_verification(new_customer)
 
-        flash("Usajili umefanikiwa! Tumekutumia email ya uthibitisho - tafadhali ithibitishe, kisha ingia.", "success")
+        flash("Usajili umefanikiwa! Sasa unaweza kuingia (login).", "success")
         return redirect(url_for("login"))
 
     return render_template("customer_register.html")
@@ -710,7 +713,7 @@ def mechanic_register():
 
         send_email_verification(new_user)
 
-        flash("Usajili umefanikiwa! Tumekutumia email ya uthibitisho. Akaunti yako pia inasubiri uthibitisho wa Admin (baada ya kukagua kitambulisho chako).", "success")
+        flash("Usajili umefanikiwa! Akaunti yako inasubiri uthibitisho (verification) wa Admin baada ya kukagua kitambulisho chako - utaweza kuingia mara tu ukishaidhinishwa.", "success")
         return redirect(url_for("login"))
 
     return render_template("mechanic_register.html")

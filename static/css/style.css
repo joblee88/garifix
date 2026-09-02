@@ -91,6 +91,15 @@ body {
     border-radius: 10px;
 }
 
+.topbar-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(13, 110, 253, 0.3);
+    flex-shrink: 0;
+}
+
 .app-wrapper {
     display: flex;
     width: 100%;

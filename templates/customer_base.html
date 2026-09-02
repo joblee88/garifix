@@ -27,6 +27,11 @@
         <button type="button" class="btn btn-outline-secondary theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
             <i class="theme-toggle-icon fa-solid fa-moon"></i>
         </button>
+        {% if current_user.profile_photo %}
+            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" class="topbar-avatar" alt="Profile">
+        {% else %}
+            <i class="fa-solid fa-circle-user fa-2x text-secondary"></i>
+        {% endif %}
         <span class="badge bg-info fs-6 px-3 py-2 d-none d-sm-inline-flex"><i class="fa fa-user-circle me-1"></i> {{ current_user.full_name }}</span>
     </div>
 </nav>
