@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-primary shadow-sm py-3">
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3 public-navbar">
     <div class="container-fluid px-3 px-md-4">
         <div class="d-flex align-items-center">
             <button class="btn btn-outline-light border-0 me-2 fs-4 p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-controls="sideMenu">
@@ -39,8 +39,8 @@
     </div>
 </nav>
 
-<!-- SIDE MENU (Offcanvas - inatoka upande wa KUSHOTO, siyo kushuka chini) -->
-<div class="offcanvas offcanvas-start" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
+<!-- SIDE MENU (Offcanvas - inatoka upande wa KUSHOTO, CHINI ya navbar) -->
+<div class="offcanvas offcanvas-start public-side-menu" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
     <div class="offcanvas-header bg-primary">
         <h5 class="offcanvas-title text-white fw-bold" id="sideMenuLabel">
             <i class="fa-solid fa-car-side"></i> GariFix
@@ -86,7 +86,7 @@
     </div>
 </div>
 
-<div class="container py-4">
+<div class="container py-4 public-page-content">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
