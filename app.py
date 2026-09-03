@@ -1294,8 +1294,6 @@ def delete_product(id):
 
 
 @app.route("/sellers")
-@login_required
-@role_required("customer")
 def sellers_list():
     """Ukurasa wa 'Duka la Spea' - inaonyesha BIDHAA (siyo maduka) kutoka
     kwa wauzaji wote walioidhinishwa, kwa mpangilio wa nasibu (randomised)
@@ -1324,8 +1322,6 @@ def sellers_list():
 
 
 @app.route("/seller/<int:seller_id>")
-@login_required
-@role_required("customer")
 def seller_profile(seller_id):
     """Profile ya muuzaji - customer aliyeingia pekee anaweza kuona (sawa na search_mechanics)."""
     seller = Seller.query.get_or_404(seller_id)
