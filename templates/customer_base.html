@@ -24,6 +24,9 @@
         <span class="topbar-title"><i class="fa-solid fa-user text-primary"></i> Customer Portal</span>
     </div>
     <div class="topbar-right">
+        <a href="{{ url_for('sellers_list') }}" class="btn btn-outline-warning" title="Duka la Spea">
+            <i class="fa-solid fa-shop"></i> <span class="d-none d-md-inline">Duka la Spea</span>
+        </a>
         <a href="{{ url_for('customer_requests') }}" class="btn btn-outline-secondary position-relative" title="Arifa">
             <i class="fa-solid fa-bell"></i>
             {% if notification_count and notification_count > 0 %}
