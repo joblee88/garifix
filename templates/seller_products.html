@@ -12,7 +12,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             {% if p.photo %}
-                <img src="{{ url_for('static', filename='uploads/' + p.photo) }}" class="card-img-top" style="height:180px;object-fit:cover;">
+                <img src="{{ resolve_image_url(p.photo) }}" class="card-img-top" style="height:180px;object-fit:cover;">
             {% else %}
                 <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px;">
                     <i class="fa-solid fa-image fa-3x text-secondary"></i>

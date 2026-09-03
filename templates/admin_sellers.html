@@ -28,7 +28,7 @@
                 <tr>
                     <td>
                         {% if seller.shop_photo %}
-                            <img src="{{ url_for('static', filename='uploads/' + seller.shop_photo) }}" width="50" height="50" class="rounded-circle" style="object-fit:cover;">
+                            <img src="{{ resolve_image_url(seller.shop_photo) }}" width="50" height="50" class="rounded-circle" style="object-fit:cover;">
                         {% else %}
                             <i class="fa-solid fa-shop fa-2x text-secondary"></i>
                         {% endif %}
@@ -69,7 +69,7 @@
                         <a href="{{ url_for('admin_seller_detail', id=seller.id) }}" class="btn btn-outline-primary btn-sm mb-1">
                             <i class="fa fa-eye"></i> Taarifa Zote
                         </a>
-                        {% if seller.verified == "approved" %}
+                        {% if seller.verified != "pending" %}
                             {% if seller.user.status == "blocked" %}
                                 <form method="POST" action="{{ url_for('unblock_user', id=seller.user.id) }}" class="d-inline mb-1">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -92,7 +92,7 @@
                                 </button>
                             </form>
                         {% else %}
-                            <span class="badge bg-secondary mb-1 d-block">Idhinisha kwanza kabla ya Block/Ondoa</span>
+                            <span class="badge bg-secondary mb-1 d-block">Idhinisha au Kataa kwanza</span>
                         {% endif %}
                     </td>
                 </tr>

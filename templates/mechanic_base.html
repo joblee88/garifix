@@ -28,7 +28,7 @@
             <i class="theme-toggle-icon fa-solid fa-moon"></i>
         </button>
         {% if current_user.mechanic_profile and current_user.mechanic_profile.profile_photo %}
-            <img src="{{ url_for('static', filename='uploads/' + current_user.mechanic_profile.profile_photo) }}" class="topbar-avatar" alt="Profile">
+            <img src="{{ resolve_image_url(current_user.mechanic_profile.profile_photo) }}" class="topbar-avatar" alt="Profile">
         {% else %}
             <i class="fa-solid fa-circle-user fa-2x text-secondary"></i>
         {% endif %}

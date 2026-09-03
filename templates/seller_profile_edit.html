@@ -16,7 +16,7 @@
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Picha ya Duka</label>
                     {% if seller.shop_photo %}
-                        <div class="mb-2"><img src="{{ url_for('static', filename='uploads/' + seller.shop_photo) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;"></div>
+                        <div class="mb-2"><img src="{{ resolve_image_url(seller.shop_photo) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;"></div>
                     {% endif %}
                     <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
                 </div>

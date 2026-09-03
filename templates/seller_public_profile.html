@@ -6,7 +6,7 @@
     <div class="col-md-4">
         <div class="card shadow border-0 text-center p-4">
             {% if seller.shop_photo %}
-                <img src="{{ url_for('static', filename='uploads/' + seller.shop_photo) }}" class="rounded-circle mx-auto mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                <img src="{{ resolve_image_url(seller.shop_photo) }}" class="rounded-circle mx-auto mb-3" style="width: 150px; height: 150px; object-fit: cover;">
             {% else %}
                 <i class="fa-solid fa-shop fa-6x text-warning mb-3"></i>
             {% endif %}
@@ -59,7 +59,7 @@
                 <div class="col-md-6">
                     <div class="card shadow-sm h-100">
                         {% if p.photo %}
-                            <img src="{{ url_for('static', filename='uploads/' + p.photo) }}" class="card-img-top" style="height:140px;object-fit:cover;">
+                            <img src="{{ resolve_image_url(p.photo) }}" class="card-img-top" style="height:140px;object-fit:cover;">
                         {% endif %}
                         <div class="card-body p-3">
                             <h6 class="fw-bold mb-1">{{ p.name }}</h6>

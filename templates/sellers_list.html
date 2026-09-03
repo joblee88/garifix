@@ -23,7 +23,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             {% if seller.shop_photo %}
-                <img src="{{ url_for('static', filename='uploads/' + seller.shop_photo) }}" class="card-img-top" style="height:160px;object-fit:cover;">
+                <img src="{{ resolve_image_url(seller.shop_photo) }}" class="card-img-top" style="height:160px;object-fit:cover;">
             {% else %}
                 <div class="d-flex align-items-center justify-content-center bg-light" style="height:160px;">
                     <i class="fa-solid fa-shop fa-3x text-secondary"></i>

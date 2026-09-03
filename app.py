@@ -70,7 +70,10 @@ def validate_image_upload(file_storage):
     except Exception:
         return False, "Faili hili si picha halali. Tafadhali pakia picha sahihi (JPG/PNG)."
 
-# Mipangilio ya upload ya picha (PROFILE - ya wazi/public)
+# Mipangilio ya upload ya picha (PROFILE - ya wazi/public) - hii ni "fallback"
+# ya ndani ya Render tu, itatumika PEKEE kama Cloudinary haijasanidiwa
+# (angalia CLOUDINARY_CONFIGURED hapa chini) - kumbuka faili hizi HAZITADUMU
+# baada ya deploy mpya kwenye Render.
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -81,6 +84,27 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 PRIVATE_UPLOAD_FOLDER = os.path.join(app.root_path, "private_uploads", "id_documents")
 app.config["PRIVATE_UPLOAD_FOLDER"] = PRIVATE_UPLOAD_FOLDER
 os.makedirs(PRIVATE_UPLOAD_FOLDER, exist_ok=True)
+
+# --- CLOUDINARY (Uhifadhi wa Picha wa KUDUMU na SALAMA) ---
+# MUHIMU: Render (kama huduma nyingi za "cloud" za bure) hutumia hifadhi ya
+# MUDA TU - faili zozote zilizohifadhiwa ndani ya app zinafutika kila deploy
+# mpya. Cloudinary ni huduma ya NJE (bure, HAIHITAJI kadi ya benki) ambayo
+# inahifadhi picha kwa kudumu, salama, na kwa uhakika zaidi.
+#
+# JINSI YA KUWEZESHA: Weka Environment Variable "CLOUDINARY_URL" (Render)
+# yenye muundo: cloudinary://<api_key>:<api_secret>@<cloud_name>
+# (Cloudinary console inakupa hii moja kwa moja baada ya kujisajili bure).
+CLOUDINARY_CONFIGURED = bool(os.environ.get("CLOUDINARY_URL"))
+if CLOUDINARY_CONFIGURED:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.utils
+    cloudinary.config(secure=True)
+    print("[Storage] Cloudinary IMEWEZESHWA - picha zitahifadhiwa kwa kudumu na salama.")
+else:
+    print("[Storage] ONYO: CLOUDINARY_URL haijawekwa - picha zitahifadhiwa "
+          "ndani ya Render TU na ZITAPOTEA kila deploy mpya! Weka "
+          "CLOUDINARY_URL kwenye Environment Variables haraka iwezekanavyo.")
 
 # 3. Unganisha Database na App
 db.init_app(app)
@@ -154,10 +178,18 @@ class InvalidImageError(Exception):
     pass
 
 
-def save_uploaded_image(file_storage, folder):
-    """Hifadhi picha kwa jina la kipekee (uuid) ili kuepuka mgongano wa majina.
-    Inathibitisha kwanza faili ni PICHA HALALI (usalama) - inatupa
-    InvalidImageError kama siyo."""
+def save_uploaded_image(file_storage, folder_hint="general", private=False):
+    """
+    Hifadhi picha KWA KUDUMU kwenye Cloudinary (kama imesanidiwa), au
+    kwenye disk ya ndani ya Render kama "fallback" (ONYO: hii haitadumu).
+
+    Inarudisha:
+      - URL kamili (https://res.cloudinary.com/...) kama Cloudinary
+        imewezeshwa na "private" ni False
+      - "public_id" ya Cloudinary (kwa ku-generate signed URL baadaye)
+        kama "private" ni True
+      - jina la faili la ndani (uuid) kama Cloudinary haijasanidiwa
+    """
     if not file_storage or file_storage.filename == "":
         return None
 
@@ -165,11 +197,49 @@ def save_uploaded_image(file_storage, folder):
     if not is_valid:
         raise InvalidImageError(error_msg)
 
+    if CLOUDINARY_CONFIGURED:
+        file_storage.stream.seek(0)
+        upload_options = {
+            "folder": f"garifix/{folder_hint}",
+            "resource_type": "image",
+            "overwrite": True,
+        }
+        if private:
+            upload_options["type"] = "private"
+        result = cloudinary.uploader.upload(file_storage, **upload_options)
+        return result["public_id"] if private else result["secure_url"]
+
+    # --- FALLBACK: hifadhi ya ndani ya Render (haitadumu baada ya deploy) ---
     ext = os.path.splitext(secure_filename(file_storage.filename))[1]
     unique_name = f"{uuid.uuid4().hex}{ext}"
-    os.makedirs(folder, exist_ok=True)
-    file_storage.save(os.path.join(folder, unique_name))
+    target_folder = app.config["PRIVATE_UPLOAD_FOLDER"] if private else app.config["UPLOAD_FOLDER"]
+    os.makedirs(target_folder, exist_ok=True)
+    file_storage.save(os.path.join(target_folder, unique_name))
     return unique_name
+
+
+def resolve_image_url(value, private=False):
+    """
+    Geuza thamani iliyohifadhiwa (kutoka save_uploaded_image) kuwa URL
+    inayoweza kuonyeshwa kwenye <img src="...">. Inashughulikia hali zote
+    tatu: Cloudinary URL kamili, Cloudinary public_id (private), au jina
+    la faili la ndani la Render (fallback ya zamani).
+    """
+    if not value:
+        return None
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    if private and CLOUDINARY_CONFIGURED:
+        url, _ = cloudinary.utils.private_download_url(value, "jpg", resource_type="image", type="private")
+        return url
+    # Fallback ya ndani (jina la faili tu)
+    folder = "id_documents" if private else "uploads"
+    return url_for("static", filename=f"{folder}/{value}") if not private else None
+
+
+# Ruhusu templates kutumia resolve_image_url() moja kwa moja, mfano:
+# {{ resolve_image_url(mechanic.profile_photo) }}
+app.jinja_env.globals["resolve_image_url"] = resolve_image_url
 
 
 # Context Processor kwa ajili ya taarifa za mtumiaji aliyeingia
@@ -631,7 +701,7 @@ def customer_register():
 
         hashed_password = generate_password_hash(password)
         try:
-            photo_filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+            photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("customer_register"))
@@ -731,6 +801,10 @@ def mechanic_register():
             flash("Lazima ukubaliane na Vigezo na Masharti ili kuendelea.", "danger")
             return redirect(url_for("mechanic_register"))
 
+        if not region or not district or not ward or not street:
+            flash("Tafadhali jaza eneo lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
+            return redirect(url_for("mechanic_register"))
+
         if password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("mechanic_register"))
@@ -755,8 +829,8 @@ def mechanic_register():
         filename = None
         id_document_filename = None
         try:
-            filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
-            id_document_filename = save_uploaded_image(id_doc_file, app.config["PRIVATE_UPLOAD_FOLDER"])
+            filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
+            id_document_filename = save_uploaded_image(id_doc_file, folder_hint="id_documents", private=True)
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("mechanic_register"))
@@ -964,6 +1038,10 @@ def seller_register():
             flash("Lazima ukubaliane na Vigezo na Masharti ili kuendelea.", "danger")
             return redirect(url_for("seller_register"))
 
+        if not region or not district or not ward or not street:
+            flash("Tafadhali jaza eneo la duka lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
+            return redirect(url_for("seller_register"))
+
         if password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("seller_register"))
@@ -977,7 +1055,7 @@ def seller_register():
             return redirect(url_for("seller_register"))
 
         try:
-            shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+            shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), folder_hint="shops")
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("seller_register"))
@@ -1047,7 +1125,7 @@ def own_seller_profile():
         seller.business_type = ", ".join(request.form.getlist("business_type"))
 
         try:
-            photo = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+            photo = save_uploaded_image(request.files.get("shop_photo"), folder_hint="shops")
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("own_seller_profile"))
@@ -1095,7 +1173,7 @@ def add_product():
             return redirect(url_for("add_product"))
 
         try:
-            photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+            photo_filename = save_uploaded_image(request.files.get("photo"), folder_hint="products")
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("add_product"))
@@ -1142,7 +1220,7 @@ def edit_product(id):
             return redirect(url_for("edit_product", id=id))
 
         try:
-            photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+            photo_filename = save_uploaded_image(request.files.get("photo"), folder_hint="products")
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("edit_product", id=id))
@@ -1463,11 +1541,24 @@ def admin_mechanics():
 @role_required("admin")
 def view_id_document(mechanic_id):
     """Onesha kitambulisho cha fundi (NIDA/Leseni/Kura) - Admin PEKEE anaweza
-    kufikia (faili haliko chini ya /static/ hivyo halifikiki na mtu mwingine)."""
+    kufikia. Kama Cloudinary imesanidiwa, inatengeneza "signed URL" ya muda
+    (dakika 10) na kumpeleka huko moja kwa moja; vinginevyo (fallback ya
+    zamani) inatoa faili kutoka Render moja kwa moja."""
     mechanic = Mechanic.query.get_or_404(mechanic_id)
     if not mechanic.id_document:
         flash("Fundi huyu hajapakia kitambulisho.", "warning")
         return redirect(url_for("admin_mechanic_detail", id=mechanic_id))
+
+    if mechanic.id_document.startswith("http"):
+        # Data ya zamani kabla ya "private" kuwezeshwa - URL ya moja kwa moja
+        return redirect(mechanic.id_document)
+
+    if CLOUDINARY_CONFIGURED:
+        url, _ = cloudinary.utils.private_download_url(
+            mechanic.id_document, "jpg", resource_type="image", type="private"
+        )
+        return redirect(url)
+
     return send_from_directory(app.config["PRIVATE_UPLOAD_FOLDER"], mechanic.id_document)
 
 
