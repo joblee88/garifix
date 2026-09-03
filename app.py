@@ -203,6 +203,20 @@ def save_uploaded_image(file_storage, folder_hint="general", private=False):
             "folder": f"garifix/{folder_hint}",
             "resource_type": "image",
             "overwrite": True,
+            # --- UKANDAMIZAJI (COMPRESSION) WA KIOTOMATIKI ---
+            # "quality: auto" - Cloudinary inachagua ubora bora zaidi
+            # unaowezekana kwa ukubwa mdogo zaidi wa faili (algorithm yao
+            # ya kisasa - haionekani tofauti kwa macho lakini inapunguza
+            # MB kwa kiasi kikubwa).
+            # "width/height/crop: limit" - kama picha ni kubwa kuliko
+            # 1600x1600 pixels, inapunguzwa kiotomatiki (bila kuvuta
+            # zilizo ndogo kuwa kubwa) - simu nyingi hupiga picha za
+            # MB 5-15 ambazo ni kubwa mno kwa mahitaji ya wavuti.
+            "quality": "auto:good",
+            "fetch_format": "auto",
+            "width": 1600,
+            "height": 1600,
+            "crop": "limit",
         }
         if private:
             upload_options["type"] = "private"
