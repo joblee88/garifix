@@ -47,9 +47,12 @@
                     <td>{{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '-' }}</td>
                     <td>
                         {% if req.status == "accepted" %}
-                            <a href="{{ url_for('complete_request', id=req.id) }}" class="btn btn-sm btn-primary mb-1" onclick="return confirm('Umethibitisha kuwa fundi amemaliza kazi?');">
-                                <i class="fa-solid fa-flag-checkered"></i> Kamilisha
-                            </a>
+                            <form method="POST" action="{{ url_for('complete_request', id=req.id) }}" class="d-inline mb-1" onsubmit="return confirm('Umethibitisha kuwa fundi amemaliza kazi?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fa-solid fa-flag-checkered"></i> Kamilisha
+                                </button>
+                            </form>
                         {% endif %}
                         {% if req.mechanic and req.status == "completed" %}
                             <a href="{{ url_for('add_review', mechanic_id=req.mechanic.id) }}" class="btn btn-sm btn-outline-warning">

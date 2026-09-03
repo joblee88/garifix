@@ -8,7 +8,7 @@
             <h4 class="fw-bold mb-3"><i class="fa-solid fa-store me-2"></i>Taarifa za Duka Lako</h4>
 
             <form method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">                <div class="mb-3">
                     <label class="form-label fw-semibold">Jina la Duka</label>
                     <input type="text" name="shop_name" class="form-control" value="{{ seller.shop_name }}" required>
                 </div>

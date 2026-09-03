@@ -45,10 +45,16 @@
                             <i class="fa fa-eye"></i> Taarifa
                         </button>
                         {% if req.status == "accepted" %}
-                            <a href="{{ url_for('complete_request', id=req.id) }}" class="btn btn-primary btn-sm me-1"><i class="fa fa-check"></i> Complete</a>
+                            <form method="POST" action="{{ url_for('complete_request', id=req.id) }}" class="d-inline me-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa fa-check"></i> Complete</button>
+                            </form>
                         {% endif %}
                         {% if req.status != "cancelled" and req.status != "completed" %}
-                            <a href="{{ url_for('cancel_request', id=req.id) }}" class="btn btn-danger btn-sm"><i class="fa fa-xmark"></i> Cancel</a>
+                            <form method="POST" action="{{ url_for('cancel_request', id=req.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka kufuta ombi hili?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-xmark"></i> Cancel</button>
+                            </form>
                         {% endif %}
                     </td>
                 </tr>

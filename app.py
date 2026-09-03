@@ -6,6 +6,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, or_
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from flask_wtf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # 1. Import Config na extensions
 from config import Config
@@ -18,6 +21,54 @@ app = Flask(__name__)
 
 # 2. Pakia Configuration KWANZA kabla ya db.init_app
 app.config.from_object(Config)
+
+# --- USALAMA (Security) ---
+# CSRF Protection: inazuia tovuti nyingine kumdanganya mtumiaji aliye-login
+# kutuma fomu bila yeye kujua (Cross-Site Request Forgery)
+csrf = CSRFProtect(app)
+
+# Rate Limiting: inazuia mtu kujaribu password/usajili mara nyingi mfululizo
+# (brute-force au spam) - default: maombi 200/siku, 50/saa kwa IP moja
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+
+@app.after_request
+def set_security_headers(response):
+    """Ongeza 'security headers' za kawaida kwenye kila jibu (response)."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(self)"
+    if request.is_secure:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
+def validate_image_upload(file_storage):
+    """
+    Thibitisha faili lililopakiwa ni PICHA HALISI (siyo faili la hatari
+    lililobadilishwa jina liwe .jpg). Inarudisha (True, None) kama ni sahihi,
+    au (False, "sababu") kama siyo picha halali.
+    """
+    if not file_storage or file_storage.filename == "":
+        return True, None  # Hakuna faili - hiari, si kosa
+
+    try:
+        from PIL import Image
+        file_storage.stream.seek(0)
+        img = Image.open(file_storage.stream)
+        img.verify()  # Inathibitisha ni picha halali bila kuiharibu
+        file_storage.stream.seek(0)
+        if img.format not in ("JPEG", "PNG", "GIF", "WEBP"):
+            return False, "Aina ya picha isiyoruhusiwa. Tumia JPG, PNG, GIF au WEBP."
+        return True, None
+    except Exception:
+        return False, "Faili hili si picha halali. Tafadhali pakia picha sahihi (JPG/PNG)."
 
 # Mipangilio ya upload ya picha (PROFILE - ya wazi/public)
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
@@ -46,6 +97,8 @@ with app.app_context():
 
 
 @app.route("/health")
+@csrf.exempt
+@limiter.exempt
 def health():
     return "GariFix Tanzania is running", 200
 
@@ -97,10 +150,21 @@ def send_email_verification(user):
     send_verification_email(user, verify_url)
 
 
+class InvalidImageError(Exception):
+    pass
+
+
 def save_uploaded_image(file_storage, folder):
-    """Hifadhi picha kwa jina la kipekee (uuid) ili kuepuka mgongano wa majina."""
+    """Hifadhi picha kwa jina la kipekee (uuid) ili kuepuka mgongano wa majina.
+    Inathibitisha kwanza faili ni PICHA HALALI (usalama) - inatupa
+    InvalidImageError kama siyo."""
     if not file_storage or file_storage.filename == "":
         return None
+
+    is_valid, error_msg = validate_image_upload(file_storage)
+    if not is_valid:
+        raise InvalidImageError(error_msg)
+
     ext = os.path.splitext(secure_filename(file_storage.filename))[1]
     unique_name = f"{uuid.uuid4().hex}{ext}"
     os.makedirs(folder, exist_ok=True)
@@ -144,6 +208,7 @@ def home():
 
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
@@ -223,6 +288,7 @@ def register_fcm_token():
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def forgot_password():
     if request.method == "POST":
         phone = request.form.get("phone", "").strip()
@@ -328,6 +394,7 @@ def resend_verification():
 
 
 @app.route("/forgot-password-email", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def forgot_password_email():
     if request.method == "POST":
         email = request.form.get("email", "").strip()
@@ -527,6 +594,7 @@ def register_choice():
 
 
 @app.route("/customer/register", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def customer_register():
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
@@ -562,7 +630,11 @@ def customer_register():
             return redirect(url_for("customer_register"))
 
         hashed_password = generate_password_hash(password)
-        photo_filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+        try:
+            photo_filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("customer_register"))
 
         new_customer = User(
             full_name=full_name,
@@ -625,6 +697,7 @@ def customer_reviews():
 
 # MECHANIC ROUTES
 @app.route("/mechanic/register", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def mechanic_register():
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
@@ -679,8 +752,14 @@ def mechanic_register():
             flash("Barua pepe hii tayari imesajiliwa.", "danger")
             return redirect(url_for("mechanic_register"))
 
-        filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
-        id_document_filename = save_uploaded_image(id_doc_file, app.config["PRIVATE_UPLOAD_FOLDER"])
+        filename = None
+        id_document_filename = None
+        try:
+            filename = save_uploaded_image(request.files.get("profile_photo"), app.config["UPLOAD_FOLDER"])
+            id_document_filename = save_uploaded_image(id_doc_file, app.config["PRIVATE_UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("mechanic_register"))
 
         hashed_password = generate_password_hash(password)
         new_user = User(
@@ -785,7 +864,7 @@ def mechanic_reviews():
     return render_template("mechanic_reviews.html", reviews=reviews)
 
 
-@app.route("/accept-request/<int:id>")
+@app.route("/accept-request/<int:id>", methods=["POST"])
 @login_required
 @role_required("mechanic")
 def accept_request(id):
@@ -809,7 +888,7 @@ def accept_request(id):
     return redirect(url_for("mechanic_dashboard"))
 
 
-@app.route("/complete-request/<int:id>")
+@app.route("/complete-request/<int:id>", methods=["POST"])
 @login_required
 def complete_request(id):
     user = db.session.get(User, session["user_id"])
@@ -845,6 +924,7 @@ def complete_request(id):
 # SELLER ROUTES (Wauzaji wa Spea za Magari na Lubricants)
 # =====================================================================
 @app.route("/seller/register", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def seller_register():
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
@@ -896,7 +976,11 @@ def seller_register():
             flash("Barua pepe hii tayari imesajiliwa.", "danger")
             return redirect(url_for("seller_register"))
 
-        shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+        try:
+            shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("seller_register"))
 
         new_user = User(
             full_name=full_name,
@@ -962,7 +1046,11 @@ def own_seller_profile():
         seller.description = request.form.get("description", "").strip()
         seller.business_type = ", ".join(request.form.getlist("business_type"))
 
-        photo = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+        try:
+            photo = save_uploaded_image(request.files.get("shop_photo"), app.config["UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("own_seller_profile"))
         if photo:
             seller.shop_photo = photo
 
@@ -1006,7 +1094,11 @@ def add_product():
             flash("Bei siyo namba sahihi.", "danger")
             return redirect(url_for("add_product"))
 
-        photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+        try:
+            photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("add_product"))
 
         product = Product(
             seller_id=seller.id,
@@ -1049,7 +1141,11 @@ def edit_product(id):
             flash("Bei siyo namba sahihi.", "danger")
             return redirect(url_for("edit_product", id=id))
 
-        photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+        try:
+            photo_filename = save_uploaded_image(request.files.get("photo"), app.config["UPLOAD_FOLDER"])
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("edit_product", id=id))
         if photo_filename:
             product.photo = photo_filename
 
@@ -1060,7 +1156,7 @@ def edit_product(id):
     return render_template("product_form.html", product=product)
 
 
-@app.route("/seller/products/delete/<int:id>")
+@app.route("/seller/products/delete/<int:id>", methods=["POST"])
 @login_required
 @role_required("seller")
 def delete_product(id):
@@ -1167,7 +1263,7 @@ def admin_seller_detail(id):
     )
 
 
-@app.route("/admin/approve-seller/<int:id>")
+@app.route("/admin/approve-seller/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def approve_seller(id):
@@ -1184,7 +1280,7 @@ def approve_seller(id):
     return redirect(url_for("admin_sellers"))
 
 
-@app.route("/admin/reject-seller/<int:id>")
+@app.route("/admin/reject-seller/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def reject_seller(id):
@@ -1375,7 +1471,7 @@ def view_id_document(mechanic_id):
     return send_from_directory(app.config["PRIVATE_UPLOAD_FOLDER"], mechanic.id_document)
 
 
-@app.route("/admin/approve-mechanic/<int:id>")
+@app.route("/admin/approve-mechanic/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def approve_mechanic(id):
@@ -1392,7 +1488,7 @@ def approve_mechanic(id):
     return redirect(url_for("admin_mechanics"))
 
 
-@app.route("/admin/reject-mechanic/<int:id>")
+@app.route("/admin/reject-mechanic/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def reject_mechanic(id):
@@ -1432,7 +1528,7 @@ def admin_mechanic_detail(id):
     return render_template("admin_mechanic_detail.html", mechanic=mechanic, requests=requests, reviews=reviews, average_rating=avg_rating)
 
 
-@app.route("/admin/block-user/<int:id>")
+@app.route("/admin/block-user/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def block_user(id):
@@ -1446,7 +1542,7 @@ def block_user(id):
     return redirect(request.referrer or url_for("admin_customers"))
 
 
-@app.route("/admin/unblock-user/<int:id>")
+@app.route("/admin/unblock-user/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def unblock_user(id):
@@ -1457,7 +1553,7 @@ def unblock_user(id):
     return redirect(request.referrer or url_for("admin_customers"))
 
 
-@app.route("/admin/delete-user/<int:id>")
+@app.route("/admin/delete-user/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def delete_user(id):
@@ -1488,7 +1584,7 @@ def admin_requests():
     return render_template("admin_requests.html", requests=requests)
 
 
-@app.route("/admin/cancel-request/<int:id>")
+@app.route("/admin/cancel-request/<int:id>", methods=["POST"])
 @login_required
 @role_required("admin")
 def cancel_request(id):

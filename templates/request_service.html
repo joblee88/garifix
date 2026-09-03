@@ -12,6 +12,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('request_service', mechanic_id=mechanic.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Aina ya Gari / Model</label>
                     <div class="input-group">

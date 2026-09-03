@@ -9,6 +9,7 @@
 
 <div class="card shadow border-0 p-4 mb-5">
     <form id="mechanicSearchForm" method="POST" action="{{ url_for('search_mechanics') }}" onsubmit="return checkAuth(event)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="row g-3">
             
             <!-- Dropdown ya Mkoa -->
@@ -143,6 +144,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="serviceRequestForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body p-4">
                     <input type="hidden" id="modalMechanicId" name="mechanic_id">
 

@@ -39,7 +39,10 @@
                     </td>
                     <td>
                         {% if req.status == "pending" %}
-                            <a href="{{ url_for('accept_request', id=req.id) }}" class="btn btn-success btn-sm">Kubali</a>
+                            <form method="POST" action="{{ url_for('accept_request', id=req.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success btn-sm">Kubali</button>
+                            </form>
                         {% elif req.status == "accepted" %}
                             <span class="badge bg-light text-dark border">Inasubiri mteja athibitishe</span>
                         {% else %}

@@ -67,9 +67,12 @@
                         </td>
                         <td>
                             {% if req.status == "pending" %}
-                                <a href="{{ url_for('accept_request', id=req.id) }}" class="btn btn-success btn-sm">
-                                    <i class="fa fa-check me-1"></i> Accept
-                                </a>
+                                <form method="POST" action="{{ url_for('accept_request', id=req.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fa fa-check me-1"></i> Accept
+                                    </button>
+                                </form>
                             {% elif req.status == "accepted" %}
                                 <span class="badge bg-light text-dark border">
                                     <i class="fa fa-hourglass-half me-1"></i> Inasubiri mteja athibitishe

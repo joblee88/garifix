@@ -7,11 +7,20 @@
     <div>
         {% if mechanic.verified == "approved" %}
             {% if mechanic.user.status == "blocked" %}
-                <a href="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="btn btn-success"><i class="fa fa-unlock me-1"></i> Unblock</a>
+                <form method="POST" action="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-unlock me-1"></i> Unblock</button>
+                </form>
             {% else %}
-                <a href="{{ url_for('block_user', id=mechanic.user.id) }}" class="btn btn-warning" onclick="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');"><i class="fa fa-lock me-1"></i> Block</a>
+                <form method="POST" action="{{ url_for('block_user', id=mechanic.user.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-warning"><i class="fa fa-lock me-1"></i> Block</button>
+                </form>
             {% endif %}
-            <a href="{{ url_for('delete_user', id=mechanic.user.id) }}" class="btn btn-danger" onclick="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');"><i class="fa fa-trash me-1"></i> Ondoa</a>
+            <form method="POST" action="{{ url_for('delete_user', id=mechanic.user.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger"><i class="fa fa-trash me-1"></i> Ondoa</button>
+            </form>
         {% endif %}
         <a href="{{ url_for('admin_mechanics') }}" class="btn btn-dark"><i class="fa-solid fa-arrow-left me-1"></i> Rudi</a>
     </div>

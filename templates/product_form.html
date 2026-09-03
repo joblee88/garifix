@@ -10,6 +10,7 @@
             </h4>
 
             <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Jina la Bidhaa</label>
                     <input type="text" name="name" class="form-control" placeholder="Mfano: Brake Pads - Toyota" value="{{ product.name if product else '' }}" required>
