@@ -261,8 +261,27 @@ app.jinja_env.globals["resolve_image_url"] = resolve_image_url
 def inject_user():
     if "user_id" in session:
         user = db.session.get(User, session["user_id"])
-        return dict(current_user=user)
-    return dict(current_user=None)
+        notification_count = 0
+        if user:
+            if user.role == "customer":
+                # Maombi yaliyokubaliwa na fundi, yanayosubiri mteja
+                # athibitishe kukamilika
+                notification_count = ServiceRequest.query.filter_by(
+                    customer_id=user.id, status="accepted"
+                ).count()
+            elif user.role == "mechanic" and user.mechanic_profile:
+                # Maombi mapya yanayosubiri uamuzi wa fundi
+                notification_count = ServiceRequest.query.filter_by(
+                    mechanic_id=user.mechanic_profile.id, status="pending"
+                ).count()
+            elif user.role == "admin":
+                # Mafundi na wauzaji wanaosubiri idhini
+                notification_count = (
+                    Mechanic.query.filter_by(verified="pending").count()
+                    + Seller.query.filter_by(verified="pending").count()
+                )
+        return dict(current_user=user, notification_count=notification_count)
+    return dict(current_user=None, notification_count=0)
 
 
 # KUMBUKA: Hitaji la "email verification" (kuzuia dashboard kabla ya

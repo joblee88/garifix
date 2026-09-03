@@ -24,6 +24,14 @@
         <span class="topbar-title"><i class="fa-solid fa-gauge text-primary"></i> Admin Panel</span>
     </div>
     <div class="topbar-right">
+        <a href="{{ url_for('admin_mechanics') }}" class="btn btn-outline-secondary position-relative" title="Arifa - Wanaosubiri Idhini">
+            <i class="fa-solid fa-bell"></i>
+            {% if notification_count and notification_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ notification_count }}
+                </span>
+            {% endif %}
+        </a>
         <button type="button" class="btn btn-outline-secondary theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
             <i class="theme-toggle-icon fa-solid fa-moon"></i>
         </button>
