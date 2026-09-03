@@ -3,8 +3,8 @@
 
 {% block customer_content %}
 <div class="text-center mb-4">
-    <h2 class="fw-bold"><i class="fa-solid fa-shop text-warning me-2"></i>Wauzaji wa Spea na Lubricants</h2>
-    <p class="text-muted">Vinjari maduka ya spea za magari na mafuta yaliyothibitishwa GariFix.</p>
+    <h2 class="fw-bold"><i class="fa-solid fa-shop text-warning me-2"></i>Duka la Spea na Lubricants</h2>
+    <p class="text-muted">Vinjari bidhaa za spea za magari na mafuta kutoka kwa wauzaji waliothibitishwa GariFix.</p>
 </div>
 
 <form method="GET" class="row g-2 justify-content-center mb-4">
@@ -19,40 +19,42 @@
 </form>
 
 <div class="row g-4">
-    {% for seller in sellers %}
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            {% if seller.shop_photo %}
-                <img src="{{ resolve_image_url(seller.shop_photo) }}" class="card-img-top" style="height:160px;object-fit:cover;">
-            {% else %}
-                <div class="d-flex align-items-center justify-content-center bg-light" style="height:160px;">
-                    <i class="fa-solid fa-shop fa-3x text-secondary"></i>
-                </div>
-            {% endif %}
-            <div class="card-body">
-                <h5 class="fw-bold">{{ seller.shop_name }}</h5>
-                {% if seller.business_type %}
-                <div class="mb-1">
-                    {% for bt in seller.business_type.split(', ') %}
-                        <span class="badge bg-warning text-dark">{{ bt }}</span>
-                    {% endfor %}
-                </div>
+    {% for product in products %}
+    <div class="col-md-3 col-sm-6">
+        <a href="{{ url_for('seller_profile', seller_id=product.seller.id) }}" class="text-decoration-none text-dark">
+            <div class="card shadow-sm h-100 product-card">
+                {% if product.photo %}
+                    <img src="{{ resolve_image_url(product.photo) }}" class="card-img-top" style="height:160px;object-fit:cover;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                        <i class="fa-solid fa-box fa-3x text-secondary"></i>
+                    </div>
                 {% endif %}
-                <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-1"></i>{{ seller.region }}, {{ seller.district }}</p>
-                <p class="text-muted small mb-2">{{ seller.products|length }} bidhaa zinapatikana</p>
-                <a href="{{ url_for('seller_profile', seller_id=seller.id) }}" class="btn btn-warning btn-sm w-100 fw-bold text-dark">
-                    <i class="fa-solid fa-eye me-1"></i> Ona Duka
-                </a>
+                <div class="card-body">
+                    <h6 class="fw-bold mb-1">{{ product.name }}</h6>
+                    {% if product.category %}
+                        <span class="badge bg-warning text-dark mb-2">{{ product.category }}</span>
+                    {% endif %}
+                    <p class="fw-bold text-success mb-1">TSh {{ "{:,.0f}".format(product.price) }}</p>
+                    <p class="text-muted small mb-0">
+                        <i class="fa-solid fa-shop me-1"></i>{{ product.seller.shop_name }}
+                    </p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     {% else %}
     <div class="col-12">
         <div class="alert alert-info text-center py-5">
-            <i class="fa-solid fa-shop-slash fa-3x mb-3"></i>
-            <p class="mb-0">Hakuna wauzaji waliopatikana kwa eneo hili kwa sasa.</p>
+            <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+            <p class="mb-0">Hakuna bidhaa zilizopatikana kwa eneo hili kwa sasa.</p>
         </div>
     </div>
     {% endfor %}
 </div>
+
+<style>
+.product-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.15) !important; }
+</style>
 {% endblock %}

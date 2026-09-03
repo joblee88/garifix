@@ -63,7 +63,7 @@
                             {% for i in range(5 - (review.rating|int)) %}<i class="fa-regular fa-star"></i>{% endfor %}
                         </span>
                     </div>
-                    <p class="mb-1 text-muted">{{ review.comment }}</p>
+                    {% if review.comment %}<p class="mb-1 text-muted">{{ review.comment }}</p>{% endif %}
                     <small class="text-secondary">{{ review.created_at.strftime('%d %b %Y') if review.created_at else '' }}</small>
                 </div>
                 {% endfor %}

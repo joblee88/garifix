@@ -1270,13 +1270,26 @@ def delete_product(id):
 @login_required
 @role_required("customer")
 def sellers_list():
-    """Ukurasa wa umma - wateja wanavinjari wauzaji wote walioidhinishwa."""
+    """Ukurasa wa 'Duka la Spea' - inaonyesha BIDHAA (siyo maduka) kutoka
+    kwa wauzaji wote walioidhinishwa, kwa mpangilio wa nasibu (randomised)
+    kila mtu akifungua ukurasa. Kubofya bidhaa kunampeleka kwenye profile
+    kamili ya muuzaji husika (ikionyesha bidhaa zake zote)."""
+    import random
+
     region = request.args.get("region", "").strip()
     query = Seller.query.join(User).filter(Seller.verified == "approved", User.status == "active")
     if region:
         query = query.filter(Seller.region == region)
-    sellers = query.order_by(Seller.created_at.desc()).all()
-    return render_template("sellers_list.html", sellers=sellers, selected_region=region)
+    sellers = query.all()
+
+    products = []
+    for seller in sellers:
+        for product in seller.products:
+            products.append(product)
+
+    random.shuffle(products)
+
+    return render_template("sellers_list.html", products=products, selected_region=region)
 
 
 @app.route("/seller/<int:seller_id>")
