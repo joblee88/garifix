@@ -9,12 +9,20 @@ JINSI YA KUWEZESHA (SETUP):
    bure kwa jina "GariFix" (au jina lolote).
 2. Kwenye Project Settings -> Service Accounts -> "Generate new private key".
    Hii itapakua faili la JSON (mfano: garifix-firebase-adminsdk.json).
-3. Weka faili hilo ndani ya folder la mradi huu (Flask) - PENDEKEZO: liite
-   "firebase-credentials.json" na LISIWEKE kwenye git (tayari liko kwenye
-   .gitignore).
-4. Weka environment variable kwenye server yako (au faili la .env):
+3. Kuna njia MBILI za kuweka credentials hizi (chagua MOJA):
+
+   NJIA A - Render/Production (PENDEKEZO): Weka maudhui YOTE ya faili la
+   JSON moja kwa moja kama Environment Variable:
+       FIREBASE_CREDENTIALS_JSON=<bandika JSON nzima hapa>
+   (Render/hosting nyingi hazina "faili la kudumu" - env variable ndiyo
+   njia ya kuaminika zaidi)
+
+   NJIA B - Local development: Weka faili hilo ndani ya folder la mradi
+   huu, liite "firebase-credentials.json" (tayari liko kwenye .gitignore),
+   kisha:
        FIREBASE_CREDENTIALS_PATH=firebase-credentials.json
-5. Sakinisha maktaba (library) inayohitajika:
+
+4. Sakinisha maktaba (library) inayohitajika:
        pip install firebase-admin
 
 Kama hujafanya usanidi huu bado, mfumo UTAENDELEA KUFANYA KAZI KAWAIDA -
@@ -23,6 +31,7 @@ tu ujumbe kwenye console/logs) badala ya kuvunja (crash) app nzima.
 """
 
 import os
+import json
 
 _firebase_app = None
 _firebase_available = False
@@ -31,14 +40,21 @@ try:
     import firebase_admin
     from firebase_admin import credentials, messaging
 
+    cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH")
-    if cred_path and os.path.exists(cred_path):
+
+    if cred_json:
+        cred = credentials.Certificate(json.loads(cred_json))
+        _firebase_app = firebase_admin.initialize_app(cred)
+        _firebase_available = True
+        print("[Notifications] Firebase Cloud Messaging IMEWEZESHWA (kutoka FIREBASE_CREDENTIALS_JSON).")
+    elif cred_path and os.path.exists(cred_path):
         cred = credentials.Certificate(cred_path)
         _firebase_app = firebase_admin.initialize_app(cred)
         _firebase_available = True
-        print("[Notifications] Firebase Cloud Messaging IMEWEZESHWA.")
+        print("[Notifications] Firebase Cloud Messaging IMEWEZESHWA (kutoka faili la ndani).")
     else:
-        print("[Notifications] FIREBASE_CREDENTIALS_PATH haijawekwa - "
+        print("[Notifications] FIREBASE_CREDENTIALS_JSON/PATH haijawekwa - "
               "push notifications zimezimwa (mfumo utaendelea kufanya kazi kawaida).")
 except ImportError:
     print("[Notifications] Package 'firebase-admin' haijasakinishwa - "
