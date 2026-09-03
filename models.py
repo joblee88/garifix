@@ -115,6 +115,7 @@ class Product(db.Model):
     price = db.Column(db.Numeric(12, 2), nullable=False)
     description = db.Column(db.Text)
     photo = db.Column(db.String(255))
+    condition = db.Column(db.String(20), default="Mpya")  # "Mpya" au "Kimetumika"
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 

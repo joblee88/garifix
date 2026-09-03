@@ -8,6 +8,12 @@
 </div>
 
 <form method="GET" class="row g-2 justify-content-center mb-4">
+    <div class="col-md-5">
+        <div class="input-group">
+            <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Tafuta bidhaa (mfano: Brake Pads)..." value="{{ search_query or '' }}">
+        </div>
+    </div>
     <div class="col-md-4">
         <select name="region" class="form-select" onchange="this.form.submit()">
             <option value="">-- Mikoa Yote --</option>
@@ -15,6 +21,9 @@
                 <option value="{{ r }}" {% if selected_region == r %}selected{% endif %}>{{ r }}</option>
             {% endfor %}
         </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-warning w-100 fw-bold text-dark">Tafuta</button>
     </div>
 </form>
 
@@ -32,12 +41,22 @@
                 {% endif %}
                 <div class="card-body">
                     <h6 class="fw-bold mb-1">{{ product.name }}</h6>
-                    {% if product.category %}
-                        <span class="badge bg-warning text-dark mb-2">{{ product.category }}</span>
-                    {% endif %}
+                    <div class="mb-2">
+                        {% if product.category %}
+                            <span class="badge bg-warning text-dark">{{ product.category }}</span>
+                        {% endif %}
+                        {% if product.condition == "Kimetumika" %}
+                            <span class="badge bg-secondary">Kimetumika</span>
+                        {% else %}
+                            <span class="badge bg-success">Mpya</span>
+                        {% endif %}
+                    </div>
                     <p class="fw-bold text-success mb-1">TSh {{ "{:,.0f}".format(product.price) }}</p>
                     <p class="text-muted small mb-0">
                         <i class="fa-solid fa-shop me-1"></i>{{ product.seller.shop_name }}
+                    </p>
+                    <p class="text-muted small mb-0">
+                        <i class="fa-solid fa-location-dot me-1"></i>{{ product.seller.region }}{% if product.seller.district %}, {{ product.seller.district }}{% endif %}
                     </p>
                 </div>
             </div>

@@ -21,7 +21,10 @@
                 <p class="text-muted small">Hakuna Rating Bado</p>
             {% endif %}
 
-            <span class="badge bg-success px-3 py-2 w-50 mx-auto mb-3">✓ Verified</span>
+            <span class="badge bg-success px-3 py-2 w-50 mx-auto mb-2">✓ Verified</span>
+            {% if seller.created_at %}
+                <p class="text-muted small mb-3"><i class="fa-solid fa-calendar-check me-1"></i>Muuzaji tangu {{ seller.created_at.strftime('%Y') }}</p>
+            {% endif %}
 
             <a href="tel:{{ seller.user.phone }}" class="btn btn-primary w-100 mb-2">
                 <i class="fa-solid fa-phone me-2"></i> {{ seller.user.phone }}
@@ -64,6 +67,11 @@
                         <div class="card-body p-3">
                             <h6 class="fw-bold mb-1">{{ p.name }}</h6>
                             <span class="badge bg-secondary mb-1">{{ p.category or 'Bidhaa' }}</span>
+                            {% if p.condition == "Kimetumika" %}
+                                <span class="badge bg-warning text-dark mb-1">Kimetumika</span>
+                            {% else %}
+                                <span class="badge bg-success mb-1">Mpya</span>
+                            {% endif %}
                             <p class="fw-bold text-success mb-1">TZS {{ "{:,.0f}".format(p.price) }}</p>
                             <p class="text-muted small mb-0">{{ p.description or '' }}</p>
                         </div>

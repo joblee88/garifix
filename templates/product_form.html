@@ -34,6 +34,26 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label fw-semibold d-block">Hali ya Bidhaa</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="condition" value="Mpya" id="condNew"
+                                {% if not product or product.condition == "Mpya" %}checked{% endif %}>
+                            <label class="form-check-label" for="condNew">
+                                <span class="badge bg-success">Mpya</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="condition" value="Kimetumika" id="condUsed"
+                                {% if product and product.condition == "Kimetumika" %}checked{% endif %}>
+                            <label class="form-check-label" for="condUsed">
+                                <span class="badge bg-secondary">Kimetumika</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label fw-semibold">Picha ya Bidhaa</label>
                     {% if product and product.photo %}
                         <div class="mb-2"><img src="{{ resolve_image_url(product.photo) }}" style="width:100px;height:100px;object-fit:cover;border-radius:10px;"></div>

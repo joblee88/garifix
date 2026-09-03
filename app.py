@@ -354,10 +354,15 @@ def logout():
 
 
 @app.route("/api/register-fcm-token", methods=["POST"])
+@csrf.exempt
 @login_required
 def register_fcm_token():
     """App ya Android inatuma FCM token hapa baada ya mtumiaji ku-login,
-    ili mfumo uweze kumtumia push notifications."""
+    ili mfumo uweze kumtumia push notifications. Imetolewa kwenye ulinzi wa
+    CSRF (@csrf.exempt) kwa sababu inaitwa kupitia JavaScript fetch() ya
+    moja kwa moja kutoka Android WebView (siyo fomu ya kawaida yenye
+    csrf_token) - bado ni salama kwa sababu @login_required inahitaji
+    session halali kabla ya kufanya kazi."""
     if request.is_json:
         token = (request.get_json(silent=True) or {}).get("fcm_token")
     else:
@@ -1175,6 +1180,7 @@ def add_product():
         category = request.form.get("category", "").strip()
         price = request.form.get("price", "").strip()
         description = request.form.get("description", "").strip()
+        condition = request.form.get("condition", "Mpya").strip()
 
         if not name or not price:
             flash("Tafadhali jaza jina na bei ya bidhaa.", "danger")
@@ -1198,7 +1204,8 @@ def add_product():
             category=category,
             price=price_value,
             description=description,
-            photo=photo_filename
+            photo=photo_filename,
+            condition=condition
         )
         db.session.add(product)
         db.session.commit()
@@ -1225,6 +1232,7 @@ def edit_product(id):
         product.name = request.form.get("name", "").strip()
         product.category = request.form.get("category", "").strip()
         product.description = request.form.get("description", "").strip()
+        product.condition = request.form.get("condition", "Mpya").strip()
 
         price = request.form.get("price", "").strip()
         try:
@@ -1277,6 +1285,8 @@ def sellers_list():
     import random
 
     region = request.args.get("region", "").strip()
+    search_query = request.args.get("q", "").strip()
+
     query = Seller.query.join(User).filter(Seller.verified == "approved", User.status == "active")
     if region:
         query = query.filter(Seller.region == region)
@@ -1285,11 +1295,13 @@ def sellers_list():
     products = []
     for seller in sellers:
         for product in seller.products:
+            if search_query and search_query.lower() not in product.name.lower():
+                continue
             products.append(product)
 
     random.shuffle(products)
 
-    return render_template("sellers_list.html", products=products, selected_region=region)
+    return render_template("sellers_list.html", products=products, selected_region=region, search_query=search_query)
 
 
 @app.route("/seller/<int:seller_id>")
