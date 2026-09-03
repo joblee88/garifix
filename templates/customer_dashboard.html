@@ -9,6 +9,17 @@
     </div>
 </div>
 
+{% if accepted_requests and accepted_requests > 0 %}
+<div class="alert alert-warning d-flex align-items-center gap-2">
+    <i class="fa-solid fa-bell fa-lg"></i>
+    <div>
+        <strong>Ukumbusho:</strong> Una ombi {{ accepted_requests }} ambalo fundi ameshakubali —
+        huduma ikishakamilika, nenda <a href="{{ url_for('customer_requests') }}" class="alert-link">"Maombi Yangu"</a>
+        ubofye <strong>"Kamilisha"</strong>, kisha umpe fundi <strong>rating (nyota)</strong>.
+    </div>
+</div>
+{% endif %}
+
 <div class="row g-4 mb-4">
     <div class="col-lg-3">
         <div class="stat-card">

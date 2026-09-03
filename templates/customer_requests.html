@@ -4,6 +4,18 @@
 {% block customer_content %}
 <h2 class="fw-bold mb-4"><i class="fa-solid fa-list-check me-2"></i>Maombi Yangu ya Huduma</h2>
 
+{% set pending_completion = requests|selectattr("status", "equalto", "accepted")|list %}
+{% if pending_completion %}
+<div class="alert alert-warning d-flex align-items-center gap-2">
+    <i class="fa-solid fa-bell fa-lg"></i>
+    <div>
+        <strong>Ukumbusho:</strong> Una ombi {{ pending_completion|length }} ambalo fundi ameshakubali —
+        huduma ikishakamilika, bofya <strong>"Kamilisha"</strong> chini, kisha umpe fundi <strong>rating (nyota)</strong>
+        ili kusaidia wateja wengine kumchagua fundi mzuri.
+    </div>
+</div>
+{% endif %}
+
 <div class="card shadow border-0">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -14,6 +26,7 @@
                     <th>Tatizo</th>
                     <th>Eneo</th>
                     <th>Fundi</th>
+                    <th>Simu ya Fundi</th>
                     <th>Status</th>
                     <th>Tarehe</th>
                     <th>Action</th>
@@ -31,6 +44,15 @@
                             {{ req.mechanic.user.full_name }}
                         {% else %}
                             <span class="text-muted">Inatafutwa</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.mechanic and req.status in ["accepted", "completed"] %}
+                            <a href="tel:{{ req.mechanic.user.phone }}" class="text-decoration-none fw-semibold text-success">
+                                <i class="fa-solid fa-phone me-1"></i>{{ req.mechanic.user.phone }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small">-</span>
                         {% endif %}
                     </td>
                     <td>
@@ -65,7 +87,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8" class="text-center py-4 text-muted">Bado haujatuma ombi lolote la huduma.</td>
+                    <td colspan="9" class="text-center py-4 text-muted">Bado haujatuma ombi lolote la huduma.</td>
                 </tr>
                 {% endfor %}
             </tbody>

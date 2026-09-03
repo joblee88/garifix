@@ -22,7 +22,15 @@
                 {% for req in requests %}
                 <tr>
                     <td>{{ req.customer.full_name }}</td>
-                    <td>{{ req.customer.phone }}</td>
+                    <td>
+                        {% if req.status in ["accepted", "completed"] %}
+                            <a href="tel:{{ req.customer.phone }}" class="text-decoration-none fw-semibold text-success">
+                                <i class="fa-solid fa-phone me-1"></i>{{ req.customer.phone }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small"><i class="fa-solid fa-lock me-1"></i>Itaonekana ukikubali</span>
+                        {% endif %}
+                    </td>
                     <td>{{ req.vehicle_model }}</td>
                     <td>{{ req.problem_description }}</td>
                     <td>{{ req.location }}</td>
