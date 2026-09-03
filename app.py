@@ -230,7 +230,7 @@ def resolve_image_url(value, private=False):
     if value.startswith("http://") or value.startswith("https://"):
         return value
     if private and CLOUDINARY_CONFIGURED:
-        url, _ = cloudinary.utils.private_download_url(value, "jpg", resource_type="image", type="private")
+        url = cloudinary.utils.private_download_url(value, "jpg", resource_type="image", type="private")
         return url
     # Fallback ya ndani (jina la faili tu)
     folder = "id_documents" if private else "uploads"
@@ -1554,7 +1554,7 @@ def view_id_document(mechanic_id):
         return redirect(mechanic.id_document)
 
     if CLOUDINARY_CONFIGURED:
-        url, _ = cloudinary.utils.private_download_url(
+        url = cloudinary.utils.private_download_url(
             mechanic.id_document, "jpg", resource_type="image", type="private"
         )
         return redirect(url)

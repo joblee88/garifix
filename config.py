@@ -77,4 +77,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Kikomo cha ukubwa wa faili linaloweza kupakiwa (16 MB) - kwa picha za mafundi
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    # Kikomo cha ukubwa wa faili linaloweza kupakiwa - 25 MB (fomu ya fundi
+    # inapakia picha MBILI mara moja - profile + kitambulisho - hivyo
+    # kikomo lazima kiwe cha kutosha kwa zote mbili pamoja)
+    MAX_CONTENT_LENGTH = 25 * 1024 * 1024
