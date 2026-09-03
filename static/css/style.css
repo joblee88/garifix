@@ -497,3 +497,62 @@ body {
     .car-mechanic { left: 60px; }
     .car-seller { left: 100px; }
 }
+
+/* ==========================================
+   SMOOTH SCROLLING - Ukurasa mzima + Sidebar
+   ========================================== */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Simu za iOS/Android - "momentum scrolling" (kudunda kidogo, laini zaidi) */
+.app-sidebar,
+.app-content,
+body {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar nyembamba, nzuri zaidi ya default ya browser (Chrome/Edge/Safari) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(13, 110, 253, 0.35);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(13, 110, 253, 0.6);
+}
+
+/* Scrollbar ndani ya sidebar (giza) - tofauti kidogo iendane na rangi ya
+   background ya sidebar */
+.app-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+}
+.app-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(13, 110, 253, 0.35) transparent;
+}
+.app-sidebar {
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Mpito laini zaidi wa hali ya "minimized" ya sidebar (badala ya
+   kuruka ghafla) */
+.app-sidebar,
+.app-content,
+.sidebar-text {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease;
+}
