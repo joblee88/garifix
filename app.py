@@ -615,7 +615,12 @@ def setup_migrate():
                 continue
             try:
                 col_type = column.type.compile(dialect=db.engine.dialect)
-                ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {col_type}"
+                # MUHIMU: Weka jina la column ndani ya backticks (`) - baadhi
+                # ya majina (mfano "condition") ni MANENO YALIYOHIFADHIWA
+                # (reserved words) kwenye MySQL, hivyo ALTER TABLE bila
+                # "quoting" hii ingeshindwa kimya kimya kwa hitilafu ya
+                # kisintaksia.
+                ddl = f"ALTER TABLE {table.name} ADD COLUMN `{column.name}` {col_type}"
                 with db.engine.begin() as conn:
                     conn.execute(text(ddl))
                 added.append(f"{table.name}.{column.name}")
