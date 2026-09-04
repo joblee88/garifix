@@ -296,18 +296,28 @@ def inject_user():
 
 @app.route("/")
 def home():
-    total_mechanics = db.session.query(Mechanic).count()
-    approved_mechanics = db.session.query(Mechanic).filter_by(verified="approved").count()
-    total_customers = db.session.query(User).filter_by(role="customer").count()
-    total_requests = db.session.query(ServiceRequest).count()
+    from sqlalchemy import func
 
-    return render_template(
-        "home.html",
-        total_mechanics=total_mechanics,
-        approved_mechanics=approved_mechanics,
-        total_customers=total_customers,
-        total_requests=total_requests
+    top_mechanics_query = (
+        db.session.query(
+            Mechanic,
+            func.avg(Review.rating).label("avg_rating"),
+            func.count(Review.id).label("review_count")
+        )
+        .join(Review, Review.mechanic_id == Mechanic.id)
+        .join(User, Mechanic.user_id == User.id)
+        .filter(Mechanic.verified == "approved", User.status == "active")
+        .group_by(Mechanic.id)
+        .order_by(func.avg(Review.rating).desc(), func.count(Review.id).desc())
+        .limit(6)
+        .all()
     )
+    top_mechanics = [
+        {"mechanic": m, "avg_rating": round(float(avg_rating), 1), "review_count": review_count}
+        for m, avg_rating, review_count in top_mechanics_query
+    ]
+
+    return render_template("home.html", top_mechanics=top_mechanics)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -991,7 +1001,7 @@ def accept_request(id):
             service.customer,
             title="Fundi Amekubali Ombi Lako - GariFix",
             body=f"{mechanic.user.full_name} amekubali kukusaidia na {service.vehicle_model}. Anakuja!",
-            data={"type": "request_accepted", "request_id": service.id}
+            data={"type": "request_accepted", "request_id": service.id, "url": "/customer/requests"}
         )
         flash("Umekubali ombi hili la huduma.", "success")
     else:
@@ -1023,7 +1033,7 @@ def complete_request(id):
                 service_request.mechanic.user,
                 title="Huduma Imethibitishwa Kukamilika - GariFix",
                 body=f"{user.full_name} amethibitisha kuwa kazi ya {service_request.vehicle_model} imekamilika. Ahsante!",
-                data={"type": "request_completed", "request_id": service_request.id}
+                data={"type": "request_completed", "request_id": service_request.id, "url": "/mechanic/requests"}
             )
         flash("Hongera! Umethibitisha kuwa huduma imekamilika.", "success")
         return redirect(url_for("customer_requests"))
@@ -1364,7 +1374,7 @@ def add_seller_review(seller_id):
             seller.user,
             title="Umepata Review Mpya - GariFix",
             body=f"Umepata rating ya {rating}/5 kwenye duka lako.",
-            data={"type": "seller_review", "seller_id": seller.id}
+            data={"type": "seller_review", "seller_id": seller.id, "url": "/seller/dashboard"}
         )
 
         flash("Maoni yako yamehifadhiwa!", "success")
@@ -1406,7 +1416,7 @@ def approve_seller(id):
         seller.user,
         title="Umeidhinishwa - GariFix",
         body="Hongera! Duka lako limeidhinishwa na Admin, sasa linaonekana kwa wateja.",
-        data={"type": "seller_approved"}
+        data={"type": "seller_approved", "url": "/seller/dashboard"}
     )
     flash(f"Duka la {seller.shop_name} limeidhinishwa.", "success")
     return redirect(url_for("admin_sellers"))
@@ -1505,7 +1515,7 @@ def request_service(mechanic_id):
             mechanic.user,
             title="Ombi Jipya la Huduma - GariFix",
             body=f"Mteja {session.get('user_id') and db.session.get(User, session['user_id']).full_name} ana tatizo la {vehicle_model}. Bofya kuona zaidi.",
-            data={"type": "new_request", "request_id": new_request.id}
+            data={"type": "new_request", "request_id": new_request.id, "url": "/mechanic/requests"}
         )
 
         flash("Ombi lako limetumwa kwa fundi kikamilifu!", "success")
@@ -1537,7 +1547,7 @@ def add_review(mechanic_id):
             mechanic.user,
             title="Umepata Review Mpya - GariFix",
             body=f"{db.session.get(User, session['user_id']).full_name} amekupa rating ya {rating}/5.",
-            data={"type": "new_review", "mechanic_id": mechanic.id}
+            data={"type": "new_review", "mechanic_id": mechanic.id, "url": "/mechanic/reviews"}
         )
 
         flash("Maoni yako yamehifadhiwa!", "success")
@@ -1627,7 +1637,7 @@ def approve_mechanic(id):
         mechanic.user,
         title="Umeidhinishwa - GariFix",
         body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
-        data={"type": "mechanic_approved"}
+        data={"type": "mechanic_approved", "url": "/dashboard"}
     )
     flash("Fundi ameidhinishwa!", "success")
     return redirect(url_for("admin_mechanics"))

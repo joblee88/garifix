@@ -32,34 +32,49 @@
     </div>
 </div>
 
-<div class="row g-4 mt-4">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fa-solid fa-user-gear fa-3x text-primary mb-3"></i>
-            <h2 class="fw-bold text-dark">{{ total_mechanics }}</h2>
-            <p class="text-muted mb-0">Total Mechanics</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
-            <h2 class="fw-bold text-dark">{{ approved_mechanics }}</h2>
-            <p class="text-muted mb-0">Verified Mechanics</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fa-solid fa-users fa-3x text-info mb-3"></i>
-            <h2 class="fw-bold text-dark">{{ total_customers }}</h2>
-            <p class="text-muted mb-0">Registered Customers</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fa-solid fa-car fa-3x text-danger mb-3"></i>
-            <h2 class="fw-bold text-dark">{{ total_requests }}</h2>
-            <p class="text-muted mb-0">Service Requests</p>
-        </div>
-    </div>
+<div class="text-center mt-5 mb-3">
+    <h3 class="fw-bold"><i class="fa-solid fa-star text-warning me-2"></i>Mafundi Wenye Rating Bora Zaidi</h3>
+    <p class="text-muted">Wateja wanawapenda mafundi hawa - jionee mwenyewe.</p>
 </div>
+
+<div class="row g-4">
+    {% for item in top_mechanics %}
+    <div class="col-md-4 col-sm-6">
+        <a href="{{ url_for('mechanic_profile', mechanic_id=item.mechanic.id) }}" class="text-decoration-none text-dark">
+            <div class="card shadow-sm h-100 text-center p-4 top-mechanic-card">
+                {% if item.mechanic.profile_photo %}
+                    <img src="{{ resolve_image_url(item.mechanic.profile_photo) }}" class="rounded-circle mx-auto mb-3" style="width:90px;height:90px;object-fit:cover;">
+                {% else %}
+                    <i class="fa-solid fa-user-circle fa-5x text-secondary mb-3"></i>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ item.mechanic.user.full_name }}</h5>
+                <p class="text-muted small mb-2">{{ item.mechanic.garage_name or '' }}</p>
+                <div class="mb-1">
+                    {% for i in range(5) %}
+                        {% if i < item.avg_rating|round(0, 'floor') %}
+                            <i class="fa-solid fa-star text-warning"></i>
+                        {% else %}
+                            <i class="fa-regular fa-star text-warning"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <p class="fw-bold text-success mb-0">{{ item.avg_rating }}/5 <span class="text-muted fw-normal">({{ item.review_count }} reviews)</span></p>
+                <span class="badge bg-primary mt-2">{{ item.mechanic.specialization.split(',')[0] if item.mechanic.specialization else 'Fundi' }}</span>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-4">
+            <i class="fa-solid fa-star fa-2x mb-2"></i>
+            <p class="mb-0">Bado hakuna mafundi wenye reviews za kutosha - kuwa wa kwanza kutoa rating!</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.top-mechanic-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.top-mechanic-card:hover { transform: translateY(-4px); box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.15) !important; }
+</style>
 {% endblock %}
