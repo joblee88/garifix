@@ -40,28 +40,26 @@
 <div class="row g-4">
     {% for item in top_mechanics %}
     <div class="col-md-4 col-sm-6">
-        <a href="{{ url_for('mechanic_profile', mechanic_id=item.mechanic.id) }}" class="text-decoration-none text-dark">
-            <div class="card shadow-sm h-100 text-center p-4 top-mechanic-card">
-                {% if item.mechanic.profile_photo %}
-                    <img src="{{ resolve_image_url(item.mechanic.profile_photo) }}" class="rounded-circle mx-auto mb-3" style="width:90px;height:90px;object-fit:cover;">
-                {% else %}
-                    <i class="fa-solid fa-user-circle fa-5x text-secondary mb-3"></i>
-                {% endif %}
-                <h5 class="fw-bold mb-1">{{ item.mechanic.user.full_name }}</h5>
-                <p class="text-muted small mb-2">{{ item.mechanic.garage_name or '' }}</p>
-                <div class="mb-1">
-                    {% for i in range(5) %}
-                        {% if i < item.avg_rating|round(0, 'floor') %}
-                            <i class="fa-solid fa-star text-warning"></i>
-                        {% else %}
-                            <i class="fa-regular fa-star text-warning"></i>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                <p class="fw-bold text-success mb-0">{{ item.avg_rating }}/5 <span class="text-muted fw-normal">({{ item.review_count }} reviews)</span></p>
-                <span class="badge bg-primary mt-2">{{ item.mechanic.specialization.split(',')[0] if item.mechanic.specialization else 'Fundi' }}</span>
+        <div class="card shadow-sm h-100 text-center p-4 top-mechanic-card">
+            {% if item.mechanic.profile_photo %}
+                <img src="{{ resolve_image_url(item.mechanic.profile_photo) }}" class="rounded-circle mx-auto mb-3" style="width:90px;height:90px;object-fit:cover;">
+            {% else %}
+                <i class="fa-solid fa-user-circle fa-5x text-secondary mb-3"></i>
+            {% endif %}
+            <h5 class="fw-bold mb-1">{{ item.mechanic.user.full_name }}</h5>
+            <p class="text-muted small mb-2">{{ item.mechanic.garage_name or '' }}</p>
+            <div class="mb-1">
+                {% for i in range(5) %}
+                    {% if i < item.avg_rating|round(0, 'floor') %}
+                        <i class="fa-solid fa-star text-warning"></i>
+                    {% else %}
+                        <i class="fa-regular fa-star text-warning"></i>
+                    {% endif %}
+                {% endfor %}
             </div>
-        </a>
+            <p class="fw-bold text-success mb-0">{{ item.avg_rating }}/5 <span class="text-muted fw-normal">({{ item.review_count }} reviews)</span></p>
+            <span class="badge bg-primary mt-2">{{ item.mechanic.specialization.split(',')[0] if item.mechanic.specialization else 'Fundi' }}</span>
+        </div>
     </div>
     {% else %}
     <div class="col-12">
@@ -74,7 +72,7 @@
 </div>
 
 <style>
-.top-mechanic-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.top-mechanic-card:hover { transform: translateY(-4px); box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.15) !important; }
+.top-mechanic-card { transition: box-shadow 0.15s ease; }
+.top-mechanic-card:hover { box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important; }
 </style>
 {% endblock %}
