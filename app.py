@@ -256,6 +256,16 @@ def resolve_image_url(value, private=False):
 app.jinja_env.globals["resolve_image_url"] = resolve_image_url
 
 
+# Context Processor - inagundua kama ukurasa unafunguliwa NDANI YA APP ya
+# Android (kupitia User-Agent maalum tuliyoongeza kwenye WebView), ili
+# templates ziweze kuficha vitu vya "website" visivyohitajika ndani ya app
+# (mfano footer - Bottom Navigation ya app tayari inatosha kwa urambazaji).
+@app.context_processor
+def inject_app_mode():
+    ua = request.headers.get("User-Agent", "")
+    return dict(is_app_mode="GariFixAndroidApp" in ua)
+
+
 # Context Processor kwa ajili ya taarifa za mtumiaji aliyeingia
 @app.context_processor
 def inject_user():
@@ -329,9 +339,40 @@ def home():
     return render_template("home.html", top_mechanics=top_mechanics)
 
 
+def role_dashboard_url():
+    """Rudisha URL sahihi ya dashboard kutegemea role ya mtumiaji aliye-login
+    sasa (au None kama hakuna aliye-login)."""
+    role = session.get("role")
+    if role == "customer":
+        return url_for("customer_dashboard")
+    elif role == "mechanic":
+        return url_for("mechanic_dashboard")
+    elif role == "seller":
+        return url_for("seller_dashboard")
+    elif role == "admin":
+        return url_for("admin_dashboard", user_id=session.get("user_id"))
+    return None
+
+
+@app.route("/app-home")
+def app_home():
+    """Kwa ajili ya 'Home' tab ya Bottom Navigation ya App ya Android -
+    inampeleka mtumiaji kwenye dashboard sahihi kama ame-login, au home
+    page ya kawaida kama bado hajaingia."""
+    dashboard_url = role_dashboard_url()
+    if dashboard_url:
+        return redirect(dashboard_url)
+    return redirect(url_for("home"))
+
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def login():
+    if request.method == "GET" and "user_id" in session:
+        dashboard_url = role_dashboard_url()
+        if dashboard_url:
+            return redirect(dashboard_url)
+
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")

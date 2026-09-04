@@ -104,6 +104,7 @@
     {% block content %}{% endblock %}
 </div>
 
+{% if not is_app_mode %}
 <footer class="site-footer text-white mt-5">
     <div class="road-strip">
         <i class="fa-solid fa-car-side driving-car car-customer" title="Customer"></i>
@@ -139,6 +140,7 @@
         </div>
     </div>
 </footer>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
