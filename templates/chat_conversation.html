@@ -1,0 +1,90 @@
+{% extends "seller_base.html" if user.role == "seller" else "customer_base.html" %}
+{% block title %}Ujumbe - GariFix{% endblock %}
+
+{% macro chat_body() %}
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a href="{{ url_for('chat_list') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <h4 class="fw-bold mb-0">
+        {% if user.role == "seller" %}
+            {{ convo.customer.full_name }}
+        {% else %}
+            {{ convo.seller.shop_name }}
+        {% endif %}
+    </h4>
+</div>
+
+{% if convo.product %}
+<a href="{{ url_for('product_detail', product_id=convo.product.id) }}" class="text-decoration-none">
+    <div class="card p-2 mb-3 d-flex flex-row align-items-center gap-2" style="max-width: 350px;">
+        {% if convo.product.photo %}
+            <img src="{{ resolve_image_url(convo.product.photo) }}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">
+        {% endif %}
+        <div>
+            <p class="small fw-bold mb-0 text-dark">{{ convo.product.name }}</p>
+            <p class="small text-success fw-bold mb-0">TSh {{ "{:,.0f}".format(convo.product.price) }}</p>
+        </div>
+    </div>
+</a>
+{% endif %}
+
+<div id="chatMessages" class="border rounded p-3 mb-3" style="height: 400px; overflow-y: auto; background: rgba(0,0,0,0.02);" data-conversation-id="{{ convo.id }}" data-last-id="{{ convo.messages[-1].id if convo.messages else 0 }}">
+    {% for m in convo.messages %}
+        <div class="d-flex mb-2 {% if m.sender_id == user.id %}justify-content-end{% endif %}">
+            <div class="p-2 rounded {% if m.sender_id == user.id %}bg-primary text-white{% else %}bg-white border{% endif %}" style="max-width: 75%;">
+                <div>{{ m.text }}</div>
+                <div class="small {% if m.sender_id == user.id %}text-white-50{% else %}text-muted{% endif %}">{{ m.created_at.strftime('%H:%M') if m.created_at else '' }}</div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<form method="POST" action="{{ url_for('view_chat', conversation_id=convo.id) }}" class="d-flex gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="text" class="form-control" placeholder="Andika ujumbe..." required autocomplete="off">
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+</form>
+
+<script>
+(function() {
+    var box = document.getElementById("chatMessages");
+    box.scrollTop = box.scrollHeight;
+
+    var convoId = box.dataset.conversationId;
+    var lastId = parseInt(box.dataset.lastId, 10) || 0;
+
+    function poll() {
+        fetch("/chat/" + convoId + "/poll?after_id=" + lastId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.messages || data.messages.length === 0) return;
+                data.messages.forEach(function(m) {
+                    lastId = m.id;
+                    var row = document.createElement("div");
+                    row.className = "d-flex mb-2" + (m.is_me ? " justify-content-end" : "");
+                    var bubble = document.createElement("div");
+                    bubble.className = "p-2 rounded " + (m.is_me ? "bg-primary text-white" : "bg-white border");
+                    bubble.style.maxWidth = "75%";
+                    var textDiv = document.createElement("div");
+                    textDiv.textContent = m.text;
+                    var timeDiv = document.createElement("div");
+                    timeDiv.className = "small " + (m.is_me ? "text-white-50" : "text-muted");
+                    timeDiv.textContent = m.time;
+                    bubble.appendChild(textDiv);
+                    bubble.appendChild(timeDiv);
+                    row.appendChild(bubble);
+                    box.appendChild(row);
+                });
+                box.scrollTop = box.scrollHeight;
+            })
+            .catch(function() {});
+    }
+
+    setInterval(poll, 4000);
+})();
+</script>
+{% endmacro %}
+
+{% block customer_content %}{{ chat_body() }}{% endblock %}
+{% block seller_content %}{{ chat_body() }}{% endblock %}

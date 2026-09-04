@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - GariFix{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-6">
+        {% if product.photos %}
+            <div id="productCarousel" class="carousel slide mb-2">
+                <div class="carousel-inner rounded">
+                    {% for p in product.photos %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ resolve_image_url(p.photo) }}" class="d-block w-100" style="height:350px;object-fit:cover;">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if product.photos|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                {% for p in product.photos %}
+                    <img src="{{ resolve_image_url(p.photo) }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;" class="border">
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:350px;">
+                <i class="fa-solid fa-box fa-5x text-secondary"></i>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <h2 class="fw-bold">{{ product.name }}</h2>
+        <div class="mb-2">
+            <span class="badge bg-warning text-dark">{{ product.category or 'Bidhaa' }}</span>
+            {% if product.condition == "Kimetumika" %}
+                <span class="badge bg-secondary">Kimetumika</span>
+            {% else %}
+                <span class="badge bg-success">Mpya</span>
+            {% endif %}
+        </div>
+        <h3 class="text-success fw-bold">TSh {{ "{:,.0f}".format(product.price) }}</h3>
+        <p class="text-muted">{{ product.description or 'Hakuna maelezo ya ziada.' }}</p>
+        <hr>
+        <h5 class="fw-bold"><i class="fa-solid fa-shop me-2"></i>{{ seller.shop_name }}</h5>
+        <p class="text-muted small mb-3"><i class="fa-solid fa-location-dot me-1"></i>{{ seller.region }}, {{ seller.district }}</p>
+
+        <div class="d-flex gap-2">
+            <a href="tel:{{ seller.user.phone }}" class="btn btn-success flex-fill">
+                <i class="fa-solid fa-phone me-1"></i> Piga Simu
+            </a>
+            {% if session.get("user_id") and session.get("role") == "customer" %}
+                <form method="POST" action="{{ url_for('start_chat', seller_id=seller.id) }}" class="flex-fill">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-comment-dots me-1"></i> Tuma Ujumbe
+                    </button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary flex-fill">
+                    <i class="fa-solid fa-comment-dots me-1"></i> Tuma Ujumbe
+                </a>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('seller_profile', seller_id=seller.id) }}" class="btn btn-outline-secondary w-100 mt-2">
+            <i class="fa-solid fa-store me-1"></i> Ona Bidhaa Zote za Duka Hili
+        </a>
+    </div>
+</div>
+
+{% if other_products %}
+<hr class="my-4">
+<h5 class="fw-bold mb-3">Bidhaa Zingine kutoka Duka Hili</h5>
+<div class="row g-3">
+    {% for p in other_products %}
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('product_detail', product_id=p.id) }}" class="text-decoration-none text-dark">
+            <div class="card shadow-sm h-100">
+                {% if p.photo %}
+                    <img src="{{ resolve_image_url(p.photo) }}" class="card-img-top" style="height:120px;object-fit:cover;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light" style="height:120px;">
+                        <i class="fa-solid fa-box text-secondary"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body p-2">
+                    <p class="small fw-bold mb-1">{{ p.name }}</p>
+                    <p class="small text-success fw-bold mb-0">TSh {{ "{:,.0f}".format(p.price) }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

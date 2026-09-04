@@ -114,8 +114,20 @@ class Product(db.Model):
     category = db.Column(db.String(50))  # "Spea za Magari" au "Lubricants/Mafuta"
     price = db.Column(db.Numeric(12, 2), nullable=False)
     description = db.Column(db.Text)
-    photo = db.Column(db.String(255))
+    photo = db.Column(db.String(255))  # Picha kuu/thumbnail (ya kwanza kati ya zote)
     condition = db.Column(db.String(20), default="Mpya")  # "Mpya" au "Kimetumika"
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    photos = db.relationship("ProductPhoto", backref="product", cascade="all, delete-orphan", order_by="ProductPhoto.id")
+
+
+class ProductPhoto(db.Model):
+    """Picha za ziada za bidhaa (hadi 4 kwa bidhaa moja)."""
+    __tablename__ = "product_photos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    photo = db.Column(db.String(500), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
@@ -129,3 +141,34 @@ class SellerReview(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+class Conversation(db.Model):
+    """Mazungumzo (chat) kati ya mteja mmoja na muuzaji mmoja - yanaweza
+    kuhusiana na bidhaa maalum (hiari)."""
+    __tablename__ = "conversations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    customer = db.relationship("User", foreign_keys=[customer_id])
+    seller = db.relationship("Seller", foreign_keys=[seller_id])
+    product = db.relationship("Product", foreign_keys=[product_id])
+    messages = db.relationship("ChatMessage", backref="conversation", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+
+
+class ChatMessage(db.Model):
+    """Ujumbe mmoja ndani ya mazungumzo (conversation)."""
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey("conversations.id"), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    sender = db.relationship("User", foreign_keys=[sender_id])

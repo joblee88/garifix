@@ -24,6 +24,14 @@
         <span class="topbar-title"><i class="fa-solid fa-user text-primary"></i> Customer Portal</span>
     </div>
     <div class="topbar-right">
+        <a href="{{ url_for('chat_list') }}" class="btn btn-outline-primary position-relative" title="Ujumbe">
+            <i class="fa-solid fa-comment-dots"></i>
+            {% if unread_chat_count and unread_chat_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ unread_chat_count }}
+                </span>
+            {% endif %}
+        </a>
         <a href="{{ url_for('sellers_list') }}" class="btn btn-outline-warning" title="Duka la Spea">
             <i class="fa-solid fa-shop"></i> <span class="d-none d-md-inline">Duka la Spea</span>
         </a>
@@ -62,6 +70,9 @@
             </a>
             <a href="{{ url_for('sellers_list') }}">
                 <i class="fa-solid fa-shop"></i> <span class="sidebar-text">Duka la Spea</span>
+            </a>
+            <a href="{{ url_for('chat_list') }}">
+                <i class="fa-solid fa-comment-dots"></i> <span class="sidebar-text">Ujumbe</span>
             </a>
             <a href="{{ url_for('customer_requests') }}">
                 <i class="fa-solid fa-list-check"></i> <span class="sidebar-text">Maombi Yangu</span>

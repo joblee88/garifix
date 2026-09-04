@@ -2,7 +2,6 @@
 {% block title %}Customer Register - GariFix{% endblock %}
 
 {% block content %}
-<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
     <div class="col-lg-6 col-md-8">
@@ -33,12 +32,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Namba ya Simu</label>
-                    <div class="input-group">
-                        <span class="input-group-text fw-bold">+255</span>
-                        <input type="tel" inputmode="numeric" class="form-control" maxlength="9" placeholder="712345678" required
-                               oninput="syncGariFixPhone(this, 'phoneHidden')">
-                    </div>
-                    <input type="hidden" name="phone" id="phoneHidden">
+                    <input type="tel" name="phone" class="form-control" placeholder="07XXXXXXXX" required>
                 </div>
 
                 <div class="mb-3">

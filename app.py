@@ -113,7 +113,7 @@ db.init_app(app)
 with app.app_context():
     try:
         import models
-        from models import User, Mechanic, ServiceRequest, Review, Seller, Product, SellerReview
+        from models import User, Mechanic, ServiceRequest, Review, Seller, Product, ProductPhoto, SellerReview, Conversation, ChatMessage
         db.create_all()
         print("Database ya SQLite imewezeshwa: Faili la garifix.db na meza zote zipo tayari!")
     except Exception as e:
@@ -262,26 +262,35 @@ def inject_user():
     if "user_id" in session:
         user = db.session.get(User, session["user_id"])
         notification_count = 0
+        unread_chat_count = 0
         if user:
             if user.role == "customer":
-                # Maombi yaliyokubaliwa na fundi, yanayosubiri mteja
-                # athibitishe kukamilika
                 notification_count = ServiceRequest.query.filter_by(
                     customer_id=user.id, status="accepted"
                 ).count()
+                unread_chat_count = ChatMessage.query.join(Conversation).filter(
+                    Conversation.customer_id == user.id,
+                    ChatMessage.sender_id != user.id,
+                    ChatMessage.is_read == False
+                ).count()
             elif user.role == "mechanic" and user.mechanic_profile:
-                # Maombi mapya yanayosubiri uamuzi wa fundi
                 notification_count = ServiceRequest.query.filter_by(
                     mechanic_id=user.mechanic_profile.id, status="pending"
                 ).count()
+            elif user.role == "seller" and user.seller_profile:
+                unread_chat_count = ChatMessage.query.join(Conversation).filter(
+                    Conversation.seller_id == user.seller_profile.id,
+                    ChatMessage.sender_id != user.id,
+                    ChatMessage.is_read == False
+                ).count()
+                notification_count = unread_chat_count
             elif user.role == "admin":
-                # Mafundi na wauzaji wanaosubiri idhini
                 notification_count = (
                     Mechanic.query.filter_by(verified="pending").count()
                     + Seller.query.filter_by(verified="pending").count()
                 )
-        return dict(current_user=user, notification_count=notification_count)
-    return dict(current_user=None, notification_count=0)
+        return dict(current_user=user, notification_count=notification_count, unread_chat_count=unread_chat_count)
+    return dict(current_user=None, notification_count=0, unread_chat_count=0)
 
 
 # KUMBUKA: Hitaji la "email verification" (kuzuia dashboard kabla ya
@@ -919,6 +928,15 @@ def mechanic_register():
 
         send_email_verification(new_user)
 
+        # Arifisha ADMIN WOTE - fundi mpya anasubiri idhini
+        for admin_user in User.query.filter_by(role="admin").all():
+            send_notification(
+                admin_user,
+                title="Fundi Mpya Anasubiri Idhini - GariFix",
+                body=f"{full_name} ({garage_name}) amejisajili na anasubiri uthibitisho wako.",
+                data={"type": "mechanic_pending", "mechanic_id": new_mechanic.id, "url": "/admin/mechanics"}
+            )
+
         flash("Usajili umefanikiwa! Akaunti yako inasubiri uthibitisho (verification) wa Admin baada ya kukagua kitambulisho chako - utaweza kuingia mara tu ukishaidhinishwa.", "success")
         return redirect(url_for("login"))
 
@@ -1138,6 +1156,15 @@ def seller_register():
         db.session.add(new_seller)
         db.session.commit()
 
+        # Arifisha ADMIN WOTE - muuzaji mpya anasubiri idhini
+        for admin_user in User.query.filter_by(role="admin").all():
+            send_notification(
+                admin_user,
+                title="Muuzaji Mpya Anasubiri Idhini - GariFix",
+                body=f"{full_name} ({shop_name}) amejisajili na anasubiri uthibitisho wako.",
+                data={"type": "seller_pending", "seller_id": new_seller.id, "url": "/admin/sellers"}
+            )
+
         flash("Usajili umefanikiwa! Akaunti yako inasubiri idhini ya Admin kabla ya kuanza kuonekana kwa wateja.", "success")
         return redirect(url_for("login"))
 
@@ -1227,7 +1254,15 @@ def add_product():
             return redirect(url_for("add_product"))
 
         try:
-            photo_filename = save_uploaded_image(request.files.get("photo"), folder_hint="products")
+            photo_files = [f for f in request.files.getlist("photos") if f and f.filename]
+            if len(photo_files) > 4:
+                flash("Unaweza kupakia picha 4 pekee kwa bidhaa moja.", "danger")
+                return redirect(url_for("add_product"))
+            uploaded_filenames = []
+            for f in photo_files:
+                fname = save_uploaded_image(f, folder_hint="products")
+                if fname:
+                    uploaded_filenames.append(fname)
         except InvalidImageError as e:
             flash(str(e), "danger")
             return redirect(url_for("add_product"))
@@ -1238,10 +1273,14 @@ def add_product():
             category=category,
             price=price_value,
             description=description,
-            photo=photo_filename,
+            photo=uploaded_filenames[0] if uploaded_filenames else None,
             condition=condition
         )
         db.session.add(product)
+        db.session.commit()
+
+        for fname in uploaded_filenames:
+            db.session.add(ProductPhoto(product_id=product.id, photo=fname))
         db.session.commit()
 
         flash("Bidhaa imeongezwa kikamilifu!", "success")
@@ -1275,15 +1314,38 @@ def edit_product(id):
             flash("Bei siyo namba sahihi.", "danger")
             return redirect(url_for("edit_product", id=id))
 
+        # Futa picha zilizochaguliwa kuondolewa
+        delete_photo_ids = request.form.getlist("delete_photos")
+        for pid in delete_photo_ids:
+            photo_obj = ProductPhoto.query.filter_by(id=int(pid), product_id=product.id).first()
+            if photo_obj:
+                db.session.delete(photo_obj)
+        db.session.flush()
+
+        remaining_count = ProductPhoto.query.filter_by(product_id=product.id).count()
+
         try:
-            photo_filename = save_uploaded_image(request.files.get("photo"), folder_hint="products")
+            new_photo_files = [f for f in request.files.getlist("photos") if f and f.filename]
+            if remaining_count + len(new_photo_files) > 4:
+                flash("Jumla ya picha (za zamani + mpya) haziwezi kuzidi 4.", "danger")
+                db.session.rollback()
+                return redirect(url_for("edit_product", id=id))
+            for f in new_photo_files:
+                fname = save_uploaded_image(f, folder_hint="products")
+                if fname:
+                    db.session.add(ProductPhoto(product_id=product.id, photo=fname))
         except InvalidImageError as e:
             flash(str(e), "danger")
+            db.session.rollback()
             return redirect(url_for("edit_product", id=id))
-        if photo_filename:
-            product.photo = photo_filename
 
         db.session.commit()
+
+        # "photo" (thumbnail kuu) daima ni picha ya kwanza iliyobaki
+        first_photo = ProductPhoto.query.filter_by(product_id=product.id).order_by(ProductPhoto.id).first()
+        product.photo = first_photo.photo if first_photo else None
+        db.session.commit()
+
         flash("Bidhaa imesasishwa kikamilifu!", "success")
         return redirect(url_for("seller_products"))
 
@@ -1386,6 +1448,133 @@ def add_seller_review(seller_id):
         return redirect(url_for("seller_profile", seller_id=seller.id))
 
     return render_template("seller_review.html", seller=seller)
+
+
+@app.route("/product/<int:product_id>")
+def product_detail(product_id):
+    """Ukurasa wa maelezo kamili ya bidhaa moja - taarifa zaidi, picha zote,
+    na mawasiliano ya muuzaji (namba ya simu + kuanzisha chat). Ni wa umma
+    (hauhitaji login kuona), lakini kuchat/ku-message kunahitaji login."""
+    product = Product.query.get_or_404(product_id)
+    seller = product.seller
+    if seller.verified != "approved" or seller.user.status == "blocked":
+        flash("Bidhaa hii haipatikani kwa sasa.", "warning")
+        return redirect(url_for("sellers_list"))
+
+    other_products = Product.query.filter(
+        Product.seller_id == seller.id, Product.id != product.id
+    ).limit(4).all()
+
+    return render_template("product_detail.html", product=product, seller=seller, other_products=other_products)
+
+
+def _get_or_create_conversation(customer_id, seller_id, product_id=None):
+    convo = Conversation.query.filter_by(customer_id=customer_id, seller_id=seller_id).first()
+    if not convo:
+        convo = Conversation(customer_id=customer_id, seller_id=seller_id, product_id=product_id)
+        db.session.add(convo)
+        db.session.commit()
+    elif product_id and not convo.product_id:
+        convo.product_id = product_id
+        db.session.commit()
+    return convo
+
+
+@app.route("/chat/start/<int:seller_id>", methods=["POST"])
+@login_required
+@role_required("customer")
+def start_chat(seller_id):
+    seller = Seller.query.get_or_404(seller_id)
+    product_id = request.form.get("product_id", type=int)
+    convo = _get_or_create_conversation(session["user_id"], seller.id, product_id)
+    return redirect(url_for("view_chat", conversation_id=convo.id))
+
+
+@app.route("/chat/list")
+@login_required
+def chat_list():
+    user = db.session.get(User, session["user_id"])
+    if user.role == "customer":
+        conversations = Conversation.query.filter_by(customer_id=user.id).order_by(Conversation.created_at.desc()).all()
+    elif user.role == "seller" and user.seller_profile:
+        conversations = Conversation.query.filter_by(seller_id=user.seller_profile.id).order_by(Conversation.created_at.desc()).all()
+    else:
+        conversations = []
+    return render_template("chat_list.html", conversations=conversations, user=user)
+
+
+@app.route("/chat/<int:conversation_id>", methods=["GET", "POST"])
+@login_required
+def view_chat(conversation_id):
+    convo = Conversation.query.get_or_404(conversation_id)
+    user = db.session.get(User, session["user_id"])
+
+    is_customer_party = user.id == convo.customer_id
+    is_seller_party = user.role == "seller" and user.seller_profile and user.seller_profile.id == convo.seller_id
+    if not (is_customer_party or is_seller_party):
+        flash("Huna ruhusa ya kuona mazungumzo haya.", "danger")
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        text = request.form.get("text", "").strip()
+        if text:
+            msg = ChatMessage(conversation_id=convo.id, sender_id=user.id, text=text)
+            db.session.add(msg)
+            db.session.commit()
+
+            # Arifisha upande mwingine wa mazungumzo
+            if is_customer_party:
+                recipient = convo.seller.user
+            else:
+                recipient = convo.customer
+            send_notification(
+                recipient,
+                title=f"Ujumbe Mpya kutoka {user.full_name} - GariFix",
+                body=text[:100],
+                data={"type": "chat_message", "conversation_id": convo.id, "url": f"/chat/{convo.id}"}
+            )
+        return redirect(url_for("view_chat", conversation_id=convo.id))
+
+    # Weka ujumbe wote uliotumwa na "upande mwingine" kama umesomwa
+    ChatMessage.query.filter(
+        ChatMessage.conversation_id == convo.id,
+        ChatMessage.sender_id != user.id,
+        ChatMessage.is_read == False
+    ).update({"is_read": True})
+    db.session.commit()
+
+    return render_template("chat_conversation.html", convo=convo, user=user)
+
+
+@app.route("/chat/<int:conversation_id>/poll")
+@login_required
+def poll_chat_messages(conversation_id):
+    """JSON endpoint - kwa JavaScript kuangalia ujumbe mpya kila baada ya
+    sekunde chache (polling), bila kuhitaji WebSocket."""
+    convo = Conversation.query.get_or_404(conversation_id)
+    user = db.session.get(User, session["user_id"])
+    is_customer_party = user.id == convo.customer_id
+    is_seller_party = user.role == "seller" and user.seller_profile and user.seller_profile.id == convo.seller_id
+    if not (is_customer_party or is_seller_party):
+        return {"error": "forbidden"}, 403
+
+    after_id = request.args.get("after_id", 0, type=int)
+    new_messages = ChatMessage.query.filter(
+        ChatMessage.conversation_id == convo.id, ChatMessage.id > after_id
+    ).order_by(ChatMessage.id).all()
+
+    return {
+        "messages": [
+            {
+                "id": m.id,
+                "text": m.text,
+                "sender_id": m.sender_id,
+                "is_me": m.sender_id == user.id,
+                "time": m.created_at.strftime("%H:%M") if m.created_at else ""
+            }
+            for m in new_messages
+        ]
+    }
 
 
 @app.route("/admin/sellers")

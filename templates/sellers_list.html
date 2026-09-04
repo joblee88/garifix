@@ -29,8 +29,8 @@
 
 <div class="row g-4">
     {% for product in products %}
-    <div class="col-md-3 col-sm-6">
-        <a href="{{ url_for('seller_profile', seller_id=product.seller.id) }}" class="text-decoration-none text-dark">
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none text-dark">
             <div class="card shadow-sm h-100 product-card">
                 {% if product.photo %}
                     <img src="{{ resolve_image_url(product.photo) }}" class="card-img-top" style="height:160px;object-fit:cover;">

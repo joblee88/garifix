@@ -59,7 +59,8 @@
             <hr>
             <div class="row g-3">
                 {% for p in products %}
-                <div class="col-md-6">
+                <div class="col-6 col-md-6">
+                    <a href="{{ url_for('product_detail', product_id=p.id) }}" class="text-decoration-none text-dark">
                     <div class="card shadow-sm h-100">
                         {% if p.photo %}
                             <img src="{{ resolve_image_url(p.photo) }}" class="card-img-top" style="height:140px;object-fit:cover;">
@@ -76,6 +77,7 @@
                             <p class="text-muted small mb-0">{{ p.description or '' }}</p>
                         </div>
                     </div>
+                    </a>
                 </div>
                 {% else %}
                 <div class="col-12"><p class="text-muted">Bado hakuna bidhaa zilizowekwa na muuzaji huyu.</p></div>

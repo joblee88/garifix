@@ -24,8 +24,8 @@
         <span class="topbar-title"><i class="fa-solid fa-shop text-warning"></i> Seller Workspace</span>
     </div>
     <div class="topbar-right">
-        <a href="{{ url_for('seller_dashboard') }}" class="btn btn-outline-secondary position-relative" title="Arifa">
-            <i class="fa-solid fa-bell"></i>
+        <a href="{{ url_for('chat_list') }}" class="btn btn-outline-primary position-relative" title="Ujumbe">
+            <i class="fa-solid fa-comment-dots"></i>
             {% if notification_count and notification_count > 0 %}
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                     {{ notification_count }}
@@ -59,6 +59,9 @@
             </a>
             <a href="{{ url_for('seller_products') }}">
                 <i class="fa-solid fa-boxes-stacked"></i> <span class="sidebar-text">Bidhaa Zangu</span>
+            </a>
+            <a href="{{ url_for('chat_list') }}">
+                <i class="fa-solid fa-comment-dots"></i> <span class="sidebar-text">Ujumbe</span>
             </a>
             <hr class="mx-3 text-secondary">
             <a href="{{ url_for('logout') }}" class="text-danger">

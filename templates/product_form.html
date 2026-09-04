@@ -54,11 +54,22 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Picha ya Bidhaa</label>
-                    {% if product and product.photo %}
-                        <div class="mb-2"><img src="{{ resolve_image_url(product.photo) }}" style="width:100px;height:100px;object-fit:cover;border-radius:10px;"></div>
+                    <label class="form-label fw-semibold">Picha za Bidhaa (hadi 4)</label>
+                    {% if product and product.photos %}
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            {% for p in product.photos %}
+                                <div class="text-center">
+                                    <img src="{{ resolve_image_url(p.photo) }}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;">
+                                    <div class="form-check small mt-1">
+                                        <input class="form-check-input" type="checkbox" name="delete_photos" value="{{ p.id }}" id="delPhoto{{ p.id }}">
+                                        <label class="form-check-label text-danger" for="delPhoto{{ p.id }}">Futa</label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% endif %}
-                    <input type="file" name="photo" class="form-control" accept="image/*" capture="environment">
+                    <input type="file" name="photos" class="form-control" accept="image/*" capture="environment" multiple>
+                    <small class="text-muted">Unaweza kuchagua hadi picha 4 kwa wakati mmoja (bonyeza Ctrl ukichagua kwenye kompyuta).</small>
                 </div>
 
                 <div class="mb-4">
