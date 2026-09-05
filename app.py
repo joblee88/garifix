@@ -739,86 +739,77 @@ def setup_migrate():
         return "Ufunguo (key) si sahihi.", 403
 
     from sqlalchemy import inspect, text
-
-    # Kwanza tengeneza majedwali yoyote MAPYA kabisa yasiyokuwepo bado
-    db.create_all()
-
-    inspector = inspect(db.engine)
-    added = []
-    errors = []
-
-    for table in db.metadata.sorted_tables:
-        if not inspector.has_table(table.name):
-            continue
-        existing_columns = {c["name"] for c in inspector.get_columns(table.name)}
-        for column in table.columns:
-            if column.name in existing_columns:
-                continue
-            try:
-                col_type = column.type.compile(dialect=db.engine.dialect)
-                # MUHIMU: Weka jina la column ndani ya backticks (`) - baadhi
-                # ya majina (mfano "condition") ni MANENO YALIYOHIFADHIWA
-                # (reserved words) kwenye MySQL, hivyo ALTER TABLE bila
-                # "quoting" hii ingeshindwa kimya kimya kwa hitilafu ya
-                # kisintaksia.
-                ddl = f"ALTER TABLE {table.name} ADD COLUMN `{column.name}` {col_type}"
-                with db.engine.begin() as conn:
-                    conn.execute(text(ddl))
-                added.append(f"{table.name}.{column.name}")
-            except Exception as e:
-                errors.append(f"{table.name}.{column.name}: {e}")
-
-    html = "<h2>Matokeo ya Database Migration</h2>"
-    if added:
-        html += "<p><strong>Columns mpya zilizoongezwa:</strong></p><ul>"
-        html += "".join(f"<li>{a}</li>" for a in added) + "</ul>"
-    else:
-        html += "<p>Hakuna column mpya iliyohitajika kuongezwa.</p>"
-
-    # --- Hatua ya PILI: panua ENUM zilizopo (mfano status ya ServiceRequest
-    # kuongeza "rejected") - hii ni TOFAUTI na kuongeza column mpya, kwa
-    # sababu column HII TAYARI IPO, lakini orodha yake ya thamani zinazoruhusiwa
-    # (allowed values) ndani ya database halisi bado ni ya ZAMANI. Bila hatua
-    # hii, MySQL inakataa (Data truncated) unapojaribu kuweka thamani mpya
-    # (mfano "rejected") ambayo haikuwepo wakati jedwali liliundwa.
     from sqlalchemy import Enum as SAEnum
+    import traceback
 
-    enum_updated = []
-    for table in db.metadata.sorted_tables:
-        if not inspector.has_table(table.name):
-            continue
-        db_columns = {c["name"]: c for c in inspector.get_columns(table.name)}
-        for column in table.columns:
-            if column.name not in db_columns or not isinstance(column.type, SAEnum):
+    try:
+        db.create_all()
+
+        inspector = inspect(db.engine)
+        existing_tables = set(inspector.get_table_names())  # SWALI MOJA TU (round-trip 1)
+        added = []
+        enum_updated = []
+        errors = []
+
+        # LOOP MOJA TU kwa kila jedwali - inachukua taarifa za columns
+        # MARA MOJA (siyo mara mbili), kisha inatumia taarifa hizo hizo
+        # kwa kazi zote mbili: (1) kuongeza column mpya (2) kupanua ENUM
+        # zilizopo. Hii inapunguza idadi ya "round-trips" kwenda database
+        # ya mbali (Aiven) kwa kiasi kikubwa, ikizuia "timeout" kwenye
+        # majedwali mengi.
+        for table in db.metadata.sorted_tables:
+            try:
+                if table.name not in existing_tables:
+                    continue
+                db_columns = {c["name"]: c for c in inspector.get_columns(table.name)}
+            except Exception as e:
+                errors.append(f"{table.name} (soma columns): {e}")
                 continue
-            model_values = set(column.type.enums)
-            db_type = db_columns[column.name]["type"]
-            db_values = set(getattr(db_type, "enums", []) or [])
-            if model_values - db_values:
+
+            for column in table.columns:
                 try:
-                    col_type_sql = column.type.compile(dialect=db.engine.dialect)
-                    ddl = f"ALTER TABLE {table.name} MODIFY COLUMN `{column.name}` {col_type_sql}"
-                    with db.engine.begin() as conn:
-                        conn.execute(text(ddl))
-                    enum_updated.append(f"{table.name}.{column.name}: {sorted(db_values)} -> {sorted(model_values)}")
+                    if column.name not in db_columns:
+                        # Column MPYA - haipo kabisa kwenye database halisi
+                        col_type = column.type.compile(dialect=db.engine.dialect)
+                        ddl = f"ALTER TABLE {table.name} ADD COLUMN `{column.name}` {col_type}"
+                        with db.engine.begin() as conn:
+                            conn.execute(text(ddl))
+                        added.append(f"{table.name}.{column.name}")
+                    elif isinstance(column.type, SAEnum):
+                        # Column IPO tayari - angalia kama ni ENUM
+                        # inayohitaji kupanuliwa (thamani mpya kwenye model
+                        # ambazo hazipo database halisi)
+                        model_values = set(column.type.enums)
+                        db_values = set(getattr(db_columns[column.name]["type"], "enums", []) or [])
+                        if model_values - db_values:
+                            col_type_sql = column.type.compile(dialect=db.engine.dialect)
+                            ddl = f"ALTER TABLE {table.name} MODIFY COLUMN `{column.name}` {col_type_sql}"
+                            with db.engine.begin() as conn:
+                                conn.execute(text(ddl))
+                            enum_updated.append(f"{table.name}.{column.name}: {sorted(db_values)} -> {sorted(model_values)}")
                 except Exception as e:
-                    errors.append(f"{table.name}.{column.name} (ENUM): {e}")
+                    errors.append(f"{table.name}.{column.name}: {e}")
 
-    if enum_updated:
-        html += "<p><strong>ENUM zilizopanuliwa (thamani mpya ziliongezwa):</strong></p><ul>"
-        html += "".join(f"<li>{u}</li>" for u in enum_updated) + "</ul>"
+        html = "<h2>Matokeo ya Database Migration</h2>"
+        if added:
+            html += "<p><strong>Columns mpya zilizoongezwa:</strong></p><ul>"
+            html += "".join(f"<li>{a}</li>" for a in added) + "</ul>"
+        if enum_updated:
+            html += "<p><strong>ENUM zilizopanuliwa (thamani mpya ziliongezwa):</strong></p><ul>"
+            html += "".join(f"<li>{u}</li>" for u in enum_updated) + "</ul>"
+        if not added and not enum_updated:
+            html += "<p>Database tayari inalingana kikamilifu na models.py.</p>"
+        if errors:
+            html += "<p style='color:red'><strong>Hitilafu (kama zipo):</strong></p><ul>"
+            html += "".join(f"<li>{e}</li>" for e in errors) + "</ul>"
 
-    if not added and not enum_updated:
-        html += "<p>Database tayari inalingana kikamilifu na models.py.</p>"
+        return html
 
-    if errors:
-        html += "<p style='color:red'><strong>Hitilafu (kama zipo):</strong></p><ul>"
-        html += "".join(f"<li>{e}</li>" for e in errors) + "</ul>"
-
-    return html
+    except Exception:
+        tb = traceback.format_exc()
+        return f"<h2>Hitilafu Isiyotarajiwa</h2><pre style='white-space:pre-wrap;color:red;'>{tb}</pre>", 500
 
 
-@app.route("/setup-admin", methods=["GET", "POST"])
 def setup_admin():
     """
     Njia mbadala ya kutengeneza akaunti ya kwanza ya ADMIN bila kuhitaji
