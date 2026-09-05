@@ -2,6 +2,7 @@
 {% block title %}Taarifa za Duka - GariFix{% endblock %}
 
 {% block seller_content %}
+<script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow border-0 p-4">
@@ -18,7 +19,7 @@
                     {% if seller.shop_photo %}
                         <div class="mb-2"><img src="{{ resolve_image_url(seller.shop_photo) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;"></div>
                     {% endif %}
-                    <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
+                    <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment" data-compress data-compress-max="1000" data-compress-quality="0.7">
                 </div>
 
                 <div class="mb-3">

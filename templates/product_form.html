@@ -2,6 +2,7 @@
 {% block title %}{{ 'Hariri Bidhaa' if product else 'Ongeza Bidhaa' }} - GariFix{% endblock %}
 
 {% block seller_content %}
+<script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
 <div class="row justify-content-center">
     <div class="col-lg-7">
         <div class="card shadow border-0 p-4">
@@ -68,7 +69,7 @@
                             {% endfor %}
                         </div>
                     {% endif %}
-                    <input type="file" name="photos" class="form-control" accept="image/*" capture="environment" multiple>
+                    <input type="file" name="photos" class="form-control" accept="image/*" capture="environment" multiple data-compress data-compress-max="1200" data-compress-quality="0.75">
                     <small class="text-muted">Unaweza kuchagua hadi picha 4 kwa wakati mmoja (bonyeza Ctrl ukichagua kwenye kompyuta).</small>
                 </div>
 

@@ -27,6 +27,12 @@
                     <img src="{{ resolve_image_url(p.photo) }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;" class="border">
                 {% endfor %}
             </div>
+        {% elif product.photo %}
+            <!-- Bidhaa za zamani (kabla ya mfumo wa "picha nyingi") - picha
+                 moja iliyohifadhiwa kwenye "photo" field ya zamani -->
+            <div class="mb-3">
+                <img src="{{ resolve_image_url(product.photo) }}" class="d-block w-100 rounded" style="height:350px;object-fit:cover;">
+            </div>
         {% else %}
             <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:350px;">
                 <i class="fa-solid fa-box fa-5x text-secondary"></i>

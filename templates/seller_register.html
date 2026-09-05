@@ -2,6 +2,9 @@
 {% block title %}Nataka Kuuza Spea/Oil - GariFix{% endblock %}
 
 {% block content %}
+<script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/password-hint.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
 <div class="auth-page-bg">
 <div class="container py-4">
     <div class="row justify-content-center w-100">
@@ -26,7 +29,12 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Namba ya Simu</label>
-                                <input type="tel" name="phone" class="form-control" placeholder="07XXXXXXXX" required>
+                                <div class="input-group">
+                                    <span class="input-group-text fw-bold">+255</span>
+                                    <input type="tel" inputmode="numeric" class="form-control" maxlength="9" placeholder="712345678" required
+                                           oninput="syncGariFixPhone(this, 'phoneHidden')">
+                                </div>
+                                <input type="hidden" name="phone" id="phoneHidden">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Email</label>
@@ -34,7 +42,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Password</label>
-                                <input type="password" name="password" class="form-control" required minlength="6">
+                                <input type="password" id="pwdInput" name="password" class="form-control" required minlength="6">
+                                <small id="pwdHint" class="form-text text-muted">Angalau herufi 6</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Rudia Password</label>
@@ -66,7 +75,7 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-semibold">Picha ya Duka (Hiari)</label>
-                                <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment">
+                                <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment" data-compress data-compress-max="1000" data-compress-quality="0.7">
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -114,6 +123,11 @@
                             </div>
                         </div>
                     </form>
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function () {
+                            setupGariFixPasswordHint("pwdInput", "pwdHint");
+                        });
+                    </script>
                 </div>
             </div>
         </div>
