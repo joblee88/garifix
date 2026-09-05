@@ -1310,7 +1310,9 @@ def complete_request(id):
                 body=f"{user.full_name} amethibitisha kuwa kazi ya {service_request.vehicle_model} imekamilika. Ahsante!",
                 data={"type": "request_completed", "request_id": service_request.id, "url": "/mechanic/requests"}
             )
-        flash("Hongera! Umethibitisha kuwa huduma imekamilika.", "success")
+        flash("Hongera! Umethibitisha kuwa huduma imekamilika. Tafadhali mpe fundi rating.", "success")
+        if service_request.mechanic:
+            return redirect(url_for("add_review", mechanic_id=service_request.mechanic.id))
         return redirect(url_for("customer_requests"))
 
     flash("Hauruhusiwi kubadilisha taarifa hii.", "danger")
