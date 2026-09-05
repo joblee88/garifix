@@ -16,7 +16,38 @@
 </div>
 {% endif %}
 
-<div class="card shadow border-0">
+<!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua taarifa kamili -->
+<div class="row g-2 d-md-none">
+    {% for req in requests %}
+    <div class="col-6">
+        <div class="border rounded-3 p-2 bg-white h-100" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#creqModal{{ req.id }}">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <h6 class="fw-bold mb-0 small">{{ req.mechanic.user.full_name if req.mechanic else "Inatafutwa" }}</h6>
+            </div>
+            {% if req.status == "pending" %}
+                <span class="badge bg-warning text-dark mb-1">Pending</span>
+            {% elif req.status == "accepted" %}
+                <span class="badge bg-success mb-1">Accepted</span>
+            {% elif req.status == "completed" %}
+                <span class="badge bg-primary mb-1">Completed</span>
+            {% elif req.status == "rejected" %}
+                <span class="badge bg-secondary mb-1">Fundi Amekataa</span>
+            {% else %}
+                <span class="badge bg-danger mb-1">Cancelled</span>
+            {% endif %}
+            <p class="mb-1 small text-muted"><i class="fa-solid fa-car me-1"></i>{{ req.vehicle_model }}</p>
+            <p class="mb-0 small text-muted text-truncate"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ req.problem_description }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <p class="text-center py-4 text-muted mb-0">Bado haujatuma ombi lolote la huduma.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- MUONEKANO WA DESKTOP (Jedwali) -->
+<div class="card shadow border-0 d-none d-md-block">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
@@ -62,6 +93,8 @@
                             <span class="badge bg-success">Accepted</span>
                         {% elif req.status == "completed" %}
                             <span class="badge bg-primary">Completed</span>
+                        {% elif req.status == "rejected" %}
+                            <span class="badge bg-secondary">Fundi Amekataa</span>
                         {% else %}
                             <span class="badge bg-danger">Cancelled</span>
                         {% endif %}
@@ -80,6 +113,10 @@
                             <a href="{{ url_for('add_review', mechanic_id=req.mechanic.id) }}" class="btn btn-sm btn-outline-warning">
                                 <i class="fa-solid fa-star"></i> Review
                             </a>
+                        {% elif req.status == "rejected" %}
+                            <a href="{{ url_for('search_mechanics') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-magnifying-glass"></i> Tafuta Fundi Mwingine
+                            </a>
                         {% elif req.status not in ["accepted"] %}
                             <button class="btn btn-sm btn-light" disabled>-</button>
                         {% endif %}
@@ -94,4 +131,62 @@
         </table>
     </div>
 </div>
+
+<!-- MODALS ZA TAARIFA KAMILI (moja kwa kila ombi) -->
+{% for req in requests %}
+<div class="modal fade" id="creqModal{{ req.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Maelezo ya Ombi #{{ req.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Fundi:</strong> {{ req.mechanic.user.full_name if req.mechanic else "Inatafutwa" }}</p>
+                <p><strong>Simu ya Fundi:</strong>
+                    {% if req.mechanic and req.status in ["accepted", "completed"] %}
+                        <a href="tel:{{ req.mechanic.user.phone }}" class="text-success fw-semibold">{{ req.mechanic.user.phone }}</a>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </p>
+                <p><strong>Gari:</strong> {{ req.vehicle_model }}</p>
+                <p><strong>Tatizo:</strong> {{ req.problem_description }}</p>
+                <p><strong>Eneo:</strong> {{ req.location }}</p>
+                <p><strong>Tarehe ya Ombi:</strong> {{ req.created_at.strftime('%d %b %Y, %H:%M') if req.created_at else '-' }}</p>
+                <p class="mb-0"><strong>Status:</strong>
+                    {% if req.status == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif req.status == "accepted" %}
+                        <span class="badge bg-success">Accepted</span>
+                    {% elif req.status == "completed" %}
+                        <span class="badge bg-primary">Completed</span>
+                    {% elif req.status == "rejected" %}
+                        <span class="badge bg-secondary">Fundi Amekataa</span>
+                    {% else %}
+                        <span class="badge bg-danger">Cancelled</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                {% if req.status == "accepted" %}
+                    <form method="POST" action="{{ url_for('complete_request', id=req.id) }}" onsubmit="return confirm('Umethibitisha kuwa fundi amemaliza kazi?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-flag-checkered me-1"></i>Kamilisha</button>
+                    </form>
+                {% endif %}
+                {% if req.mechanic and req.status == "completed" %}
+                    <a href="{{ url_for('add_review', mechanic_id=req.mechanic.id) }}" class="btn btn-outline-warning">
+                        <i class="fa-solid fa-star me-1"></i> Review
+                    </a>
+                {% elif req.status == "rejected" %}
+                    <a href="{{ url_for('search_mechanics') }}" class="btn btn-outline-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Tafuta Fundi Mwingine
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

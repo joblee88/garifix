@@ -67,7 +67,7 @@ class ServiceRequest(db.Model):
     vehicle_model = db.Column(db.String(100), nullable=False)
     problem_description = db.Column(db.Text, nullable=False)
     location = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled"), default="pending", index=True)
+    status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled", "rejected"), default="pending", index=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
@@ -172,3 +172,21 @@ class ChatMessage(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     sender = db.relationship("User", foreign_keys=[sender_id])
+
+
+class Notification(db.Model):
+    """Arifa za ndani ya mfumo (in-app) - zinaonekana kwenye 'dropdown' ya
+    bell icon. Kila push notification (FCM) inayotumwa pia inahifadhi rekodi
+    hapa, ili mtumiaji aone historia yake na tuweze kuhesabu 'ambazo bado
+    hazijasomwa' (unread) kwa usahihi."""
+    __tablename__ = "notifications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text)
+    url = db.Column(db.String(255))  # ukurasa wa kufungua akibonyeza
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    user = db.relationship("User", foreign_keys=[user_id])

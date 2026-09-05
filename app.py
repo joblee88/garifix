@@ -113,7 +113,7 @@ db.init_app(app)
 with app.app_context():
     try:
         import models
-        from models import User, Mechanic, ServiceRequest, Review, Seller, Product, ProductPhoto, SellerReview, Conversation, ChatMessage
+        from models import User, Mechanic, ServiceRequest, Review, Seller, Product, ProductPhoto, SellerReview, Conversation, ChatMessage, Notification
         db.create_all()
         print("Database ya SQLite imewezeshwa: Faili la garifix.db na meza zote zipo tayari!")
     except Exception as e:
@@ -306,18 +306,16 @@ def inject_user():
         notification_count = 0
         unread_chat_count = 0
         if user:
+            # Idadi ya arifa ZISIZOSOMWA (unread) - sawa kwa role zote sasa,
+            # inatoka moja kwa moja kwenye jedwali la Notification badala
+            # ya makadirio ya zamani (mfano idadi ya maombi ya "pending").
+            notification_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
+
             if user.role == "customer":
-                notification_count = ServiceRequest.query.filter_by(
-                    customer_id=user.id, status="accepted"
-                ).count()
                 unread_chat_count = ChatMessage.query.join(Conversation).filter(
                     Conversation.customer_id == user.id,
                     ChatMessage.sender_id != user.id,
                     ChatMessage.is_read == False
-                ).count()
-            elif user.role == "mechanic" and user.mechanic_profile:
-                notification_count = ServiceRequest.query.filter_by(
-                    mechanic_id=user.mechanic_profile.id, status="pending"
                 ).count()
             elif user.role == "seller" and user.seller_profile:
                 unread_chat_count = ChatMessage.query.join(Conversation).filter(
@@ -325,12 +323,6 @@ def inject_user():
                     ChatMessage.sender_id != user.id,
                     ChatMessage.is_read == False
                 ).count()
-                notification_count = unread_chat_count
-            elif user.role == "admin":
-                notification_count = (
-                    Mechanic.query.filter_by(verified="pending").count()
-                    + Seller.query.filter_by(verified="pending").count()
-                )
         return dict(current_user=user, notification_count=notification_count, unread_chat_count=unread_chat_count)
     return dict(current_user=None, notification_count=0, unread_chat_count=0)
 
@@ -369,6 +361,30 @@ def home():
     ]
 
     return render_template("home.html", top_mechanics=top_mechanics)
+
+
+def notify_user(user, title, body, data=None):
+    """
+    Tuma arifa kwa mtumiaji - inafanya MAMBO MAWILI kila wakati:
+      1. Inahifadhi rekodi ya Notification kwenye database (kwa ajili ya
+         'dropdown' ya bell icon na kuhesabu 'unread' kwa usahihi)
+      2. Inatuma PUSH notification halisi (FCM) kama app ya Android
+         ime-fungwa (kupitia send_notification iliyokuwepo tayari)
+
+    Tumia HII (notify_user) badala ya kuita send_notification() moja kwa
+    moja popote kwenye app.py - inafanya kile kile cha zamani, ikiwa na
+    ziada ya kuhifadhi kwenye database.
+    """
+    url = (data or {}).get("url")
+    try:
+        notif = Notification(user_id=user.id, title=title, body=body, url=url)
+        db.session.add(notif)
+        db.session.commit()
+    except Exception as e:
+        print(f"[Notification-DB-ERROR] Imeshindikana kuhifadhi arifa: {e}")
+        db.session.rollback()
+
+    send_notification(user, title=title, body=body, data=data)
 
 
 def role_dashboard_url():
@@ -487,6 +503,47 @@ def register_fcm_token():
         db.session.commit()
         return {"status": "ok"}, 200
     return {"status": "error", "message": "fcm_token haipo"}, 400
+
+
+@app.route("/notifications/dropdown")
+@login_required
+def notifications_dropdown():
+    """Inarudisha HTML ndogo ya orodha ya arifa za hivi karibuni (kwa
+    ndani ya 'dropdown' ya bell icon) - inaitwa kupitia AJAX kila
+    dropdown inapofunguliwa, ili idadi ya 'unread' iwe sahihi kila wakati."""
+    user_id = session["user_id"]
+    notifications = (
+        Notification.query.filter_by(user_id=user_id)
+        .order_by(Notification.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    return render_template("_notifications_dropdown.html", notifications=notifications)
+
+
+@app.route("/notifications/<int:id>/open")
+@login_required
+def open_notification(id):
+    """Akibonyeza arifa mahususi - inaitia alama 'imesomwa' (read) kisha
+    inampeleka kwenye ukurasa husika (url iliyohifadhiwa)."""
+    notif = Notification.query.get_or_404(id)
+    if notif.user_id != session["user_id"]:
+        flash("Huna ruhusa ya kuona arifa hii.", "danger")
+        return redirect(url_for("home"))
+
+    notif.is_read = True
+    db.session.commit()
+
+    return redirect(notif.url or url_for("home"))
+
+
+@app.route("/notifications/mark-all-read", methods=["POST"])
+@login_required
+def mark_all_notifications_read():
+    """Weka arifa ZOTE za mtumiaji huyu kuwa 'zimesomwa' kwa mara moja."""
+    Notification.query.filter_by(user_id=session["user_id"], is_read=False).update({"is_read": True})
+    db.session.commit()
+    return redirect(request.referrer or url_for("home"))
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
@@ -1006,7 +1063,7 @@ def mechanic_register():
 
         # Arifisha ADMIN WOTE - fundi mpya anasubiri idhini
         for admin_user in User.query.filter_by(role="admin").all():
-            send_notification(
+            notify_user(
                 admin_user,
                 title="Fundi Mpya Anasubiri Idhini - GariFix",
                 body=f"{full_name} ({garage_name}) amejisajili na anasubiri uthibitisho wako.",
@@ -1096,13 +1153,40 @@ def accept_request(id):
     if mechanic and service.mechanic_id == mechanic.id:
         service.status = "accepted"
         db.session.commit()
-        send_notification(
+        notify_user(
             service.customer,
             title="Fundi Amekubali Ombi Lako - GariFix",
             body=f"{mechanic.user.full_name} amekubali kukusaidia na {service.vehicle_model}. Anakuja!",
             data={"type": "request_accepted", "request_id": service.id, "url": "/customer/requests"}
         )
         flash("Umekubali ombi hili la huduma.", "success")
+    else:
+        flash("Hauruhusiwi kutenda kitendo hiki.", "danger")
+
+    return redirect(url_for("mechanic_dashboard"))
+
+
+@app.route("/reject-request/<int:id>", methods=["POST"])
+@login_required
+@role_required("mechanic")
+def reject_request(id):
+    """Fundi anakataa ombi la huduma - mteja anapata arifa kwamba fundi
+    huyu hawezi kushughulikia tatizo lake kwa muda huo, ili aweze
+    kutafuta fundi mwingine."""
+    user = db.session.get(User, session["user_id"])
+    mechanic = Mechanic.query.filter_by(user_id=user.id).first()
+    service = ServiceRequest.query.get_or_404(id)
+
+    if mechanic and service.mechanic_id == mechanic.id and service.status == "pending":
+        service.status = "rejected"
+        db.session.commit()
+        notify_user(
+            service.customer,
+            title="Fundi Hawezi Kukusaidia kwa Sasa - GariFix",
+            body=f"{mechanic.user.full_name} hawezi kushughulikia tatizo la {service.vehicle_model} kwa muda huu. Tafadhali tafuta fundi mwingine.",
+            data={"type": "request_rejected", "request_id": service.id, "url": "/customer/requests"}
+        )
+        flash("Umekataa ombi hili. Mteja amejulishwa.", "warning")
     else:
         flash("Hauruhusiwi kutenda kitendo hiki.", "danger")
 
@@ -1128,7 +1212,7 @@ def complete_request(id):
         service_request.status = "completed"
         db.session.commit()
         if service_request.mechanic:
-            send_notification(
+            notify_user(
                 service_request.mechanic.user,
                 title="Huduma Imethibitishwa Kukamilika - GariFix",
                 body=f"{user.full_name} amethibitisha kuwa kazi ya {service_request.vehicle_model} imekamilika. Ahsante!",
@@ -1234,7 +1318,7 @@ def seller_register():
 
         # Arifisha ADMIN WOTE - muuzaji mpya anasubiri idhini
         for admin_user in User.query.filter_by(role="admin").all():
-            send_notification(
+            notify_user(
                 admin_user,
                 title="Muuzaji Mpya Anasubiri Idhini - GariFix",
                 body=f"{full_name} ({shop_name}) amejisajili na anasubiri uthibitisho wako.",
@@ -1513,7 +1597,7 @@ def add_seller_review(seller_id):
         db.session.add(review)
         db.session.commit()
 
-        send_notification(
+        notify_user(
             seller.user,
             title="Umepata Review Mpya - GariFix",
             body=f"Umepata rating ya {rating}/5 kwenye duka lako.",
@@ -1603,7 +1687,7 @@ def view_chat(conversation_id):
                 recipient = convo.seller.user
             else:
                 recipient = convo.customer
-            send_notification(
+            notify_user(
                 recipient,
                 title=f"Ujumbe Mpya kutoka {user.full_name} - GariFix",
                 body=text[:100],
@@ -1682,7 +1766,7 @@ def approve_seller(id):
     seller = Seller.query.get_or_404(id)
     seller.verified = "approved"
     db.session.commit()
-    send_notification(
+    notify_user(
         seller.user,
         title="Umeidhinishwa - GariFix",
         body="Hongera! Duka lako limeidhinishwa na Admin, sasa linaonekana kwa wateja.",
@@ -1781,7 +1865,7 @@ def request_service(mechanic_id):
         db.session.add(new_request)
         db.session.commit()
 
-        send_notification(
+        notify_user(
             mechanic.user,
             title="Ombi Jipya la Huduma - GariFix",
             body=f"Mteja {session.get('user_id') and db.session.get(User, session['user_id']).full_name} ana tatizo la {vehicle_model}. Bofya kuona zaidi.",
@@ -1813,7 +1897,7 @@ def add_review(mechanic_id):
         db.session.add(review)
         db.session.commit()
 
-        send_notification(
+        notify_user(
             mechanic.user,
             title="Umepata Review Mpya - GariFix",
             body=f"{db.session.get(User, session['user_id']).full_name} amekupa rating ya {rating}/5.",
@@ -1903,7 +1987,7 @@ def approve_mechanic(id):
     mechanic = Mechanic.query.get_or_404(id)
     mechanic.verified = "approved"
     db.session.commit()
-    send_notification(
+    notify_user(
         mechanic.user,
         title="Umeidhinishwa - GariFix",
         body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",

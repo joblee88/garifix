@@ -53,6 +53,8 @@
                 <span class="badge bg-success mb-1">Accepted</span>
             {% elif req.status == "completed" %}
                 <span class="badge bg-primary mb-1">Completed</span>
+            {% elif req.status == "rejected" %}
+                <span class="badge bg-secondary mb-1">Umekataa</span>
             {% else %}
                 <span class="badge bg-danger mb-1">Cancelled</span>
             {% endif %}
@@ -68,12 +70,20 @@
                 {% endif %}
             </p>
             {% if req.status == "pending" %}
-                <form method="POST" action="{{ url_for('accept_request', id=req.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-success btn-sm w-100">
-                        <i class="fa fa-check me-1"></i> Accept
-                    </button>
-                </form>
+                <div class="d-flex gap-1">
+                    <form method="POST" action="{{ url_for('accept_request', id=req.id) }}" class="flex-fill">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="fa fa-check"></i>
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('reject_request', id=req.id) }}" class="flex-fill" onsubmit="return confirm('Una uhakika unataka kukataa ombi hili?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="fa fa-xmark"></i>
+                        </button>
+                    </form>
+                </div>
             {% elif req.status == "accepted" %}
                 <span class="badge bg-light text-dark border d-block py-1 small">
                     <i class="fa fa-hourglass-half me-1"></i> Inasubiri
@@ -127,6 +137,8 @@
                                 <span class="badge bg-success">Accepted</span>
                             {% elif req.status == "completed" %}
                                 <span class="badge bg-primary">Completed</span>
+                            {% elif req.status == "rejected" %}
+                                <span class="badge bg-secondary">Umekataa</span>
                             {% else %}
                                 <span class="badge bg-danger">Cancelled</span>
                             {% endif %}
@@ -137,6 +149,12 @@
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-success btn-sm">
                                         <i class="fa fa-check me-1"></i> Accept
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('reject_request', id=req.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka kukataa ombi hili?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fa fa-xmark me-1"></i> Reject
                                     </button>
                                 </form>
                             {% elif req.status == "accepted" %}

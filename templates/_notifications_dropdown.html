@@ -1,0 +1,21 @@
+{% if notifications %}
+    {% for n in notifications %}
+    <a href="{{ url_for('open_notification', id=n.id) }}" class="dropdown-item py-2 {% if not n.is_read %}bg-light{% endif %}" style="white-space: normal;">
+        <div class="d-flex align-items-start gap-2">
+            {% if not n.is_read %}
+                <span class="badge bg-primary rounded-circle p-1 mt-1" style="width:8px;height:8px;"></span>
+            {% else %}
+                <span style="width:8px;display:inline-block;"></span>
+            {% endif %}
+            <div>
+                <p class="mb-0 small fw-{{ 'bold' if not n.is_read else 'normal' }}">{{ n.title }}</p>
+                <p class="mb-0 text-muted" style="font-size: 11px;">{{ n.body }}</p>
+                <p class="mb-0 text-muted" style="font-size: 10px;">{{ n.created_at.strftime('%d %b, %H:%M') if n.created_at else '' }}</p>
+            </div>
+        </div>
+    </a>
+    {% if not loop.last %}<hr class="dropdown-divider my-1">{% endif %}
+    {% endfor %}
+{% else %}
+    <p class="text-center text-muted small mb-0 py-3">Hakuna arifa kwa sasa.</p>
+{% endif %}
