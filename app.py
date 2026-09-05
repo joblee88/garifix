@@ -495,14 +495,26 @@ def logout():
 @app.route("/api/register-fcm-token", methods=["POST"])
 @csrf.exempt
 @limiter.exempt
-@login_required
 def register_fcm_token():
     """App ya Android inatuma FCM token hapa baada ya mtumiaji ku-login,
     ili mfumo uweze kumtumia push notifications. Imetolewa kwenye ulinzi wa
     CSRF (@csrf.exempt) kwa sababu inaitwa kupitia JavaScript fetch() ya
     moja kwa moja kutoka Android WebView (siyo fomu ya kawaida yenye
-    csrf_token) - bado ni salama kwa sababu @login_required inahitaji
-    session halali kabla ya kufanya kazi."""
+    csrf_token).
+
+    MUHIMU: HATUTUMII @login_required hapa kwa MAKUSUDI - route hiyo
+    ingemrudisha (redirect) mtumiaji kwenda /login akiwa hajaingia, na
+    kwa kuwa fetch() inafuata "redirects" kiotomatiki, hii ingesababisha
+    ombi la ziada la GET /login KILA WAKATI app inapojaribu kutuma FCM
+    token bila mtumiaji kuwa amelogin (mfano akiwa kwenye ukurasa wa
+    /login wenyewe) - ikichanganyika na kikomo maalum cha route ya
+    /login (rate limit), ilisababisha hitilafu ya "429 Too Many
+    Requests". Badala yake, tunaangalia session WENYEWE hapa na
+    kurudisha JSON error ya moja kwa moja (bila redirect yoyote) kama
+    mtumiaji hajaingia."""
+    if "user_id" not in session:
+        return {"status": "error", "message": "Haujaingia (not logged in)"}, 401
+
     if request.is_json:
         token = (request.get_json(silent=True) or {}).get("fcm_token")
     else:
