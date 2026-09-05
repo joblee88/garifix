@@ -71,6 +71,69 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+}
+
+/* PUNGUZA UKUBWA (SCALING) KWENYE SIMU - ili kila kitu kifae ndani ya
+   topbar bila kuvuja nje, iwe ni browser ya simu au App ya Android */
+@media (max-width: 575.98px) {
+    .app-topbar {
+        height: 56px;
+        padding: 0 8px;
+        gap: 4px;
+    }
+    .app-wrapper {
+        padding-top: 56px;
+    }
+    .app-sidebar {
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+    .sidebar-backdrop {
+        top: 56px;
+        height: calc(100% - 56px);
+    }
+    .app-content {
+        min-height: calc(100vh - 56px);
+        padding: 14px;
+    }
+    .app-topbar .topbar-title {
+        font-size: 13px;
+        max-width: 34vw;
+        gap: 4px;
+    }
+    .app-topbar .topbar-title i {
+        font-size: 13px;
+    }
+    .app-topbar .topbar-left,
+    .app-topbar .topbar-right {
+        gap: 4px;
+    }
+    .app-topbar .btn,
+    .menu-toggle-btn,
+    .sidebar-minimize-btn,
+    .theme-toggle-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        padding: 0 !important;
+        font-size: 13px;
+    }
+    .app-topbar .btn i {
+        font-size: 13px;
+    }
+    .topbar-avatar {
+        width: 28px;
+        height: 28px;
+    }
+    .app-topbar .dropdown-toggle {
+        padding: 2px 6px !important;
+        gap: 4px !important;
+    }
+    .app-topbar .badge {
+        font-size: 9px;
+        padding: 2px 5px;
+    }
 }
 
 .app-topbar .topbar-left,

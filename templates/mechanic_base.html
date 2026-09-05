@@ -21,7 +21,7 @@
         <button type="button" class="sidebar-minimize-btn d-none d-lg-flex" onclick="toggleGariFixSidebar()" title="Punguza/Panua Sidebar">
             <i class="fa-solid fa-angles-left"></i>
         </button>
-        <span class="topbar-title"><i class="fa-solid fa-gauge text-primary"></i> Mechanic Workspace</span>
+        <span class="topbar-title"><i class="fa-solid fa-gauge text-primary"></i> Karibu, {{ current_user.full_name }}</span>
     </div>
     <div class="topbar-right">
         <a href="{{ url_for('own_mechanic_requests') }}" class="btn btn-outline-secondary position-relative" title="Arifa">
