@@ -259,11 +259,43 @@ app.jinja_env.globals["resolve_image_url"] = resolve_image_url
 # Context Processor - inagundua kama ukurasa unafunguliwa NDANI YA APP ya
 # Android (kupitia User-Agent maalum tuliyoongeza kwenye WebView), ili
 # templates ziweze kuficha vitu vya "website" visivyohitajika ndani ya app
+# Context Processor - salamu ya wakati (asubuhi/mchana/usiku) kwa ajili ya
+# topbar ya dashboard zote (Customer, Fundi, Muuzaji, Admin)
+@app.context_processor
+def inject_greeting():
+    from datetime import datetime
+    hour = datetime.now().hour
+    if 5 <= hour < 12:
+        greeting = "Habari za asubuhi"
+    elif 12 <= hour < 18:
+        greeting = "Habari za mchana"
+    else:
+        greeting = "Habari za usiku"
+    return dict(time_greeting=greeting)
+
+
 # (mfano footer - Bottom Navigation ya app tayari inatosha kwa urambazaji).
 @app.context_processor
 def inject_app_mode():
     ua = request.headers.get("User-Agent", "")
     return dict(is_app_mode="GariFixAndroidApp" in ua)
+
+
+# Salamu ya wakati (Habari za Asubuhi/Mchana/Jioni/Usiku) - kwa saa za
+# Afrika Mashariki (EAT, UTC+3), bila kujali server iko wapi duniani.
+@app.context_processor
+def inject_time_greeting():
+    from datetime import datetime, timedelta
+    eat_hour = (datetime.utcnow() + timedelta(hours=3)).hour
+    if 5 <= eat_hour < 12:
+        greeting = "Habari za Asubuhi"
+    elif 12 <= eat_hour < 16:
+        greeting = "Habari za Mchana"
+    elif 16 <= eat_hour < 19:
+        greeting = "Habari za Jioni"
+    else:
+        greeting = "Habari za Usiku"
+    return dict(time_greeting=greeting)
 
 
 # Context Processor kwa ajili ya taarifa za mtumiaji aliyeingia
@@ -413,7 +445,7 @@ def login():
             session["user_id"] = user.id
             session["role"] = user.role
 
-            flash("Karibu tena GariFix!", "success")
+            flash("Umeingia kikamilifu!", "success")
             if user.role == "admin":
                 return redirect(url_for("admin_dashboard", user_id=user.id))
             elif user.role == "mechanic":

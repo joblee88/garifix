@@ -62,16 +62,37 @@ body {
     gap: 12px;
 }
 
+.app-topbar .topbar-title-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    line-height: 1.15;
+}
+
 .app-topbar .topbar-title {
     font-weight: 700;
-    font-size: 18px;
+    font-size: 17px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
+}
+
+.app-topbar .topbar-greeting {
+    font-size: 11px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+[data-bs-theme="dark"] .app-topbar .topbar-greeting {
+    color: #adb5bd;
 }
 
 /* PUNGUZA UKUBWA (SCALING) KWENYE SIMU - ili kila kitu kifae ndani ya
@@ -97,10 +118,15 @@ body {
         min-height: calc(100vh - 56px);
         padding: 14px;
     }
+    .app-topbar .topbar-title-wrap {
+        max-width: 38vw;
+    }
     .app-topbar .topbar-title {
         font-size: 13px;
-        max-width: 34vw;
         gap: 4px;
+    }
+    .app-topbar .topbar-greeting {
+        font-size: 9px;
     }
     .app-topbar .topbar-title i {
         font-size: 13px;

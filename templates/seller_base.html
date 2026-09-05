@@ -21,7 +21,10 @@
         <button type="button" class="sidebar-minimize-btn d-none d-lg-flex" onclick="toggleGariFixSidebar()" title="Punguza/Panua Sidebar">
             <i class="fa-solid fa-angles-left"></i>
         </button>
-        <span class="topbar-title"><i class="fa-solid fa-shop text-warning"></i> Karibu, {{ current_user.full_name }}</span>
+        <div class="topbar-title-wrap">
+            <span class="topbar-title"><i class="fa-solid fa-shop text-warning"></i> {{ current_user.full_name }}</span>
+            <small class="topbar-greeting">{{ time_greeting }}</small>
+        </div>
     </div>
     <div class="topbar-right">
         <a href="{{ url_for('chat_list') }}" class="btn btn-outline-primary position-relative" title="Ujumbe">
