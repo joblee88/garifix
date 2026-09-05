@@ -5,6 +5,7 @@
 <script src="{{ url_for('static', filename='js/phone-input.js') }}"></script>
 <script src="{{ url_for('static', filename='js/password-hint.js') }}"></script>
 <script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
+<script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
     <div class="col-lg-6 col-md-8">
@@ -51,12 +52,18 @@
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <label class="form-label">Password</label>
-                        <input type="password" id="pwdInput" name="password" class="form-control" placeholder="Weka password" required minlength="6">
+                        <div class="input-group gfx-password-wrapper">
+                            <input type="password" id="pwdInput" name="password" class="form-control" placeholder="Weka password" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)"><i class="fa-solid fa-eye"></i></button>
+                        </div>
                         <small id="pwdHint" class="form-text text-muted">Angalau herufi 6</small>
                     </div>
                     <div class="col-md-6 mb-4">
                         <label class="form-label">Rudia Password</label>
-                        <input type="password" name="confirm_password" class="form-control" placeholder="Rudia password" required minlength="6">
+                        <div class="input-group gfx-password-wrapper">
+                            <input type="password" name="confirm_password" class="form-control" placeholder="Rudia password" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)"><i class="fa-solid fa-eye"></i></button>
+                        </div>
                     </div>
                 </div>
 

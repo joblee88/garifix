@@ -2,6 +2,7 @@
 {% block title %}Login - GariFix Tanzania{% endblock %}
 
 {% block content %}
+<script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
     <div class="col-lg-5 col-md-8">
@@ -20,9 +21,21 @@
                         <input type="text" name="identifier" class="form-control form-control-lg" placeholder="07XXXXXXXX au email@mfano.com" required autofocus>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">Password</label>
-                        <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
+                        <div class="input-group input-group-lg gfx-password-wrapper">
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Nikumbuke (Remember Me)
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Login</button>
