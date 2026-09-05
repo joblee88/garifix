@@ -19,7 +19,7 @@
                     {% if seller.shop_photo %}
                         <div class="mb-2"><img src="{{ resolve_image_url(seller.shop_photo) }}" style="width:120px;height:120px;object-fit:cover;border-radius:12px;"></div>
                     {% endif %}
-                    <input type="file" name="shop_photo" class="form-control" accept="image/*" capture="environment" data-compress data-compress-max="1000" data-compress-quality="0.7">
+                    <input type="file" name="shop_photo" class="form-control" accept="image/*" data-compress data-compress-max="1000" data-compress-quality="0.7">
                 </div>
 
                 <div class="mb-3">
