@@ -38,7 +38,7 @@
         </a>
         <div class="dropdown">
             <button type="button" class="btn btn-outline-secondary position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside" onclick="loadGariFixNotifications(this)" title="Arifa">
-                <i class="fa-solid fa-bell"></i>
+                <i class="fa-solid fa-bell icon-3d"></i>
                 {% if notification_count and notification_count > 0 %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                         {{ notification_count }}
@@ -59,14 +59,14 @@
             </div>
         </div>
         <button type="button" class="btn btn-outline-secondary theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
-            <i class="theme-toggle-icon fa-solid fa-moon"></i>
+            <i class="theme-toggle-icon fa-solid fa-moon icon-3d"></i>
         </button>
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 {% if current_user.seller_profile and current_user.seller_profile.shop_photo %}
                     <img src="{{ resolve_image_url(current_user.seller_profile.shop_photo) }}" class="topbar-avatar" alt="Profile">
                 {% else %}
-                    <i class="fa-solid fa-circle-user fa-2x text-secondary"></i>
+                    <i class="fa-solid fa-circle-user fa-2x text-secondary icon-3d"></i>
                 {% endif %}
                 <span class="d-none d-sm-inline">{{ current_user.full_name }}</span>
             </button>
