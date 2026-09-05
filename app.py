@@ -28,13 +28,23 @@ app.config.from_object(Config)
 csrf = CSRFProtect(app)
 
 # Rate Limiting: inazuia mtu kujaribu password/usajili mara nyingi mfululizo
-# (brute-force au spam) - default: maombi 200/siku, 50/saa kwa IP moja
+# (brute-force au spam). Routes nyeti (login, forgot-password) zina vikomo
+# vyao MAALUM (tazama @limiter.limit juu yao). Kikomo cha JUMLA hapa chini
+# ni "wavu wa usalama" tu (siyo kizuizi kikuu), hivyo kimewekwa juu ya
+# kutosha kuruhusu matumizi ya kawaida ya App (kila "page load" ndani ya
+# App hutuma FCM token + kupakia faili za CSS/JS + wakati mwingine
+# kuangalia arifa - yote haya ni maombi halali, siyo matumizi mabaya).
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["3000 per day", "600 per hour"],
     storage_uri="memory://",
 )
+
+
+# Static files (CSS/JS/images) hazipaswi kuathiriwa na rate limiting kabisa -
+# ukurasa mmoja pekee hupakia faili nyingi za static kwa wakati mmoja
+limiter.exempt(app.view_functions["static"])
 
 
 @app.after_request
@@ -484,6 +494,7 @@ def logout():
 
 @app.route("/api/register-fcm-token", methods=["POST"])
 @csrf.exempt
+@limiter.exempt
 @login_required
 def register_fcm_token():
     """App ya Android inatuma FCM token hapa baada ya mtumiaji ku-login,
@@ -506,6 +517,7 @@ def register_fcm_token():
 
 
 @app.route("/notifications/dropdown")
+@limiter.exempt
 @login_required
 def notifications_dropdown():
     """Inarudisha HTML ndogo ya orodha ya arifa za hivi karibuni (kwa
