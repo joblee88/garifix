@@ -347,6 +347,24 @@ def inject_user():
 # HAUATHIRIWI na hii - unaendelea kufanya kazi kama kawaida.
 
 
+@app.route("/download-app")
+def download_app():
+    """Kupakua APK ya Android moja kwa moja kutoka website. Inaangalia
+    kwanza kama faili lipo (baada ya admin kuliweka kwenye
+    static/downloads/GariFix.apk) - likiwa halipo bado, inaonyesha ujumbe
+    wa maelezo badala ya '404 haieleweki'."""
+    apk_path = os.path.join(app.static_folder, "downloads", "GariFix.apk")
+    if not os.path.exists(apk_path):
+        flash("APK bado haijapakiwa kwenye server. Tafadhali jaribu tena baadaye.", "warning")
+        return redirect(url_for("home"))
+    return send_from_directory(
+        os.path.join(app.static_folder, "downloads"),
+        "GariFix.apk",
+        as_attachment=True,
+        download_name="GariFix.apk"
+    )
+
+
 @app.route("/")
 def home():
     from sqlalchemy import func
@@ -370,7 +388,8 @@ def home():
         for m, avg_rating, review_count in top_mechanics_query
     ]
 
-    return render_template("home.html", top_mechanics=top_mechanics)
+    apk_available = os.path.exists(os.path.join(app.static_folder, "downloads", "GariFix.apk"))
+    return render_template("home.html", top_mechanics=top_mechanics, apk_available=apk_available)
 
 
 def notify_user(user, title, body, data=None):
