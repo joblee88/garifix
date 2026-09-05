@@ -97,40 +97,4 @@
     </div>
 </div>
 
-<style>
-.stat-card-sm {
-    padding: 1.1rem;
-    text-align: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    cursor: pointer;
-}
-.stat-card-sm:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.15) !important;
-}
-
-/* Columns TATU zibaki hata kwenye simu ndogo (na ndani ya App) - punguza
-   padding/icons/fonti ili maandishi yasibanane */
-@media (max-width: 575.98px) {
-    .stat-card-sm {
-        padding: 0.5rem 0.35rem;
-        border-radius: 12px;
-    }
-    .stat-card-sm i.fa-2x {
-        font-size: 1.1rem !important;
-        margin-bottom: 0.25rem !important;
-    }
-    .stat-card-sm h4 {
-        font-size: 0.95rem;
-    }
-    .stat-card-sm p {
-        font-size: 0.6rem;
-        line-height: 1.05;
-    }
-    .row.g-3 {
-        --bs-gutter-x: 0.5rem;
-        --bs-gutter-y: 0.5rem;
-    }
-}
-</style>
 {% endblock %}

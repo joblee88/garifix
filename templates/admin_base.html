@@ -35,7 +35,22 @@
         <button type="button" class="btn btn-outline-secondary theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
             <i class="theme-toggle-icon fa-solid fa-moon"></i>
         </button>
-        <span class="badge bg-primary fs-6 px-3 py-2 d-none d-sm-inline-flex"><i class="fa fa-user-circle me-1"></i> Administrator</span>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-circle-user fa-2x text-secondary"></i>
+                <span class="d-none d-sm-inline">{{ current_user.full_name }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
+                <li><span class="dropdown-item-text text-muted small">{{ current_user.email or current_user.phone }}</span></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 </nav>
 

@@ -563,3 +563,38 @@ body {
                 margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.2s ease;
 }
+
+/* KADI NDOGO ZA TAKWIMU (Stat Cards) - zinazotumika kwenye Dashboard za
+   Admin, Fundi na Customer - zote columns tatu, zote zinabofyeka */
+.stat-card-sm {
+    padding: 1.1rem;
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+.stat-card-sm:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.15) !important;
+}
+
+@media (max-width: 575.98px) {
+    .stat-card-sm {
+        padding: 0.5rem 0.35rem;
+        border-radius: 12px;
+    }
+    .stat-card-sm i.fa-2x {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    .stat-card-sm h4 {
+        font-size: 0.95rem;
+    }
+    .stat-card-sm p {
+        font-size: 0.6rem;
+        line-height: 1.05;
+    }
+    .row.g-3 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+}

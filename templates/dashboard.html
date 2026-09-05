@@ -4,27 +4,33 @@
 {% block mechanic_content %}
 <h2 class="fw-bold mb-4"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Karibu {{ user.full_name }}</h2>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <i class="fa-solid fa-car fa-3x text-primary mb-3"></i>
-            <h3 class="fw-bold">{{ requests|length }}</h3>
-            <p class="text-muted mb-0">Total Service Requests</p>
-        </div>
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <a href="{{ url_for('own_mechanic_requests') }}" class="text-decoration-none">
+            <div class="stat-card stat-card-sm">
+                <i class="fa-solid fa-car fa-2x text-primary mb-2"></i>
+                <h4 class="fw-bold text-dark mb-0">{{ requests|length }}</h4>
+                <p class="text-muted small mb-0">Total Service Requests</p>
+            </div>
+        </a>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
-            <h3 class="fw-bold text-capitalize">{{ mechanic.verified }}</h3>
-            <p class="text-muted mb-0">Account Verification Status</p>
-        </div>
+    <div class="col-4">
+        <a href="{{ url_for('own_mechanic_profile') }}" class="text-decoration-none">
+            <div class="stat-card stat-card-sm">
+                <i class="fa-solid fa-circle-check fa-2x text-success mb-2"></i>
+                <h4 class="fw-bold text-dark text-capitalize mb-0">{{ mechanic.verified }}</h4>
+                <p class="text-muted small mb-0">Verification Status</p>
+            </div>
+        </a>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <i class="fa-solid fa-phone fa-3x text-dark mb-3"></i>
-            <h3 class="fw-bold fs-4">{{ user.phone }}</h3>
-            <p class="text-muted mb-0">Registered Contact</p>
-        </div>
+    <div class="col-4">
+        <a href="{{ url_for('own_mechanic_profile') }}" class="text-decoration-none">
+            <div class="stat-card stat-card-sm">
+                <i class="fa-solid fa-phone fa-2x text-dark mb-2"></i>
+                <h4 class="fw-bold text-dark mb-0" style="font-size: 1.1rem;">{{ user.phone }}</h4>
+                <p class="text-muted small mb-0">Registered Contact</p>
+            </div>
+        </a>
     </div>
 </div>
 
