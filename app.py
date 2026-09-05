@@ -423,8 +423,29 @@ def app_home():
     return redirect(url_for("home"))
 
 
+@app.route("/app-account")
+def app_account():
+    """Kwa ajili ya 'Akaunti' tab ya Bottom Navigation ya App ya Android -
+    ikiwa mtumiaji tayari ame-login, inampeleka moja kwa moja kwenye
+    ukurasa sahihi wa profile/akaunti yake (kutegemea role) - BILA
+    kupitia /login kwanza (hii ilikuwa ikisababisha ombi la ziada kila
+    wakati tab hii ilipobonyezwa, likichangia hitilafu ya '429 Too Many
+    Requests' kwenye kikomo maalum cha /login). Kama bado hajaingia,
+    ndipo inampeleka /login."""
+    role = session.get("role")
+    if role == "mechanic":
+        return redirect(url_for("own_mechanic_profile"))
+    elif role == "seller":
+        return redirect(url_for("own_seller_profile"))
+    elif role == "customer":
+        return redirect(url_for("customer_dashboard"))
+    elif role == "admin":
+        return redirect(url_for("admin_dashboard", user_id=session.get("user_id")))
+    return redirect(url_for("login"))
+
+
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     if request.method == "GET" and "user_id" in session:
         dashboard_url = role_dashboard_url()
