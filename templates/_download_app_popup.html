@@ -1,0 +1,35 @@
+{% if is_android_browser and apk_available and not is_app_mode %}
+<div class="modal fade" id="downloadAppPopup" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0" style="background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);">
+                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-mobile-screen-button me-2"></i>Pakua App ya GariFix</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fa-solid fa-car-side fa-3x text-primary mb-3"></i>
+                <p class="mb-1">Unatumia Android? Pata GariFix kama app halisi kwenye simu yako - haraka zaidi na notifications za moja kwa moja!</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <a href="{{ url_for('download_app') }}" class="btn btn-primary btn-lg fw-bold px-4">
+                    <i class="fa-solid fa-download me-2"></i>Pakua Sasa
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Baadaye</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (!sessionStorage.getItem("gfxDownloadPopupShown")) {
+        sessionStorage.setItem("gfxDownloadPopupShown", "1");
+        setTimeout(function () {
+            var modalEl = document.getElementById("downloadAppPopup");
+            if (modalEl && window.bootstrap) {
+                new bootstrap.Modal(modalEl).show();
+            }
+        }, 1200);
+    }
+});
+</script>
+{% endif %}

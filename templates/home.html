@@ -76,29 +76,5 @@
 .top-mechanic-card:hover { box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important; }
 </style>
 
-<!-- PAKUA APP YA ANDROID -->
-<div class="card border-0 shadow-lg my-5 overflow-hidden">
-    <div class="row g-0 align-items-center">
-        <div class="col-md-8 p-4 p-md-5 text-white" style="background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);">
-            <h3 class="fw-bold mb-2"><i class="fa-solid fa-mobile-screen-button me-2"></i>Pakua App ya GariFix</h3>
-            <p class="mb-4">Pata huduma za GariFix haraka zaidi, ukiwa na notifications za moja kwa moja - moja kwa moja kwenye simu yako ya Android.</p>
-            {% if apk_available %}
-                <a href="{{ url_for('download_app') }}" class="btn btn-light btn-lg fw-bold text-primary">
-                    <i class="fa-solid fa-download me-2"></i>Pakua APK Sasa
-                </a>
-                <p class="small mt-3 mb-0 opacity-75">
-                    <i class="fa-solid fa-circle-info me-1"></i>
-                    Baada ya kupakua, ukiulizwa "Install from unknown sources", ruhusu tu - hii ni kawaida kwa APK zisizotoka Google Play Store.
-                </p>
-            {% else %}
-                <span class="btn btn-light btn-lg fw-bold text-muted disabled">
-                    <i class="fa-solid fa-clock me-2"></i>Inakuja Hivi Karibuni
-                </span>
-            {% endif %}
-        </div>
-        <div class="col-md-4 text-center p-4 d-none d-md-block">
-            <i class="fa-solid fa-car-side" style="font-size: 8rem; color: #0D6EFD; opacity: 0.15;"></i>
-        </div>
-    </div>
-</div>
+{% include "_download_app_popup.html" %}
 {% endblock %}
