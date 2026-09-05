@@ -1,34 +1,44 @@
 {% if is_android_browser and apk_available and not is_app_mode %}
-<div class="modal fade" id="downloadAppPopup" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0" style="background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);">
-                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-mobile-screen-button me-2"></i>Pakua App ya GariFix</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center py-4">
-                <i class="fa-solid fa-car-side fa-3x text-primary mb-3"></i>
-                <p class="mb-1">Unatumia Android? Pata GariFix kama app halisi kwenye simu yako - haraka zaidi na notifications za moja kwa moja!</p>
-            </div>
-            <div class="modal-footer border-0 justify-content-center pb-4">
-                <a href="{{ url_for('download_app') }}" class="btn btn-primary btn-lg fw-bold px-4">
-                    <i class="fa-solid fa-download me-2"></i>Pakua Sasa
-                </a>
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Baadaye</button>
-            </div>
+<div id="downloadAppBanner" class="gfx-download-banner">
+    <div class="d-flex align-items-center gap-2 p-2">
+        <i class="fa-solid fa-car-side text-primary fs-4 flex-shrink-0"></i>
+        <div class="flex-grow-1" style="min-width:0;">
+            <p class="mb-0 small fw-semibold text-truncate">Pakua App ya GariFix</p>
+            <p class="mb-0 text-muted" style="font-size: 11px;">Haraka zaidi + notifications</p>
         </div>
+        <a href="{{ url_for('download_app') }}" class="btn btn-primary btn-sm flex-shrink-0">Pakua</a>
+        <button type="button" class="btn-close flex-shrink-0" style="font-size:10px;" onclick="document.getElementById('downloadAppBanner').remove(); sessionStorage.setItem('gfxDownloadPopupShown','1');"></button>
     </div>
 </div>
+<style>
+.gfx-download-banner {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 1200;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    animation: gfxSlideUp 0.3s ease;
+}
+[data-bs-theme="dark"] .gfx-download-banner {
+    background: #212529;
+}
+@keyframes gfxSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    if (!sessionStorage.getItem("gfxDownloadPopupShown")) {
-        sessionStorage.setItem("gfxDownloadPopupShown", "1");
+    if (sessionStorage.getItem("gfxDownloadPopupShown")) {
+        var el = document.getElementById("downloadAppBanner");
+        if (el) el.remove();
+    } else {
         setTimeout(function () {
-            var modalEl = document.getElementById("downloadAppPopup");
-            if (modalEl && window.bootstrap) {
-                new bootstrap.Modal(modalEl).show();
-            }
-        }, 1200);
+            sessionStorage.setItem("gfxDownloadPopupShown", "1");
+        }, 500);
     }
 });
 </script>
