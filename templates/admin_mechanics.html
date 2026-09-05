@@ -1,334 +1,198 @@
 {% extends "admin_base.html" %}
-
-{% block title %}
-Manage Mechanics
-{% endblock %}
-
+{% block title %}Manage Mechanics{% endblock %}
 
 {% block content %}
-
-
 <div class="d-flex justify-content-between align-items-center mb-4">
-
-<h2 class="fw-bold">
-
-<i class="fa-solid fa-screwdriver-wrench"></i>
-
-Manage Mechanics
-
-</h2>
-
-
-<a href="/admin/dashboard/{{session['user_id']}}"
-class="btn btn-dark">
-
-<i class="fa-solid fa-gauge"></i>
-
-Dashboard
-
-</a>
-
-
+    <h2 class="fw-bold"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Manage Mechanics</h2>
+    <a href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}" class="btn btn-dark">
+        <i class="fa-solid fa-gauge"></i> Dashboard
+    </a>
 </div>
 
-
-
-<div class="card shadow border-0">
-
-
-<div class="table-responsive">
-
-
-<table class="table table-hover align-middle">
-
-
-<thead class="table-dark">
-
-<tr>
-
-<th>
-Photo
-</th>
-
-<th>
-Name
-</th>
-
-<th>
-Phone
-</th>
-
-<th>
-Garage
-</th>
-
-<th>
-Location
-</th>
-
-<th>
-Specialization
-</th>
-
-<th>
-Experience
-</th>
-
-<th>
-Status
-</th>
-
-<th>
-Action
-</th>
-
-<th>
-Taarifa
-</th>
-
-</tr>
-
-</thead>
-
-
-
-<tbody>
-
-
-{% for mechanic in mechanics %}
-
-
-<tr>
-
-
-<td>
-
-
-{% if mechanic.profile_photo %}
-
-
-<img
-src="{{ resolve_image_url(mechanic.profile_photo) }}"
-width="60"
-height="60"
-class="rounded-circle"
-style="object-fit:cover;">
-
-
-{% else %}
-
-
-<i class="fa-solid fa-user-circle fa-3x text-secondary"></i>
-
-
-{% endif %}
-
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.user.full_name }}
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.user.phone }}
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.garage_name }}
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.region }}
-
-<br>
-
-<small class="text-muted">
-
-{{ mechanic.district }}
-
-</small>
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.specialization }}
-
-</td>
-
-
-
-
-<td>
-
-{{ mechanic.experience }}
-
-Years
-
-</td>
-
-
-
-
-<td>
-
-
-{% if mechanic.verified == "pending" %}
-
-<span class="badge bg-warning text-dark">
-
-Pending
-
-</span>
-
-
-{% elif mechanic.verified == "approved" %}
-
-
-<span class="badge bg-success">
-
-Approved
-
-</span>
-
-
-{% else %}
-
-
-<span class="badge bg-danger">
-
-Rejected
-
-</span>
-
-
-{% endif %}
-
-
-
-</td>
-
-
-
-
-<td>
-
-
-{% if mechanic.verified != "approved" %}
-
-
-<form method="POST" action="{{ url_for('approve_mechanic', id=mechanic.id) }}" class="d-inline mb-1">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<button type="submit" class="btn btn-success btn-sm">
-<i class="fa-solid fa-check"></i>
-Approve
-</button>
-</form>
-
-
-{% endif %}
-
-
-{% if mechanic.id_document %}
-<a href="{{ url_for('view_id_document', mechanic_id=mechanic.id) }}" target="_blank"
-class="btn btn-outline-primary btn-sm mb-1">
-<i class="fa-solid fa-id-card"></i>
-Ona Kitambulisho
-</a>
-{% else %}
-<span class="badge bg-secondary mb-1">Hana Kitambulisho</span>
-{% endif %}
-
-
-
-{% if mechanic.verified != "rejected" %}
-
-
-<form method="POST" action="{{ url_for('reject_mechanic', id=mechanic.id) }}" class="d-inline">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<button type="submit" class="btn btn-danger btn-sm">
-<i class="fa-solid fa-xmark"></i>
-Reject
-</button>
-</form>
-
-
-{% endif %}
-
-
-
-</td>
-
-
-<td>
-<a href="{{ url_for('admin_mechanic_detail', id=mechanic.id) }}" class="btn btn-outline-primary btn-sm mb-1">
-<i class="fa fa-eye"></i> Taarifa Zote
-</a>
-{% if mechanic.verified != "pending" %}
-    {% if mechanic.user.status == "blocked" %}
-    <form method="POST" action="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="d-inline mb-1">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-unlock"></i> Unblock</button>
-    </form>
+<!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua taarifa+vitendo -->
+<div class="row g-2 d-md-none">
+    {% for mechanic in mechanics %}
+    <div class="col-6">
+        <div class="border rounded-3 p-2 bg-white h-100 text-center" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#mechModal{{ mechanic.id }}">
+            {% if mechanic.profile_photo %}
+                <img src="{{ resolve_image_url(mechanic.profile_photo) }}" width="50" height="50" class="rounded-circle mb-1" style="object-fit:cover;">
+            {% else %}
+                <i class="fa-solid fa-user-circle fa-2x text-secondary mb-1"></i>
+            {% endif %}
+            <h6 class="fw-bold mb-1 small">{{ mechanic.user.full_name }}</h6>
+            <p class="mb-1 small text-muted text-truncate">{{ mechanic.garage_name }}</p>
+            {% if mechanic.verified == "pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+            {% elif mechanic.verified == "approved" %}
+                <span class="badge bg-success">Approved</span>
+            {% else %}
+                <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+        </div>
+    </div>
     {% else %}
-    <form method="POST" action="{{ url_for('block_user', id=mechanic.user.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-warning btn-sm"><i class="fa fa-lock"></i> Block</button>
-    </form>
-    {% endif %}
-    <form method="POST" action="{{ url_for('delete_user', id=mechanic.user.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Ondoa</button>
-    </form>
-{% else %}
-    <span class="badge bg-secondary mb-1 d-block">Idhinisha au Kataa kwanza</span>
-{% endif %}
-</td>
+    <div class="col-12">
+        <p class="text-center py-4 text-muted mb-0">Hakuna fundi aliyesajiliwa.</p>
+    </div>
+    {% endfor %}
+</div>
 
+<!-- MUONEKANO WA DESKTOP (Jedwali) -->
+<div class="card shadow border-0 d-none d-md-block">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Photo</th><th>Name</th><th>Phone</th><th>Garage</th>
+                    <th>Location</th><th>Specialization</th><th>Experience</th>
+                    <th>Status</th><th>Action</th><th>Taarifa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mechanic in mechanics %}
+                <tr>
+                    <td>
+                        {% if mechanic.profile_photo %}
+                            <img src="{{ resolve_image_url(mechanic.profile_photo) }}" width="60" height="60" class="rounded-circle" style="object-fit:cover;">
+                        {% else %}
+                            <i class="fa-solid fa-user-circle fa-3x text-secondary"></i>
+                        {% endif %}
+                    </td>
+                    <td>{{ mechanic.user.full_name }}</td>
+                    <td>{{ mechanic.user.phone }}</td>
+                    <td>{{ mechanic.garage_name }}</td>
+                    <td>{{ mechanic.region }}<br><small class="text-muted">{{ mechanic.district }}</small></td>
+                    <td>{{ mechanic.specialization }}</td>
+                    <td>{{ mechanic.experience }} Years</td>
+                    <td>
+                        {% if mechanic.verified == "pending" %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif mechanic.verified == "approved" %}
+                            <span class="badge bg-success">Approved</span>
+                        {% else %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if mechanic.verified != "approved" %}
+                        <form method="POST" action="{{ url_for('approve_mechanic', id=mechanic.id) }}" class="d-inline mb-1">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                        </form>
+                        {% endif %}
+                        {% if mechanic.id_document %}
+                        <a href="{{ url_for('view_id_document', mechanic_id=mechanic.id) }}" target="_blank" class="btn btn-outline-primary btn-sm mb-1">
+                            <i class="fa-solid fa-id-card"></i> Kitambulisho
+                        </a>
+                        {% else %}
+                        <span class="badge bg-secondary mb-1">Hana Kitambulisho</span>
+                        {% endif %}
+                        {% if mechanic.verified != "rejected" %}
+                        <form method="POST" action="{{ url_for('reject_mechanic', id=mechanic.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-xmark"></i> Reject</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin_mechanic_detail', id=mechanic.id) }}" class="btn btn-outline-primary btn-sm mb-1">
+                            <i class="fa fa-eye"></i> Taarifa Zote
+                        </a>
+                        {% if mechanic.verified != "pending" %}
+                            {% if mechanic.user.status == "blocked" %}
+                            <form method="POST" action="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="d-inline mb-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-unlock"></i> Unblock</button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('block_user', id=mechanic.user.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-warning btn-sm"><i class="fa fa-lock"></i> Block</button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('delete_user', id=mechanic.user.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA? Hii haiwezi kurudishwa!');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Ondoa</button>
+                            </form>
+                        {% else %}
+                            <span class="badge bg-secondary mb-1 d-block">Idhinisha au Kataa kwanza</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center py-4 text-muted">Hakuna fundi aliyesajiliwa.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-
-</tr>
-
-
-
+<!-- MODALS ZA TAARIFA+VITENDO (kwa simu) -->
+{% for mechanic in mechanics %}
+<div class="modal fade" id="mechModal{{ mechanic.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">{{ mechanic.user.full_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Simu:</strong> {{ mechanic.user.phone }}</p>
+                <p><strong>Garage:</strong> {{ mechanic.garage_name }}</p>
+                <p><strong>Eneo:</strong> {{ mechanic.region }}, {{ mechanic.district }}</p>
+                <p><strong>Utaalamu:</strong> {{ mechanic.specialization }}</p>
+                <p><strong>Uzoefu:</strong> {{ mechanic.experience }} Miaka</p>
+                <p class="mb-0"><strong>Status:</strong>
+                    {% if mechanic.verified == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif mechanic.verified == "approved" %}
+                        <span class="badge bg-success">Approved</span>
+                    {% else %}
+                        <span class="badge bg-danger">Rejected</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer flex-wrap gap-1">
+                <a href="{{ url_for('admin_mechanic_detail', id=mechanic.id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-eye"></i> Taarifa Zote
+                </a>
+                {% if mechanic.id_document %}
+                <a href="{{ url_for('view_id_document', mechanic_id=mechanic.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-id-card"></i> Kitambulisho
+                </a>
+                {% endif %}
+                {% if mechanic.verified != "approved" %}
+                <form method="POST" action="{{ url_for('approve_mechanic', id=mechanic.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                </form>
+                {% endif %}
+                {% if mechanic.verified != "rejected" %}
+                <form method="POST" action="{{ url_for('reject_mechanic', id=mechanic.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-xmark"></i> Reject</button>
+                </form>
+                {% endif %}
+                {% if mechanic.verified != "pending" %}
+                    {% if mechanic.user.status == "blocked" %}
+                    <form method="POST" action="{{ url_for('unblock_user', id=mechanic.user.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-unlock"></i> Unblock</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('block_user', id=mechanic.user.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka ku-block {{ mechanic.user.full_name }}?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning btn-sm"><i class="fa fa-lock"></i> Block</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('delete_user', id=mechanic.user.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ mechanic.user.full_name }} KABISA?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Ondoa</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endfor %}
-
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
-</div>
-
-
-
 {% endblock %}

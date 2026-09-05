@@ -8,7 +8,35 @@
 </div>
 
 <div class="card shadow border-0">
-    <div class="table-responsive">
+    <!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua modal ile ile ya taarifa -->
+    <div class="row g-2 d-md-none p-2">
+        {% for req in requests %}
+        <div class="col-6">
+            <div class="border rounded-3 p-2 bg-white h-100" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#detailsModal{{ req.id }}">
+                <h6 class="fw-bold mb-1 small">{{ req.customer.full_name if req.customer else 'Unknown' }}</h6>
+                {% if req.status == "pending" %}
+                    <span class="badge bg-warning text-dark mb-1">Pending</span>
+                {% elif req.status == "accepted" %}
+                    <span class="badge bg-success mb-1">Accepted</span>
+                {% elif req.status == "completed" %}
+                    <span class="badge bg-primary mb-1">Completed</span>
+                {% elif req.status == "rejected" %}
+                    <span class="badge bg-secondary mb-1">Amekataa</span>
+                {% else %}
+                    <span class="badge bg-danger mb-1">Cancelled</span>
+                {% endif %}
+                <p class="mb-1 small text-muted"><i class="fa-solid fa-car me-1"></i>{{ req.vehicle_model }}</p>
+                <p class="mb-0 small text-muted text-truncate"><i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ req.mechanic.user.full_name if req.mechanic else 'Haijawekwa' }}</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <p class="text-center py-4 text-muted mb-0">Hakuna maombi ya huduma.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="table-responsive d-none d-md-block">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
                 <tr>

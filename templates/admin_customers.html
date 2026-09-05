@@ -7,18 +7,36 @@
     <a href="{{ url_for('admin_dashboard', user_id=session['user_id']) }}" class="btn btn-dark"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
 </div>
 
-<div class="card shadow border-0">
+<!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua taarifa+vitendo -->
+<div class="row g-2 d-md-none">
+    {% for customer in customers %}
+    <div class="col-6">
+        <div class="border rounded-3 p-2 bg-white h-100 text-center" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#custModal{{ customer.id }}">
+            <i class="fa-solid fa-user-circle fa-2x text-primary mb-1"></i>
+            <h6 class="fw-bold mb-1 small">{{ customer.full_name }}</h6>
+            <p class="mb-1 small text-muted text-truncate">{{ customer.phone }}</p>
+            {% if customer.status == "active" %}
+                <span class="badge bg-success">Active</span>
+            {% else %}
+                <span class="badge bg-danger">{{ customer.status }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <p class="text-center py-4 text-muted mb-0">Hakuna wateja waliosajiliwa.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- MUONEKANO WA DESKTOP (Jedwali) -->
+<div class="card shadow border-0 d-none d-md-block">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>Full Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Action</th>
+                    <th>ID</th><th>Full Name</th><th>Phone</th><th>Email</th>
+                    <th>Status</th><th>Created</th><th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,33 +61,71 @@
                         {% if customer.status == "blocked" %}
                             <form method="POST" action="{{ url_for('unblock_user', id=customer.id) }}" class="d-inline mb-1">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-success">
-                                    <i class="fa fa-unlock"></i> Unblock
-                                </button>
+                                <button type="submit" class="btn btn-sm btn-success"><i class="fa fa-unlock"></i> Unblock</button>
                             </form>
                         {% else %}
                             <form method="POST" action="{{ url_for('block_user', id=customer.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka ku-block {{ customer.full_name }}?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-warning">
-                                    <i class="fa fa-lock"></i> Block
-                                </button>
+                                <button type="submit" class="btn btn-sm btn-warning"><i class="fa fa-lock"></i> Block</button>
                             </form>
                         {% endif %}
-                        <form method="POST" action="{{ url_for('delete_user', id=customer.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ customer.full_name }} KABISA? Hii haiwezi kurudishwa!');">
+                        <form method="POST" action="{{ url_for('delete_user', id=customer.id) }}" class="d-inline mb-1" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ customer.full_name }} KABISA?');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                <i class="fa fa-trash"></i> Ondoa
-                            </button>
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i> Ondoa</button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="7" class="text-center py-4 text-muted">Hakuna wateja waliosajiliwa.</td>
-                </tr>
+                <tr><td colspan="7" class="text-center py-4 text-muted">Hakuna wateja waliosajiliwa.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- MODALS ZA TAARIFA+VITENDO (kwa simu) -->
+{% for customer in customers %}
+<div class="modal fade" id="custModal{{ customer.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">{{ customer.full_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Simu:</strong> {{ customer.phone }}</p>
+                <p><strong>Email:</strong> {{ customer.email or "Hakuna" }}</p>
+                <p><strong>Alijiunga:</strong> {{ customer.created_at.strftime('%d %b %Y') if customer.created_at else "-" }}</p>
+                <p class="mb-0"><strong>Status:</strong>
+                    {% if customer.status == "active" %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ customer.status }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer flex-wrap gap-1">
+                <a href="{{ url_for('admin_customer_detail', id=customer.id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-eye"></i> Taarifa Zote
+                </a>
+                {% if customer.status == "blocked" %}
+                    <form method="POST" action="{{ url_for('unblock_user', id=customer.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-success"><i class="fa fa-unlock"></i> Unblock</button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{{ url_for('block_user', id=customer.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka ku-block {{ customer.full_name }}?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-warning"><i class="fa fa-lock"></i> Block</button>
+                    </form>
+                {% endif %}
+                <form method="POST" action="{{ url_for('delete_user', id=customer.id) }}" class="d-inline" onsubmit="return confirm('Una uhakika unataka KUFUTA {{ customer.full_name }} KABISA?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i> Ondoa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
