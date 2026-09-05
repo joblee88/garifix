@@ -773,7 +773,44 @@ def setup_migrate():
         html += "<p><strong>Columns mpya zilizoongezwa:</strong></p><ul>"
         html += "".join(f"<li>{a}</li>" for a in added) + "</ul>"
     else:
-        html += "<p>Database tayari inalingana na models.py - hakuna kilichohitajika.</p>"
+        html += "<p>Hakuna column mpya iliyohitajika kuongezwa.</p>"
+
+    # --- Hatua ya PILI: panua ENUM zilizopo (mfano status ya ServiceRequest
+    # kuongeza "rejected") - hii ni TOFAUTI na kuongeza column mpya, kwa
+    # sababu column HII TAYARI IPO, lakini orodha yake ya thamani zinazoruhusiwa
+    # (allowed values) ndani ya database halisi bado ni ya ZAMANI. Bila hatua
+    # hii, MySQL inakataa (Data truncated) unapojaribu kuweka thamani mpya
+    # (mfano "rejected") ambayo haikuwepo wakati jedwali liliundwa.
+    from sqlalchemy import Enum as SAEnum
+
+    enum_updated = []
+    for table in db.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        db_columns = {c["name"]: c for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name not in db_columns or not isinstance(column.type, SAEnum):
+                continue
+            model_values = set(column.type.enums)
+            db_type = db_columns[column.name]["type"]
+            db_values = set(getattr(db_type, "enums", []) or [])
+            if model_values - db_values:
+                try:
+                    col_type_sql = column.type.compile(dialect=db.engine.dialect)
+                    ddl = f"ALTER TABLE {table.name} MODIFY COLUMN `{column.name}` {col_type_sql}"
+                    with db.engine.begin() as conn:
+                        conn.execute(text(ddl))
+                    enum_updated.append(f"{table.name}.{column.name}: {sorted(db_values)} -> {sorted(model_values)}")
+                except Exception as e:
+                    errors.append(f"{table.name}.{column.name} (ENUM): {e}")
+
+    if enum_updated:
+        html += "<p><strong>ENUM zilizopanuliwa (thamani mpya ziliongezwa):</strong></p><ul>"
+        html += "".join(f"<li>{u}</li>" for u in enum_updated) + "</ul>"
+
+    if not added and not enum_updated:
+        html += "<p>Database tayari inalingana kikamilifu na models.py.</p>"
+
     if errors:
         html += "<p style='color:red'><strong>Hitilafu (kama zipo):</strong></p><ul>"
         html += "".join(f"<li>{e}</li>" for e in errors) + "</ul>"
