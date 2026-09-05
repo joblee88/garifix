@@ -18,7 +18,7 @@
     <div class="col-4">
         <a href="{{ url_for('customer_requests') }}" class="text-decoration-none">
             <div class="stat-card stat-card-sm">
-                <i class="fa-solid fa-car fa-2x text-primary mb-2"></i>
+                <i class="fa-solid fa-car fa-2x text-primary mb-2 icon-3d"></i>
                 <h4 class="fw-bold text-dark mb-0">{{ total_requests }}</h4>
                 <p class="text-muted small mb-0">Maombi Yote</p>
             </div>
@@ -27,7 +27,7 @@
     <div class="col-4">
         <a href="{{ url_for('customer_requests') }}" class="text-decoration-none">
             <div class="stat-card stat-card-sm">
-                <i class="fa-solid fa-clock fa-2x text-warning mb-2"></i>
+                <i class="fa-solid fa-clock fa-2x text-warning mb-2 icon-3d"></i>
                 <h4 class="fw-bold text-dark mb-0">{{ pending_requests }}</h4>
                 <p class="text-muted small mb-0">Pending</p>
             </div>
@@ -36,7 +36,7 @@
     <div class="col-4">
         <a href="{{ url_for('customer_requests') }}" class="text-decoration-none">
             <div class="stat-card stat-card-sm">
-                <i class="fa-solid fa-circle-check fa-2x text-success mb-2"></i>
+                <i class="fa-solid fa-circle-check fa-2x text-success mb-2 icon-3d"></i>
                 <h4 class="fw-bold text-dark mb-0">{{ accepted_requests }}</h4>
                 <p class="text-muted small mb-0">Accepted</p>
             </div>
@@ -48,7 +48,7 @@
     <div class="col-4">
         <a href="{{ url_for('search_mechanics') }}" class="text-decoration-none">
             <div class="card shadow-sm h-100 text-center p-3 quick-access-card">
-                <i class="fa-solid fa-magnifying-glass fa-2x text-primary mb-2"></i>
+                <i class="fa-solid fa-magnifying-glass fa-2x text-primary mb-2 icon-3d"></i>
                 <h6 class="fw-bold mb-0">Tafuta Fundi</h6>
             </div>
         </a>
@@ -56,7 +56,7 @@
     <div class="col-4">
         <a href="{{ url_for('customer_requests') }}" class="text-decoration-none">
             <div class="card shadow-sm h-100 text-center p-3 quick-access-card">
-                <i class="fa-solid fa-list-check fa-2x text-success mb-2"></i>
+                <i class="fa-solid fa-list-check fa-2x text-success mb-2 icon-3d"></i>
                 <h6 class="fw-bold mb-0">Maombi Yangu</h6>
             </div>
         </a>
@@ -64,7 +64,7 @@
     <div class="col-4">
         <a href="{{ url_for('sellers_list') }}" class="text-decoration-none">
             <div class="card shadow-sm h-100 text-center p-3 quick-access-card">
-                <i class="fa-solid fa-shop fa-2x text-warning mb-2"></i>
+                <i class="fa-solid fa-shop fa-2x text-warning mb-2 icon-3d"></i>
                 <h6 class="fw-bold mb-0">Duka la Spea</h6>
             </div>
         </a>
@@ -79,7 +79,7 @@
         <div class="row g-2">
             {% for req in requests[:6] %}
             <div class="col-6">
-                <div class="border rounded-3 p-3 h-100 bg-white">
+                <div class="border rounded-3 p-3 h-100 bg-white" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#dashReqModal{{ req.id }}">
                     <div class="d-flex justify-content-between align-items-start mb-1">
                         <h6 class="fw-bold mb-0 small">{{ req.mechanic.user.full_name if req.mechanic else "Inatafutwa" }}</h6>
                         {% if req.status == "pending" %}
@@ -88,6 +88,8 @@
                             <span class="badge bg-success">Accepted</span>
                         {% elif req.status == "completed" %}
                             <span class="badge bg-primary">Completed</span>
+                        {% elif req.status == "rejected" %}
+                            <span class="badge bg-secondary">Amekataa</span>
                         {% else %}
                             <span class="badge bg-danger">Cancelled</span>
                         {% endif %}
@@ -114,4 +116,62 @@
 .quick-access-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .quick-access-card:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.15) !important; }
 </style>
+
+<!-- MODALS ZA TAARIFA KAMILI (moja kwa kila ombi lililoonyeshwa hapo juu) -->
+{% for req in requests[:6] %}
+<div class="modal fade" id="dashReqModal{{ req.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Maelezo ya Ombi #{{ req.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Fundi:</strong> {{ req.mechanic.user.full_name if req.mechanic else "Inatafutwa" }}</p>
+                <p><strong>Simu ya Fundi:</strong>
+                    {% if req.mechanic and req.status in ["accepted", "completed"] %}
+                        <a href="tel:{{ req.mechanic.user.phone }}" class="text-success fw-semibold">{{ req.mechanic.user.phone }}</a>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </p>
+                <p><strong>Gari:</strong> {{ req.vehicle_model }}</p>
+                <p><strong>Tatizo:</strong> {{ req.problem_description }}</p>
+                <p><strong>Eneo:</strong> {{ req.location }}</p>
+                <p><strong>Tarehe ya Ombi:</strong> {{ req.created_at.strftime('%d %b %Y, %H:%M') if req.created_at else '-' }}</p>
+                <p class="mb-0"><strong>Status:</strong>
+                    {% if req.status == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif req.status == "accepted" %}
+                        <span class="badge bg-success">Accepted</span>
+                    {% elif req.status == "completed" %}
+                        <span class="badge bg-primary">Completed</span>
+                    {% elif req.status == "rejected" %}
+                        <span class="badge bg-secondary">Amekataa</span>
+                    {% else %}
+                        <span class="badge bg-danger">Cancelled</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                {% if req.status == "accepted" %}
+                    <form method="POST" action="{{ url_for('complete_request', id=req.id) }}" onsubmit="return confirm('Umethibitisha kuwa fundi amemaliza kazi?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-flag-checkered me-1"></i>Kamilisha</button>
+                    </form>
+                {% endif %}
+                {% if req.mechanic and req.status == "completed" %}
+                    <a href="{{ url_for('add_review', mechanic_id=req.mechanic.id) }}" class="btn btn-outline-warning">
+                        <i class="fa-solid fa-star me-1"></i> Review
+                    </a>
+                {% elif req.status == "rejected" %}
+                    <a href="{{ url_for('search_mechanics') }}" class="btn btn-outline-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Tafuta Fundi Mwingine
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

@@ -36,6 +36,8 @@
                             <span class="badge bg-success">Accepted</span>
                         {% elif req.status == "completed" %}
                             <span class="badge bg-primary">Completed</span>
+                        {% elif req.status == "rejected" %}
+                            <span class="badge bg-secondary">Fundi Amekataa</span>
                         {% else %}
                             <span class="badge bg-danger">Cancelled</span>
                         {% endif %}

@@ -6,28 +6,28 @@
 <div class="row g-4 mb-4">
     <div class="col-md-3">
         <div class="stat-card">
-            <i class="fa-solid fa-boxes-stacked fa-3x text-warning mb-3"></i>
+            <i class="fa-solid fa-boxes-stacked fa-3x text-warning mb-3 icon-3d"></i>
             <h3 class="fw-bold">{{ products|length }}</h3>
             <p class="text-muted mb-0">Bidhaa Zangu</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <i class="fa-solid fa-circle-check fa-3x text-success mb-3"></i>
+            <i class="fa-solid fa-circle-check fa-3x text-success mb-3 icon-3d"></i>
             <h3 class="fw-bold text-capitalize">{{ seller.verified }}</h3>
             <p class="text-muted mb-0">Status ya Duka</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <i class="fa-solid fa-star fa-3x text-primary mb-3"></i>
+            <i class="fa-solid fa-star fa-3x text-primary mb-3 icon-3d"></i>
             <h3 class="fw-bold">{{ "%.1f"|format(average_rating) if average_rating else "0.0" }} / 5</h3>
             <p class="text-muted mb-0">Rating Wastani ({{ reviews|length }} reviews)</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <i class="fa-solid fa-phone fa-3x text-dark mb-3"></i>
+            <i class="fa-solid fa-phone fa-3x text-dark mb-3 icon-3d"></i>
             <h3 class="fw-bold fs-4">{{ user.phone }}</h3>
             <p class="text-muted mb-0">Namba ya Duka</p>
         </div>

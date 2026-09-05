@@ -64,7 +64,8 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
-                <li><span class="dropdown-item-text text-muted small">{{ current_user.email or current_user.phone }}</span></li>
+                <li><span class="dropdown-item-text text-muted small d-block"><i class="fa-solid fa-envelope me-1"></i>{{ current_user.email or '-' }}</span></li>
+                <li><span class="dropdown-item-text text-muted small d-block"><i class="fa-solid fa-phone me-1"></i>{{ current_user.phone }}</span></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">

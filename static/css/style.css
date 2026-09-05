@@ -690,3 +690,22 @@ body {
         --bs-gutter-y: 0.5rem;
     }
 }
+
+/* IKONI ZA "3D" - inatoa hisia ya kina/uhalisia kwenye Font Awesome icons
+   kwa kutumia gradient + vivuli vilivyowekwa tabaka (layered shadows),
+   badala ya rangi tambarare la kawaida. */
+.icon-3d {
+    display: inline-block;
+    background: linear-gradient(145deg, currentColor 0%, rgba(0,0,0,0.35) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,0.5))
+            drop-shadow(0 3px 4px rgba(0,0,0,0.35))
+            drop-shadow(0 6px 10px rgba(0,0,0,0.15));
+}
+[data-bs-theme="dark"] .icon-3d {
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,0.15))
+            drop-shadow(0 3px 6px rgba(0,0,0,0.6))
+            drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+}
