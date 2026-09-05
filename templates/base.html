@@ -24,14 +24,14 @@
 
         <div class="d-flex align-items-center gap-2">
             <a href="{{ url_for('sellers_list') }}" class="btn btn-outline-light" title="Duka la Spea">
-                <i class="fa-solid fa-shop"></i> <span class="d-none d-md-inline">Duka la Spea</span>
+                <i class="fa-solid fa-shop icon-3d"></i> <span class="d-none d-md-inline">Duka la Spea</span>
             </a>
             <button type="button" class="btn btn-outline-light theme-toggle-btn" onclick="toggleGariFixTheme()" title="Badilisha Mandhari (Dark/Light)">
                 <i class="theme-toggle-icon fa-solid fa-moon"></i>
             </button>
             {% if not session.get("user_id") %}
                 <a class="btn btn-light" href="{{ url_for('login') }}">
-                    <i class="fa-solid fa-right-to-bracket"></i> <span class="d-none d-sm-inline">Login</span>
+                    <i class="fa-solid fa-right-to-bracket icon-3d"></i> <span class="d-none d-sm-inline">Login</span>
                 </a>
             {% else %}
                 <a class="btn btn-danger" href="{{ url_for('logout') }}">
@@ -53,23 +53,23 @@
     <div class="offcanvas-body d-flex flex-column">
         <ul class="nav nav-pills flex-column mb-auto gap-1">
             <li class="nav-item">
-                <a class="nav-link text-dark" href="{{ url_for('home') }}"><i class="fa-solid fa-house me-2"></i> Home</a>
+                <a class="nav-link text-dark" href="{{ url_for('home') }}"><i class="fa-solid fa-house me-2 icon-3d"></i> Home</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-dark" href="{{ url_for('search_mechanics') }}"><i class="fa-solid fa-magnifying-glass me-2"></i> Tafuta Fundi</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-dark" href="{{ url_for('sellers_list') }}"><i class="fa-solid fa-shop me-2"></i> Duka la Spea</a>
+                <a class="nav-link text-dark" href="{{ url_for('sellers_list') }}"><i class="fa-solid fa-shop me-2 icon-3d"></i> Duka la Spea</a>
             </li>
 
             <li><hr class="my-2"></li>
 
             {% if not session.get("user_id") %}
                 <li class="nav-item">
-                    <a class="nav-link text-dark" href="{{ url_for('register_choice') }}"><i class="fa-solid fa-user-plus me-2"></i> Jisajili</a>
+                    <a class="nav-link text-dark" href="{{ url_for('register_choice') }}"><i class="fa-solid fa-user-plus me-2 icon-3d"></i> Jisajili</a>
                 </li>
                 <li class="nav-item d-sm-none">
-                    <a class="nav-link text-dark" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket me-2"></i> Login</a>
+                    <a class="nav-link text-dark" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket me-2 icon-3d"></i> Login</a>
                 </li>
             {% else %}
                 {% if session.get("role") == "customer" %}

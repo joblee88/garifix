@@ -22,8 +22,18 @@
         <button type="button" class="sidebar-minimize-btn d-none d-lg-flex" onclick="toggleGariFixSidebar()" title="Punguza/Panua Sidebar">
             <i class="fa-solid fa-angles-left"></i>
         </button>
+        {% if current_user.mechanic_profile and current_user.mechanic_profile.profile_photo %}
+            <img src="{{ resolve_image_url(current_user.mechanic_profile.profile_photo) }}" class="topbar-avatar" alt="Profile">
+        {% else %}
+            <i class="fa-solid fa-circle-user fa-2x text-secondary"></i>
+        {% endif %}
         <div class="topbar-title-wrap">
-            <span class="topbar-title"><i class="fa-solid fa-gauge text-primary"></i> {{ current_user.full_name }}</span>
+            <span class="topbar-title">
+                {{ current_user.full_name }}
+                {% if current_user.mechanic_profile and current_user.mechanic_profile.verified == "approved" %}
+                    <i class="fa-solid fa-circle-check text-primary" title="Fundi Aliyethibitishwa" style="font-size: 0.75em;"></i>
+                {% endif %}
+            </span>
             <small class="topbar-greeting">{{ time_greeting }}</small>
         </div>
     </div>
