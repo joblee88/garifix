@@ -34,19 +34,18 @@
 </div>
 
 <div class="card shadow border-0">
-    <div class="card-header bg-primary text-white py-3">
-        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i>Incoming Service Requests</h5>
+    <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i>Maombi ya Hivi Karibuni</h5>
+        <a href="{{ url_for('own_mechanic_requests') }}" class="btn btn-light btn-sm">Ona Yote</a>
     </div>
 
-    <!-- MUONEKANO WA SIMU (Cards) - columns MBILI, unaonekana skrini ndogo pekee -->
+    <!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua taarifa+vitendo -->
     <div class="card-body d-md-none p-2">
         <div class="row g-2">
-        {% for req in requests %}
+        {% for req in requests[:6] %}
         <div class="col-6">
-        <div class="border rounded-3 p-2 bg-white h-100">
-            <div class="d-flex justify-content-between align-items-start mb-1">
-                <h6 class="fw-bold mb-0 small">{{ req.customer.full_name }}</h6>
-            </div>
+        <div class="border rounded-3 p-2 bg-white h-100" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#dashMechModal{{ req.id }}">
+            <h6 class="fw-bold mb-1 small">{{ req.customer.full_name }}</h6>
             {% if req.status == "pending" %}
                 <span class="badge bg-warning text-dark mb-1">Pending</span>
             {% elif req.status == "accepted" %}
@@ -58,37 +57,7 @@
             {% else %}
                 <span class="badge bg-danger mb-1">Cancelled</span>
             {% endif %}
-            <p class="mb-1 small text-muted"><i class="fa-solid fa-car me-1"></i>{{ req.vehicle_model }}</p>
-            <p class="mb-1 small text-muted text-truncate"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ req.problem_description }}</p>
-            <p class="mb-2 small">
-                {% if req.status in ["accepted", "completed"] %}
-                    <a href="tel:{{ req.customer.phone }}" class="text-decoration-none fw-semibold text-success">
-                        <i class="fa-solid fa-phone me-1"></i>{{ req.customer.phone }}
-                    </a>
-                {% else %}
-                    <span class="text-muted"><i class="fa-solid fa-lock me-1"></i>Ficha</span>
-                {% endif %}
-            </p>
-            {% if req.status == "pending" %}
-                <div class="d-flex gap-1">
-                    <form method="POST" action="{{ url_for('accept_request', id=req.id) }}" class="flex-fill">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-success btn-sm w-100">
-                            <i class="fa fa-check"></i>
-                        </button>
-                    </form>
-                    <form method="POST" action="{{ url_for('reject_request', id=req.id) }}" class="flex-fill" onsubmit="return confirm('Una uhakika unataka kukataa ombi hili?');">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                            <i class="fa fa-xmark"></i>
-                        </button>
-                    </form>
-                </div>
-            {% elif req.status == "accepted" %}
-                <span class="badge bg-light text-dark border d-block py-1 small">
-                    <i class="fa fa-hourglass-half me-1"></i> Inasubiri
-                </span>
-            {% endif %}
+            <p class="mb-0 small text-muted"><i class="fa-solid fa-car me-1"></i>{{ req.vehicle_model }}</p>
         </div>
         </div>
         {% else %}
@@ -115,12 +84,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for req in requests %}
-                    <tr>
+                    {% for req in requests[:6] %}
+                    <tr style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#dashMechModal{{ req.id }}">
                         <td class="fw-semibold">{{ req.customer.full_name }}</td>
                         <td>
                             {% if req.status in ["accepted", "completed"] %}
-                                <a href="tel:{{ req.customer.phone }}" class="text-decoration-none fw-semibold text-success">
+                                <a href="tel:{{ req.customer.phone }}" class="text-decoration-none fw-semibold text-success" onclick="event.stopPropagation()">
                                     <i class="fa-solid fa-phone me-1"></i>{{ req.customer.phone }}
                                 </a>
                             {% else %}
@@ -143,7 +112,7 @@
                                 <span class="badge bg-danger">Cancelled</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td onclick="event.stopPropagation()">
                             {% if req.status == "pending" %}
                                 <form method="POST" action="{{ url_for('accept_request', id=req.id) }}" class="d-inline">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -176,4 +145,57 @@
         </div>
     </div>
 </div>
+
+<!-- MODALS ZA TAARIFA KAMILI (moja kwa kila ombi lililoonyeshwa hapo juu) -->
+{% for req in requests[:6] %}
+<div class="modal fade" id="dashMechModal{{ req.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Maelezo ya Ombi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Mteja:</strong> {{ req.customer.full_name }}</p>
+                <p><strong>Simu:</strong>
+                    {% if req.status in ["accepted", "completed"] %}
+                        <a href="tel:{{ req.customer.phone }}" class="text-success fw-semibold">{{ req.customer.phone }}</a>
+                    {% else %}
+                        <span class="text-muted">Itaonekana ukikubali ombi</span>
+                    {% endif %}
+                </p>
+                <p><strong>Gari:</strong> {{ req.vehicle_model }}</p>
+                <p><strong>Tatizo:</strong> {{ req.problem_description }}</p>
+                <p><strong>Eneo:</strong> {{ req.location }}</p>
+                <p><strong>Tarehe ya Ombi:</strong> {{ req.created_at.strftime('%d %b %Y, %H:%M') if req.created_at else '-' }}</p>
+                <p class="mb-0"><strong>Status:</strong>
+                    {% if req.status == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif req.status == "accepted" %}
+                        <span class="badge bg-success">Accepted</span>
+                    {% elif req.status == "completed" %}
+                        <span class="badge bg-primary">Completed</span>
+                    {% elif req.status == "rejected" %}
+                        <span class="badge bg-secondary">Umekataa</span>
+                    {% else %}
+                        <span class="badge bg-danger">Cancelled</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if req.status == "pending" %}
+            <div class="modal-footer">
+                <form method="POST" action="{{ url_for('reject_request', id=req.id) }}" onsubmit="return confirm('Una uhakika unataka kukataa ombi hili?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger"><i class="fa fa-xmark me-1"></i>Kataa</button>
+                </form>
+                <form method="POST" action="{{ url_for('accept_request', id=req.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-check me-1"></i>Kubali</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

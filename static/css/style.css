@@ -155,9 +155,13 @@ body {
         width: 28px;
         height: 28px;
     }
+    .app-topbar .dropdown-toggle::after {
+        display: none;
+    }
     .app-topbar .dropdown-toggle {
-        padding: 2px 6px !important;
-        gap: 4px !important;
+        width: auto !important;
+        min-width: 32px;
+        padding: 0 6px !important;
     }
     .app-topbar .badge {
         font-size: 9px;
