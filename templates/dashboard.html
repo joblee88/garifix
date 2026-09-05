@@ -2,7 +2,6 @@
 {% block title %}Mechanic Dashboard - GariFix{% endblock %}
 
 {% block mechanic_content %}
-<h2 class="fw-bold mb-4"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Dashboard Yangu</h2>
 
 <div class="row g-3 mb-4">
     <div class="col-4">
@@ -39,32 +38,33 @@
         <h5 class="mb-0 fw-bold"><i class="fa-solid fa-list-check me-2"></i>Incoming Service Requests</h5>
     </div>
 
-    <!-- MUONEKANO WA SIMU (Cards) - unaonekana skrini ndogo pekee -->
+    <!-- MUONEKANO WA SIMU (Cards) - columns MBILI, unaonekana skrini ndogo pekee -->
     <div class="card-body d-md-none p-2">
+        <div class="row g-2">
         {% for req in requests %}
-        <div class="border rounded-3 p-3 mb-2 bg-white">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <h6 class="fw-bold mb-0">{{ req.customer.full_name }}</h6>
-                {% if req.status == "pending" %}
-                    <span class="badge bg-warning text-dark">Pending</span>
-                {% elif req.status == "accepted" %}
-                    <span class="badge bg-success">Accepted</span>
-                {% elif req.status == "completed" %}
-                    <span class="badge bg-primary">Completed</span>
-                {% else %}
-                    <span class="badge bg-danger">Cancelled</span>
-                {% endif %}
+        <div class="col-6">
+        <div class="border rounded-3 p-2 bg-white h-100">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <h6 class="fw-bold mb-0 small">{{ req.customer.full_name }}</h6>
             </div>
-            <p class="mb-1 small"><i class="fa-solid fa-car me-1 text-muted"></i> {{ req.vehicle_model }}</p>
-            <p class="mb-1 small"><i class="fa-solid fa-triangle-exclamation me-1 text-muted"></i> {{ req.problem_description }}</p>
-            <p class="mb-2 small"><i class="fa-solid fa-location-dot me-1 text-muted"></i> {{ req.location }}</p>
+            {% if req.status == "pending" %}
+                <span class="badge bg-warning text-dark mb-1">Pending</span>
+            {% elif req.status == "accepted" %}
+                <span class="badge bg-success mb-1">Accepted</span>
+            {% elif req.status == "completed" %}
+                <span class="badge bg-primary mb-1">Completed</span>
+            {% else %}
+                <span class="badge bg-danger mb-1">Cancelled</span>
+            {% endif %}
+            <p class="mb-1 small text-muted"><i class="fa-solid fa-car me-1"></i>{{ req.vehicle_model }}</p>
+            <p class="mb-1 small text-muted text-truncate"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ req.problem_description }}</p>
             <p class="mb-2 small">
                 {% if req.status in ["accepted", "completed"] %}
                     <a href="tel:{{ req.customer.phone }}" class="text-decoration-none fw-semibold text-success">
                         <i class="fa-solid fa-phone me-1"></i>{{ req.customer.phone }}
                     </a>
                 {% else %}
-                    <span class="text-muted"><i class="fa-solid fa-lock me-1"></i>Simu itaonekana ukikubali</span>
+                    <span class="text-muted"><i class="fa-solid fa-lock me-1"></i>Ficha</span>
                 {% endif %}
             </p>
             {% if req.status == "pending" %}
@@ -75,14 +75,18 @@
                     </button>
                 </form>
             {% elif req.status == "accepted" %}
-                <span class="badge bg-light text-dark border d-block py-2">
-                    <i class="fa fa-hourglass-half me-1"></i> Inasubiri mteja athibitishe
+                <span class="badge bg-light text-dark border d-block py-1 small">
+                    <i class="fa fa-hourglass-half me-1"></i> Inasubiri
                 </span>
             {% endif %}
         </div>
+        </div>
         {% else %}
-        <p class="text-center py-4 text-muted mb-0">Hakuna Service Requests zilizopatikana.</p>
+        <div class="col-12">
+            <p class="text-center py-4 text-muted mb-0">Hakuna Service Requests zilizopatikana.</p>
+        </div>
         {% endfor %}
+        </div>
     </div>
 
     <!-- MUONEKANO WA DESKTOP (Jedwali) - unaonekana skrini kubwa pekee -->

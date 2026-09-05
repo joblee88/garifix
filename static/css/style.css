@@ -133,7 +133,10 @@ body {
     }
     .app-topbar .topbar-left,
     .app-topbar .topbar-right {
-        gap: 4px;
+        gap: 8px;
+    }
+    .app-topbar .btn.position-relative {
+        margin-right: 4px;
     }
     .app-topbar .btn,
     .menu-toggle-btn,

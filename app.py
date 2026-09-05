@@ -445,7 +445,6 @@ def login():
             session["user_id"] = user.id
             session["role"] = user.role
 
-            flash("Umeingia kikamilifu!", "success")
             if user.role == "admin":
                 return redirect(url_for("admin_dashboard", user_id=user.id))
             elif user.role == "mechanic":
@@ -878,6 +877,7 @@ def customer_dashboard():
     return render_template(
         "customer_dashboard.html",
         user=user,
+        requests=requests,
         total_requests=total_requests,
         pending_requests=pending_requests,
         accepted_requests=accepted_requests,
