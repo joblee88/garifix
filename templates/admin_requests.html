@@ -88,59 +88,6 @@
                         {% endif %}
                     </td>
                 </tr>
-
-                <!-- Modal ya Taarifa Kamili za Ombi #{{ req.id }} -->
-                <div class="modal fade" id="detailsModal{{ req.id }}" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title fw-bold">Taarifa za Ombi #{{ req.id }}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row g-4">
-                                    <div class="col-md-6">
-                                        <h6 class="fw-bold text-primary"><i class="fa-solid fa-user me-2"></i>Taarifa za Mteja</h6>
-                                        {% if req.customer %}
-                                        <ul class="list-unstyled small">
-                                            <li><strong>Jina:</strong> {{ req.customer.full_name }}</li>
-                                            <li><strong>Simu:</strong> {{ req.customer.phone }}</li>
-                                            <li><strong>Email:</strong> {{ req.customer.email or '-' }}</li>
-                                        </ul>
-                                        {% else %}
-                                        <p class="text-muted small">Taarifa za mteja hazipatikani.</p>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6 class="fw-bold text-success"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Taarifa za Fundi</h6>
-                                        {% if req.mechanic %}
-                                        <ul class="list-unstyled small">
-                                            <li><strong>Jina:</strong> {{ req.mechanic.user.full_name }}</li>
-                                            <li><strong>Simu:</strong> {{ req.mechanic.user.phone }}</li>
-                                            <li><strong>Email:</strong> {{ req.mechanic.user.email or '-' }}</li>
-                                            <li><strong>Garage:</strong> {{ req.mechanic.garage_name or '-' }}</li>
-                                            <li><strong>Utaalamu:</strong> {{ req.mechanic.specialization }}</li>
-                                            <li><strong>Uzoefu:</strong> {{ req.mechanic.experience or 0 }} miaka</li>
-                                            <li><strong>Eneo la Fundi:</strong> {{ req.mechanic.region }}, {{ req.mechanic.district }}</li>
-                                        </ul>
-                                        {% else %}
-                                        <p class="text-muted small">Bado hakuna fundi aliyewekwa kwenye ombi hili.</p>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-12">
-                                        <h6 class="fw-bold text-dark"><i class="fa-solid fa-car me-2"></i>Taarifa za Ombi</h6>
-                                        <ul class="list-unstyled small">
-                                            <li><strong>Aina ya Gari:</strong> {{ req.vehicle_model }}</li>
-                                            <li><strong>Tatizo:</strong> {{ req.problem_description }}</li>
-                                            <li><strong>Eneo la Huduma:</strong> {{ req.location }}</li>
-                                            <li><strong>Tarehe:</strong> {{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '-' }}</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 {% else %}
                 <tr>
                     <td colspan="7" class="text-center py-4 text-muted">Hakuna maombi ya huduma.</td>
@@ -150,4 +97,59 @@
         </table>
     </div>
 </div>
+
+<!-- MODALS ZA TAARIFA KAMILI (moja kwa kila ombi) - nje ya jedwali kabisa -->
+{% for req in requests %}
+<div class="modal fade" id="detailsModal{{ req.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Taarifa za Ombi #{{ req.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-primary"><i class="fa-solid fa-user me-2"></i>Taarifa za Mteja</h6>
+                        {% if req.customer %}
+                        <ul class="list-unstyled small">
+                            <li><strong>Jina:</strong> {{ req.customer.full_name }}</li>
+                            <li><strong>Simu:</strong> {{ req.customer.phone }}</li>
+                            <li><strong>Email:</strong> {{ req.customer.email or '-' }}</li>
+                        </ul>
+                        {% else %}
+                        <p class="text-muted small">Taarifa za mteja hazipatikani.</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-success"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Taarifa za Fundi</h6>
+                        {% if req.mechanic %}
+                        <ul class="list-unstyled small">
+                            <li><strong>Jina:</strong> {{ req.mechanic.user.full_name }}</li>
+                            <li><strong>Simu:</strong> {{ req.mechanic.user.phone }}</li>
+                            <li><strong>Email:</strong> {{ req.mechanic.user.email or '-' }}</li>
+                            <li><strong>Garage:</strong> {{ req.mechanic.garage_name or '-' }}</li>
+                            <li><strong>Utaalamu:</strong> {{ req.mechanic.specialization }}</li>
+                            <li><strong>Uzoefu:</strong> {{ req.mechanic.experience or 0 }} miaka</li>
+                            <li><strong>Eneo la Fundi:</strong> {{ req.mechanic.region }}, {{ req.mechanic.district }}</li>
+                        </ul>
+                        {% else %}
+                        <p class="text-muted small">Bado hakuna fundi aliyewekwa kwenye ombi hili.</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <h6 class="fw-bold text-dark"><i class="fa-solid fa-car me-2"></i>Taarifa za Ombi</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Aina ya Gari:</strong> {{ req.vehicle_model }}</li>
+                            <li><strong>Tatizo:</strong> {{ req.problem_description }}</li>
+                            <li><strong>Eneo la Huduma:</strong> {{ req.location }}</li>
+                            <li><strong>Tarehe:</strong> {{ req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else '-' }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
