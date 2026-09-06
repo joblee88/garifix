@@ -1,7 +1,7 @@
 {% if is_android_browser and apk_available and not is_app_mode %}
 <div id="downloadAppBanner" class="gfx-download-banner">
     <div class="d-flex align-items-center gap-2 p-2">
-        <i class="fa-solid fa-car-side text-primary fs-4 flex-shrink-0"></i>
+        <img src="{{ url_for('static', filename='images/garifix-emblem.png') }}" alt="GariFix" style="width:28px;height:28px;object-fit:contain;" class="flex-shrink-0">
         <div class="flex-grow-1" style="min-width:0;">
             <p class="mb-0 small fw-semibold text-truncate">Pakua App ya GariFix</p>
             <p class="mb-0 text-muted" style="font-size: 11px;">Haraka zaidi + notifications</p>

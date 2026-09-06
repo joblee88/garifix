@@ -1,5 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
+/* Rangi kuu ya website - imelinganishwa na logo yetu halisi (GariFix
+   emblem) badala ya bluu ya kawaida ya Bootstrap, ili website na
+   icon zisipishane. Bootstrap 5.3+ inasoma variable hizi moja kwa
+   moja kwa .btn-primary, .text-primary, .bg-primary n.k. */
+:root {
+    --bs-primary: #1D4ED8;
+    --bs-primary-rgb: 29, 78, 216;
+    --bs-primary-text-emphasis: #14338F;
+    --bs-primary-bg-subtle: #DCE6FB;
+    --bs-primary-border-subtle: #A9C0F2;
+    --bs-link-color: #1D4ED8;
+    --bs-link-hover-color: #14338F;
+}
+.btn-primary {
+    --bs-btn-bg: #1D4ED8;
+    --bs-btn-border-color: #1D4ED8;
+    --bs-btn-hover-bg: #1841B8;
+    --bs-btn-hover-border-color: #1841B8;
+    --bs-btn-active-bg: #14338F;
+    --bs-btn-active-border-color: #14338F;
+}
+.btn-outline-primary {
+    --bs-btn-color: #1D4ED8;
+    --bs-btn-border-color: #1D4ED8;
+    --bs-btn-hover-bg: #1D4ED8;
+    --bs-btn-hover-border-color: #1D4ED8;
+    --bs-btn-active-bg: #1D4ED8;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background: #f4f6f9;
@@ -500,7 +529,7 @@ body {
    ========================================== */
 .auth-page-bg {
     min-height: calc(100vh - 130px);
-    background: linear-gradient(135deg, #0D6EFD 0%, #198754 100%);
+    background: linear-gradient(135deg, #1D4ED8 0%, #198754 100%);
     display: flex;
     align-items: center;
     margin: -1.5rem -0.75rem;
@@ -568,7 +597,7 @@ body {
    Kila gari lina SPEED (muda) TOFAUTI ili yapitane barabarani, siyo
    kutembea kwa mstari sawa milele. */
 .car-customer {
-    color: #0D6EFD;
+    color: #1D4ED8;
     animation-duration: 6s;
     animation-delay: 0s;
 }
