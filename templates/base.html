@@ -128,6 +128,9 @@
                     <li><a href="{{ url_for('search_mechanics') }}" class="text-white text-decoration-none">Tafuta Fundi</a></li>
                     <li><a href="{{ url_for('sellers_list') }}" class="text-white text-decoration-none">Duka la Spea</a></li>
                     <li><a href="{{ url_for('register_choice') }}" class="text-white text-decoration-none">Jisajili</a></li>
+                    {% if is_android_browser and apk_available and not is_app_mode %}
+                        <li><a href="{{ url_for('download_app') }}" class="text-white text-decoration-none"><i class="fa-solid fa-download me-1"></i> Pakua App (Android)</a></li>
+                    {% endif %}
                     <li><a href="{{ url_for('terms') }}" class="text-white text-decoration-none">Vigezo na Masharti</a></li>
                 </ul>
             </div>

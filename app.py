@@ -291,9 +291,14 @@ def inject_app_mode():
     # "Android" pekee (siyo alama yetu maalum ya "GariFixAndroidApp") -
     # inagundua MTUMIAJI YEYOTE wa simu ya Android (hata kwenye Chrome
     # ya kawaida, siyo lazima awe na app yetu tayari) - kwa ajili ya
-    # kuonyesha "popup ya kupakua app" kwa hadhira sahihi TU.
+    # kuonyesha kiungo cha "Pakua App" kwa hadhira sahihi TU.
     is_android_browser = "Android" in ua and "GariFixAndroidApp" not in ua
-    return dict(is_app_mode="GariFixAndroidApp" in ua, is_android_browser=is_android_browser)
+    apk_available = os.path.exists(os.path.join(app.static_folder, "downloads", "GariFix.apk"))
+    return dict(
+        is_app_mode="GariFixAndroidApp" in ua,
+        is_android_browser=is_android_browser,
+        apk_available=apk_available,
+    )
 
 
 # Salamu ya wakati (Habari za Asubuhi/Mchana/Jioni/Usiku) - kwa saa za
@@ -393,8 +398,7 @@ def home():
         for m, avg_rating, review_count in top_mechanics_query
     ]
 
-    apk_available = os.path.exists(os.path.join(app.static_folder, "downloads", "GariFix.apk"))
-    return render_template("home.html", top_mechanics=top_mechanics, apk_available=apk_available)
+    return render_template("home.html", top_mechanics=top_mechanics)
 
 
 def notify_user(user, title, body, data=None):
@@ -951,8 +955,7 @@ def terms():
 @app.route("/register")
 def register_choice():
     """Ukurasa wa kuchagua: Nataka kujisajili kama Mteja au kama Fundi."""
-    apk_available = os.path.exists(os.path.join(app.static_folder, "downloads", "GariFix.apk"))
-    return render_template("register_choice.html", apk_available=apk_available)
+    return render_template("register_choice.html")
 
 
 @app.route("/customer/register", methods=["GET", "POST"])
