@@ -2174,6 +2174,12 @@ def delete_user(id):
 
     name = user.full_name
     role = user.role
+    # Futa kwanza arifa (Notifications) za mtumiaji huyu - vinginevyo
+    # MySQL inakataa kufuta user (foreign key constraint) kwa sababu
+    # bado kuna Notification zinazomrejelea. (Vitu vingine kama Mechanic/
+    # Seller/ServiceRequest vina "cascade" tayari - hii ndiyo pekee mpya
+    # isiyokuwa nayo bado.)
+    Notification.query.filter_by(user_id=user.id).delete()
     db.session.delete(user)
     db.session.commit()
 
