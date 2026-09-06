@@ -2174,12 +2174,31 @@ def delete_user(id):
 
     name = user.full_name
     role = user.role
-    # Futa kwanza arifa (Notifications) za mtumiaji huyu - vinginevyo
-    # MySQL inakataa kufuta user (foreign key constraint) kwa sababu
-    # bado kuna Notification zinazomrejelea. (Vitu vingine kama Mechanic/
-    # Seller/ServiceRequest vina "cascade" tayari - hii ndiyo pekee mpya
-    # isiyokuwa nayo bado.)
+    # Futa kwanza VITU VYOTE vinavyomrejelea mtumiaji huyu (moja kwa moja
+    # au kupitia Seller/Product yake) - vinginevyo MySQL inakataa kufuta
+    # (foreign key constraint). Conversations zinaweza kurejelea customer_id,
+    # seller_id (Seller), AU product_id (Product) - zote lazima ziondolewe
+    # kwanza. ChatMessage zinafutwa kiotomatiki (cascade) pamoja na
+    # Conversation husika.
     Notification.query.filter_by(user_id=user.id).delete()
+
+    if role == "customer":
+        conv_ids = [c.id for c in Conversation.query.filter_by(customer_id=user.id).all()]
+        if conv_ids:
+            ChatMessage.query.filter(ChatMessage.conversation_id.in_(conv_ids)).delete(synchronize_session=False)
+        Conversation.query.filter_by(customer_id=user.id).delete()
+    elif role == "seller" and user.seller_profile:
+        seller_id = user.seller_profile.id
+        product_ids = [p.id for p in user.seller_profile.products]
+        conv_ids = set(c.id for c in Conversation.query.filter_by(seller_id=seller_id).all())
+        if product_ids:
+            conv_ids.update(c.id for c in Conversation.query.filter(Conversation.product_id.in_(product_ids)).all())
+        if conv_ids:
+            ChatMessage.query.filter(ChatMessage.conversation_id.in_(conv_ids)).delete(synchronize_session=False)
+        if product_ids:
+            Conversation.query.filter(Conversation.product_id.in_(product_ids)).delete(synchronize_session=False)
+        Conversation.query.filter_by(seller_id=seller_id).delete()
+
     db.session.delete(user)
     db.session.commit()
 
