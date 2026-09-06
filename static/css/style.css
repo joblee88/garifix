@@ -612,11 +612,6 @@ body {
     animation-duration: 8.5s;
     animation-delay: 1s;
 }
-.car-seller {
-    color: #ffc107;
-    animation-duration: 11s;
-    animation-delay: 2s;
-}
 
 @keyframes gariFixDriveAcross {
     from {
@@ -633,7 +628,6 @@ body {
         left: 20px;
     }
     .car-mechanic { left: 60px; }
-    .car-seller { left: 100px; }
 }
 
 /* ==========================================

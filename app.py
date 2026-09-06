@@ -123,7 +123,7 @@ db.init_app(app)
 with app.app_context():
     try:
         import models
-        from models import User, Mechanic, ServiceRequest, Review, Seller, Product, ProductPhoto, SellerReview, Conversation, ChatMessage, Notification
+        from models import User, Mechanic, ServiceRequest, Review, Notification
         db.create_all()
         print("Database ya SQLite imewezeshwa: Faili la garifix.db na meza zote zipo tayari!")
     except Exception as e:
@@ -324,27 +324,12 @@ def inject_user():
     if "user_id" in session:
         user = db.session.get(User, session["user_id"])
         notification_count = 0
-        unread_chat_count = 0
         if user:
-            # Idadi ya arifa ZISIZOSOMWA (unread) - sawa kwa role zote sasa,
-            # inatoka moja kwa moja kwenye jedwali la Notification badala
-            # ya makadirio ya zamani (mfano idadi ya maombi ya "pending").
+            # Idadi ya arifa ZISIZOSOMWA (unread) - sawa kwa role zote,
+            # inatoka moja kwa moja kwenye jedwali la Notification.
             notification_count = Notification.query.filter_by(user_id=user.id, is_read=False).count()
-
-            if user.role == "customer":
-                unread_chat_count = ChatMessage.query.join(Conversation).filter(
-                    Conversation.customer_id == user.id,
-                    ChatMessage.sender_id != user.id,
-                    ChatMessage.is_read == False
-                ).count()
-            elif user.role == "seller" and user.seller_profile:
-                unread_chat_count = ChatMessage.query.join(Conversation).filter(
-                    Conversation.seller_id == user.seller_profile.id,
-                    ChatMessage.sender_id != user.id,
-                    ChatMessage.is_read == False
-                ).count()
-        return dict(current_user=user, notification_count=notification_count, unread_chat_count=unread_chat_count)
-    return dict(current_user=None, notification_count=0, unread_chat_count=0)
+        return dict(current_user=user, notification_count=notification_count)
+    return dict(current_user=None, notification_count=0)
 
 
 # KUMBUKA: Hitaji la "email verification" (kuzuia dashboard kabla ya
@@ -433,8 +418,6 @@ def role_dashboard_url():
         return url_for("customer_dashboard")
     elif role == "mechanic":
         return url_for("mechanic_dashboard")
-    elif role == "seller":
-        return url_for("seller_dashboard")
     elif role == "admin":
         return url_for("admin_dashboard", user_id=session.get("user_id"))
     return None
@@ -463,8 +446,6 @@ def app_account():
     role = session.get("role")
     if role == "mechanic":
         return redirect(url_for("own_mechanic_profile"))
-    elif role == "seller":
-        return redirect(url_for("own_seller_profile"))
     elif role == "customer":
         return redirect(url_for("customer_dashboard"))
     elif role == "admin":
@@ -503,16 +484,6 @@ def login():
                         flash("Usajili wako umekataliwa na Admin.", "danger")
                         return redirect(url_for("login"))
 
-            if user.role == "seller":
-                seller = Seller.query.filter_by(user_id=user.id).first()
-                if seller:
-                    if seller.verified == "pending":
-                        flash("Akaunti yako bado inasubiri idhini (approval) ya Admin.", "warning")
-                        return redirect(url_for("login"))
-                    elif seller.verified == "rejected":
-                        flash("Usajili wako umekataliwa na Admin.", "danger")
-                        return redirect(url_for("login"))
-
             # "Remember Me" - ikiwa haijachaguliwa, session ni ya kawaida tu
             # (inaisha ukifunga browser); ikiwa imechaguliwa, inadumu siku 7
             # (kama tulivyosanidi kwenye PERMANENT_SESSION_LIFETIME)
@@ -524,8 +495,6 @@ def login():
                 return redirect(url_for("admin_dashboard", user_id=user.id))
             elif user.role == "mechanic":
                 return redirect(url_for("mechanic_dashboard"))
-            elif user.role == "seller":
-                return redirect(url_for("seller_dashboard"))
             else:
                 return redirect(url_for("customer_dashboard"))
 
@@ -1376,618 +1345,6 @@ def complete_request(id):
     return redirect(url_for("home"))
 
 
-# =====================================================================
-# SELLER ROUTES (Wauzaji wa Spea za Magari na Lubricants)
-# =====================================================================
-@app.route("/seller/register", methods=["GET", "POST"])
-@limiter.limit("10 per minute")
-def seller_register():
-    if request.method == "POST":
-        first_name = request.form.get("first_name", "").strip()
-        last_name = request.form.get("last_name", "").strip()
-        full_name = f"{first_name} {last_name}".strip()
-        phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
-
-        shop_name = request.form.get("shop_name", "").strip()
-        region = request.form.get("region", "").strip()
-        district = request.form.get("district", "").strip()
-        ward = request.form.get("ward", "").strip()
-        street = request.form.get("street", "").strip()
-        description = request.form.get("description", "").strip()
-        business_types = request.form.getlist("business_type")
-        business_type = ", ".join(business_types)
-
-        if not first_name or not last_name:
-            flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
-            return redirect(url_for("seller_register"))
-
-        if not email:
-            flash("Tafadhali weka email.", "danger")
-            return redirect(url_for("seller_register"))
-
-        if not shop_name:
-            flash("Tafadhali weka jina la duka lako.", "danger")
-            return redirect(url_for("seller_register"))
-
-        if not business_types:
-            flash("Tafadhali chagua unauza nini (Spea za Magari na/au Mafuta/Lubricants).", "danger")
-            return redirect(url_for("seller_register"))
-
-        if not request.form.get("agree_terms"):
-            flash("Lazima ukubaliane na Vigezo na Masharti ili kuendelea.", "danger")
-            return redirect(url_for("seller_register"))
-
-        if not region or not district or not ward or not street:
-            flash("Tafadhali jaza eneo la duka lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
-            return redirect(url_for("seller_register"))
-
-        if password != confirm_password:
-            flash("Password na Rudia Password hazifanani.", "danger")
-            return redirect(url_for("seller_register"))
-
-        # Angalia kama tayari kuna akaunti na simu/email hii. Kama ni
-        # muuzaji aliyekataliwa (rejected) HAPO AWALI, mruhusu "kuomba upya".
-        existing_by_phone = User.query.filter_by(phone=phone).first()
-        existing_by_email = User.query.filter_by(email=email).first()
-
-        reapplying_user = None
-        for existing in (existing_by_phone, existing_by_email):
-            if existing and existing.role == "seller" and existing.seller_profile and existing.seller_profile.verified == "rejected":
-                reapplying_user = existing
-                break
-
-        if not reapplying_user:
-            if existing_by_phone:
-                flash("Namba hii ya simu tayari imesajiliwa.", "danger")
-                return redirect(url_for("seller_register"))
-            if existing_by_email:
-                flash("Barua pepe hii tayari imesajiliwa.", "danger")
-                return redirect(url_for("seller_register"))
-        else:
-            if existing_by_phone and existing_by_phone.id != reapplying_user.id:
-                flash("Namba hii ya simu tayari imesajiliwa na akaunti nyingine.", "danger")
-                return redirect(url_for("seller_register"))
-            if existing_by_email and existing_by_email.id != reapplying_user.id:
-                flash("Barua pepe hii tayari imesajiliwa na akaunti nyingine.", "danger")
-                return redirect(url_for("seller_register"))
-
-        try:
-            shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), folder_hint="shops")
-        except InvalidImageError as e:
-            flash(str(e), "danger")
-            return redirect(url_for("seller_register"))
-
-        if reapplying_user:
-            # KUOMBA UPYA - sasisha taarifa za zamani badala ya kuunda mpya
-            new_user = reapplying_user
-            new_user.full_name = full_name
-            new_user.phone = phone
-            new_user.email = email
-            new_user.password = generate_password_hash(password)
-            new_user.status = "active"
-
-            new_seller = new_user.seller_profile
-            new_seller.shop_name = shop_name
-            new_seller.region = region
-            new_seller.district = district
-            new_seller.ward = ward
-            new_seller.street = street
-            new_seller.description = description
-            if shop_photo_filename:
-                new_seller.shop_photo = shop_photo_filename
-            new_seller.business_type = business_type
-            new_seller.verified = "pending"
-            db.session.commit()
-        else:
-            new_user = User(
-                full_name=full_name,
-                phone=phone,
-                email=email,
-                password=generate_password_hash(password),
-                role="seller"
-            )
-            db.session.add(new_user)
-            db.session.commit()
-
-            new_seller = Seller(
-                user_id=new_user.id,
-                shop_name=shop_name,
-                region=region,
-                district=district,
-                ward=ward,
-                street=street,
-                description=description,
-                shop_photo=shop_photo_filename,
-                business_type=business_type,
-                verified="pending"
-            )
-            db.session.add(new_seller)
-            db.session.commit()
-
-        # Arifisha ADMIN WOTE - muuzaji mpya (au anayeomba upya) anasubiri idhini
-        for admin_user in User.query.filter_by(role="admin").all():
-            notify_user(
-                admin_user,
-                title="Muuzaji Mpya Anasubiri Idhini - GariFix",
-                body=f"{full_name} ({shop_name}) amejisajili na anasubiri uthibitisho wako.",
-                data={"type": "seller_pending", "seller_id": new_seller.id, "url": "/admin/sellers"}
-            )
-
-        flash("Usajili umefanikiwa! Akaunti yako inasubiri idhini ya Admin kabla ya kuanza kuonekana kwa wateja.", "success")
-        return redirect(url_for("login"))
-
-    return render_template("seller_register.html")
-
-
-@app.route("/seller/dashboard")
-@login_required
-@role_required("seller")
-def seller_dashboard():
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-    products = Product.query.filter_by(seller_id=seller.id).order_by(Product.created_at.desc()).all()
-    reviews = SellerReview.query.filter_by(seller_id=seller.id).order_by(SellerReview.created_at.desc()).all()
-    avg_rating = db.session.query(func.avg(SellerReview.rating)).filter_by(seller_id=seller.id).scalar() or 0
-
-    return render_template(
-        "seller_dashboard.html",
-        seller=seller, user=user, products=products,
-        reviews=reviews, average_rating=avg_rating
-    )
-
-
-@app.route("/seller/profile", methods=["GET", "POST"])
-@login_required
-@role_required("seller")
-def own_seller_profile():
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-
-    if request.method == "POST":
-        seller.shop_name = request.form.get("shop_name", "").strip()
-        seller.region = request.form.get("region", "").strip()
-        seller.district = request.form.get("district", "").strip()
-        seller.ward = request.form.get("ward", "").strip()
-        seller.street = request.form.get("street", "").strip()
-        seller.description = request.form.get("description", "").strip()
-        seller.business_type = ", ".join(request.form.getlist("business_type"))
-
-        try:
-            photo = save_uploaded_image(request.files.get("shop_photo"), folder_hint="shops")
-        except InvalidImageError as e:
-            flash(str(e), "danger")
-            return redirect(url_for("own_seller_profile"))
-        if photo:
-            seller.shop_photo = photo
-
-        db.session.commit()
-        flash("Taarifa za duka lako zimesasishwa!", "success")
-        return redirect(url_for("own_seller_profile"))
-
-    return render_template("seller_profile_edit.html", seller=seller)
-
-
-@app.route("/seller/products")
-@login_required
-@role_required("seller")
-def seller_products():
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-    products = Product.query.filter_by(seller_id=seller.id).order_by(Product.created_at.desc()).all()
-    return render_template("seller_products.html", seller=seller, products=products)
-
-
-@app.route("/seller/products/add", methods=["GET", "POST"])
-@login_required
-@role_required("seller")
-def add_product():
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        category = request.form.get("category", "").strip()
-        price = request.form.get("price", "").strip()
-        description = request.form.get("description", "").strip()
-        condition = request.form.get("condition", "Mpya").strip()
-
-        if not name or not price:
-            flash("Tafadhali jaza jina na bei ya bidhaa.", "danger")
-            return redirect(url_for("add_product"))
-
-        try:
-            price_value = float(price)
-        except ValueError:
-            flash("Bei siyo namba sahihi.", "danger")
-            return redirect(url_for("add_product"))
-
-        try:
-            photo_files = [f for f in request.files.getlist("photos") if f and f.filename]
-            if len(photo_files) > 4:
-                flash("Unaweza kupakia picha 4 pekee kwa bidhaa moja.", "danger")
-                return redirect(url_for("add_product"))
-            uploaded_filenames = []
-            for f in photo_files:
-                fname = save_uploaded_image(f, folder_hint="products")
-                if fname:
-                    uploaded_filenames.append(fname)
-        except InvalidImageError as e:
-            flash(str(e), "danger")
-            return redirect(url_for("add_product"))
-
-        product = Product(
-            seller_id=seller.id,
-            name=name,
-            category=category,
-            price=price_value,
-            description=description,
-            photo=uploaded_filenames[0] if uploaded_filenames else None,
-            condition=condition
-        )
-        db.session.add(product)
-        db.session.commit()
-
-        for fname in uploaded_filenames:
-            db.session.add(ProductPhoto(product_id=product.id, photo=fname))
-        db.session.commit()
-
-        flash("Bidhaa imeongezwa kikamilifu!", "success")
-        return redirect(url_for("seller_products"))
-
-    return render_template("product_form.html", product=None)
-
-
-@app.route("/seller/products/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-@role_required("seller")
-def edit_product(id):
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-    product = Product.query.get_or_404(id)
-
-    if product.seller_id != seller.id:
-        flash("Hauruhusiwi kuhariri bidhaa hii.", "danger")
-        return redirect(url_for("seller_products"))
-
-    if request.method == "POST":
-        product.name = request.form.get("name", "").strip()
-        product.category = request.form.get("category", "").strip()
-        product.description = request.form.get("description", "").strip()
-        product.condition = request.form.get("condition", "Mpya").strip()
-
-        price = request.form.get("price", "").strip()
-        try:
-            product.price = float(price)
-        except ValueError:
-            flash("Bei siyo namba sahihi.", "danger")
-            return redirect(url_for("edit_product", id=id))
-
-        # Futa picha zilizochaguliwa kuondolewa
-        delete_photo_ids = request.form.getlist("delete_photos")
-        for pid in delete_photo_ids:
-            photo_obj = ProductPhoto.query.filter_by(id=int(pid), product_id=product.id).first()
-            if photo_obj:
-                db.session.delete(photo_obj)
-        db.session.flush()
-
-        remaining_count = ProductPhoto.query.filter_by(product_id=product.id).count()
-
-        try:
-            new_photo_files = [f for f in request.files.getlist("photos") if f and f.filename]
-            if remaining_count + len(new_photo_files) > 4:
-                flash("Jumla ya picha (za zamani + mpya) haziwezi kuzidi 4.", "danger")
-                db.session.rollback()
-                return redirect(url_for("edit_product", id=id))
-            for f in new_photo_files:
-                fname = save_uploaded_image(f, folder_hint="products")
-                if fname:
-                    db.session.add(ProductPhoto(product_id=product.id, photo=fname))
-        except InvalidImageError as e:
-            flash(str(e), "danger")
-            db.session.rollback()
-            return redirect(url_for("edit_product", id=id))
-
-        db.session.commit()
-
-        # "photo" (thumbnail kuu) daima ni picha ya kwanza iliyobaki
-        first_photo = ProductPhoto.query.filter_by(product_id=product.id).order_by(ProductPhoto.id).first()
-        product.photo = first_photo.photo if first_photo else None
-        db.session.commit()
-
-        flash("Bidhaa imesasishwa kikamilifu!", "success")
-        return redirect(url_for("seller_products"))
-
-    return render_template("product_form.html", product=product)
-
-
-@app.route("/seller/products/delete/<int:id>", methods=["POST"])
-@login_required
-@role_required("seller")
-def delete_product(id):
-    user = db.session.get(User, session["user_id"])
-    seller = Seller.query.filter_by(user_id=user.id).first_or_404()
-    product = Product.query.get_or_404(id)
-
-    if product.seller_id != seller.id:
-        flash("Hauruhusiwi kufuta bidhaa hii.", "danger")
-        return redirect(url_for("seller_products"))
-
-    db.session.delete(product)
-    db.session.commit()
-    flash("Bidhaa imefutwa.", "success")
-    return redirect(url_for("seller_products"))
-
-
-@app.route("/sellers")
-def sellers_list():
-    """Ukurasa wa 'Duka la Spea' - inaonyesha BIDHAA (siyo maduka) kutoka
-    kwa wauzaji wote walioidhinishwa, kwa mpangilio wa nasibu (randomised)
-    kila mtu akifungua ukurasa. Kubofya bidhaa kunampeleka kwenye profile
-    kamili ya muuzaji husika (ikionyesha bidhaa zake zote)."""
-    import random
-
-    region = request.args.get("region", "").strip()
-    search_query = request.args.get("q", "").strip()
-
-    query = Seller.query.join(User).filter(Seller.verified == "approved", User.status == "active")
-    if region:
-        query = query.filter(Seller.region == region)
-    sellers = query.all()
-
-    products = []
-    for seller in sellers:
-        for product in seller.products:
-            if search_query and search_query.lower() not in product.name.lower():
-                continue
-            products.append(product)
-
-    random.shuffle(products)
-
-    return render_template("sellers_list.html", products=products, selected_region=region, search_query=search_query)
-
-
-@app.route("/seller/<int:seller_id>")
-def seller_profile(seller_id):
-    """Profile ya muuzaji - customer aliyeingia pekee anaweza kuona (sawa na search_mechanics)."""
-    seller = Seller.query.get_or_404(seller_id)
-
-    if seller.verified != "approved" or seller.user.status != "active":
-        flash("Duka hili halipatikani kwa sasa.", "warning")
-        return redirect(url_for("sellers_list"))
-
-    products = Product.query.filter_by(seller_id=seller.id).order_by(Product.created_at.desc()).all()
-    reviews = SellerReview.query.filter_by(seller_id=seller.id).order_by(SellerReview.created_at.desc()).all()
-    avg_rating = db.session.query(func.avg(SellerReview.rating)).filter_by(seller_id=seller.id).scalar() or 0
-
-    return render_template(
-        "seller_public_profile.html",
-        seller=seller, products=products, reviews=reviews,
-        average_rating=avg_rating, review_count=len(reviews)
-    )
-
-
-@app.route("/seller/review/<int:seller_id>", methods=["GET", "POST"])
-@login_required
-@role_required("customer")
-def add_seller_review(seller_id):
-    seller = Seller.query.get_or_404(seller_id)
-
-    if request.method == "POST":
-        rating = request.form.get("rating")
-        comment = request.form.get("comment", "").strip()
-
-        review = SellerReview(
-            customer_id=session["user_id"],
-            seller_id=seller.id,
-            rating=int(rating),
-            comment=comment
-        )
-        db.session.add(review)
-        db.session.commit()
-
-        notify_user(
-            seller.user,
-            title="Umepata Review Mpya - GariFix",
-            body=f"Umepata rating ya {rating}/5 kwenye duka lako.",
-            data={"type": "seller_review", "seller_id": seller.id, "url": "/seller/dashboard"}
-        )
-
-        flash("Maoni yako yamehifadhiwa!", "success")
-        return redirect(url_for("seller_profile", seller_id=seller.id))
-
-    return render_template("seller_review.html", seller=seller)
-
-
-@app.route("/product/<int:product_id>")
-def product_detail(product_id):
-    """Ukurasa wa maelezo kamili ya bidhaa moja - taarifa zaidi, picha zote,
-    na mawasiliano ya muuzaji (namba ya simu + kuanzisha chat). Ni wa umma
-    (hauhitaji login kuona), lakini kuchat/ku-message kunahitaji login."""
-    product = Product.query.get_or_404(product_id)
-    seller = product.seller
-    if seller.verified != "approved" or seller.user.status == "blocked":
-        flash("Bidhaa hii haipatikani kwa sasa.", "warning")
-        return redirect(url_for("sellers_list"))
-
-    other_products = Product.query.filter(
-        Product.seller_id == seller.id, Product.id != product.id
-    ).limit(4).all()
-
-    return render_template("product_detail.html", product=product, seller=seller, other_products=other_products)
-
-
-def _get_or_create_conversation(customer_id, seller_id, product_id=None):
-    convo = Conversation.query.filter_by(customer_id=customer_id, seller_id=seller_id).first()
-    if not convo:
-        convo = Conversation(customer_id=customer_id, seller_id=seller_id, product_id=product_id)
-        db.session.add(convo)
-        db.session.commit()
-    elif product_id and not convo.product_id:
-        convo.product_id = product_id
-        db.session.commit()
-    return convo
-
-
-@app.route("/chat/start/<int:seller_id>", methods=["POST"])
-@login_required
-@role_required("customer")
-def start_chat(seller_id):
-    seller = Seller.query.get_or_404(seller_id)
-    product_id = request.form.get("product_id", type=int)
-    convo = _get_or_create_conversation(session["user_id"], seller.id, product_id)
-    return redirect(url_for("view_chat", conversation_id=convo.id))
-
-
-@app.route("/chat/list")
-@login_required
-def chat_list():
-    user = db.session.get(User, session["user_id"])
-    if user.role == "customer":
-        conversations = Conversation.query.filter_by(customer_id=user.id).order_by(Conversation.created_at.desc()).all()
-    elif user.role == "seller" and user.seller_profile:
-        conversations = Conversation.query.filter_by(seller_id=user.seller_profile.id).order_by(Conversation.created_at.desc()).all()
-    else:
-        conversations = []
-    return render_template("chat_list.html", conversations=conversations, user=user)
-
-
-@app.route("/chat/<int:conversation_id>", methods=["GET", "POST"])
-@login_required
-def view_chat(conversation_id):
-    convo = Conversation.query.get_or_404(conversation_id)
-    user = db.session.get(User, session["user_id"])
-
-    is_customer_party = user.id == convo.customer_id
-    is_seller_party = user.role == "seller" and user.seller_profile and user.seller_profile.id == convo.seller_id
-    if not (is_customer_party or is_seller_party):
-        flash("Huna ruhusa ya kuona mazungumzo haya.", "danger")
-        return redirect(url_for("home"))
-
-    if request.method == "POST":
-        text = request.form.get("text", "").strip()
-        if text:
-            msg = ChatMessage(conversation_id=convo.id, sender_id=user.id, text=text)
-            db.session.add(msg)
-            db.session.commit()
-
-            # Arifisha upande mwingine wa mazungumzo
-            if is_customer_party:
-                recipient = convo.seller.user
-            else:
-                recipient = convo.customer
-            notify_user(
-                recipient,
-                title=f"Ujumbe Mpya kutoka {user.full_name} - GariFix",
-                body=text[:100],
-                data={"type": "chat_message", "conversation_id": convo.id, "url": f"/chat/{convo.id}"}
-            )
-        return redirect(url_for("view_chat", conversation_id=convo.id))
-
-    # Weka ujumbe wote uliotumwa na "upande mwingine" kama umesomwa
-    ChatMessage.query.filter(
-        ChatMessage.conversation_id == convo.id,
-        ChatMessage.sender_id != user.id,
-        ChatMessage.is_read == False
-    ).update({"is_read": True})
-    db.session.commit()
-
-    return render_template("chat_conversation.html", convo=convo, user=user)
-
-
-@app.route("/chat/<int:conversation_id>/poll")
-@login_required
-def poll_chat_messages(conversation_id):
-    """JSON endpoint - kwa JavaScript kuangalia ujumbe mpya kila baada ya
-    sekunde chache (polling), bila kuhitaji WebSocket."""
-    convo = Conversation.query.get_or_404(conversation_id)
-    user = db.session.get(User, session["user_id"])
-    is_customer_party = user.id == convo.customer_id
-    is_seller_party = user.role == "seller" and user.seller_profile and user.seller_profile.id == convo.seller_id
-    if not (is_customer_party or is_seller_party):
-        return {"error": "forbidden"}, 403
-
-    after_id = request.args.get("after_id", 0, type=int)
-    new_messages = ChatMessage.query.filter(
-        ChatMessage.conversation_id == convo.id, ChatMessage.id > after_id
-    ).order_by(ChatMessage.id).all()
-
-    return {
-        "messages": [
-            {
-                "id": m.id,
-                "text": m.text,
-                "sender_id": m.sender_id,
-                "is_me": m.sender_id == user.id,
-                "time": m.created_at.strftime("%H:%M") if m.created_at else ""
-            }
-            for m in new_messages
-        ]
-    }
-
-
-@app.route("/admin/sellers")
-@login_required
-@role_required("admin")
-def admin_sellers():
-    sellers = Seller.query.all()
-    return render_template("admin_sellers.html", sellers=sellers)
-
-
-@app.route("/admin/seller/<int:id>")
-@login_required
-@role_required("admin")
-def admin_seller_detail(id):
-    seller = Seller.query.get_or_404(id)
-    products = Product.query.filter_by(seller_id=seller.id).order_by(Product.created_at.desc()).all()
-    reviews = SellerReview.query.filter_by(seller_id=seller.id).order_by(SellerReview.created_at.desc()).all()
-    avg_rating = db.session.query(func.avg(SellerReview.rating)).filter_by(seller_id=seller.id).scalar() or 0
-    return render_template(
-        "admin_seller_detail.html",
-        seller=seller, products=products, reviews=reviews, average_rating=avg_rating
-    )
-
-
-@app.route("/admin/approve-seller/<int:id>", methods=["POST"])
-@login_required
-@role_required("admin")
-def approve_seller(id):
-    seller = Seller.query.get_or_404(id)
-    seller.verified = "approved"
-    db.session.commit()
-    notify_user(
-        seller.user,
-        title="Umeidhinishwa - GariFix",
-        body="Hongera! Duka lako limeidhinishwa na Admin, sasa linaonekana kwa wateja.",
-        data={"type": "seller_approved", "url": "/seller/dashboard"}
-    )
-    flash(f"Duka la {seller.shop_name} limeidhinishwa.", "success")
-    return redirect(url_for("admin_sellers"))
-
-
-@app.route("/admin/reject-seller/<int:id>", methods=["POST"])
-@login_required
-@role_required("admin")
-def reject_seller(id):
-    seller = Seller.query.get_or_404(id)
-    reason = request.form.get("reason", "").strip()
-    seller.verified = "rejected"
-    db.session.commit()
-
-    body = f"Ombi lako la kuwa muuzaji ({seller.shop_name}) limekataliwa."
-    if reason:
-        body += f" Sababu: {reason}"
-    notify_user(
-        seller.user,
-        title="Ombi Limekataliwa - GariFix",
-        body=body,
-        data={"type": "seller_rejected", "url": "/seller/profile"}
-    )
-
-    flash(f"Duka la {seller.shop_name} limekataliwa.", "warning")
-    return redirect(url_for("admin_sellers"))
 
 
 # SEARCH & PUBLIC PROFILES
@@ -2125,8 +1482,6 @@ def admin_dashboard(user_id):
 
     total_mechanics = Mechanic.query.count()
     approved_mechanics = Mechanic.query.filter_by(verified="approved").count()
-    total_sellers = Seller.query.count()
-    approved_sellers = Seller.query.filter_by(verified="approved").count()
     total_customers = User.query.filter_by(role="customer").count()
     total_requests = ServiceRequest.query.count()
 
@@ -2139,8 +1494,6 @@ def admin_dashboard(user_id):
         user=user,
         total_mechanics=total_mechanics,
         approved_mechanics=approved_mechanics,
-        total_sellers=total_sellers,
-        approved_sellers=approved_sellers,
         total_customers=total_customers,
         total_requests=total_requests,
         pending_requests=pending_requests,
@@ -2289,30 +1642,9 @@ def delete_user(id):
 
     name = user.full_name
     role = user.role
-    # Futa kwanza VITU VYOTE vinavyomrejelea mtumiaji huyu (moja kwa moja
-    # au kupitia Seller/Product yake) - vinginevyo MySQL inakataa kufuta
-    # (foreign key constraint). Conversations zinaweza kurejelea customer_id,
-    # seller_id (Seller), AU product_id (Product) - zote lazima ziondolewe
-    # kwanza. ChatMessage zinafutwa kiotomatiki (cascade) pamoja na
-    # Conversation husika.
+    # Futa kwanza Notifications za mtumiaji huyu - vinginevyo MySQL
+    # inakataa kufuta (foreign key constraint).
     Notification.query.filter_by(user_id=user.id).delete()
-
-    if role == "customer":
-        conv_ids = [c.id for c in Conversation.query.filter_by(customer_id=user.id).all()]
-        if conv_ids:
-            ChatMessage.query.filter(ChatMessage.conversation_id.in_(conv_ids)).delete(synchronize_session=False)
-        Conversation.query.filter_by(customer_id=user.id).delete()
-    elif role == "seller" and user.seller_profile:
-        seller_id = user.seller_profile.id
-        product_ids = [p.id for p in user.seller_profile.products]
-        conv_ids = set(c.id for c in Conversation.query.filter_by(seller_id=seller_id).all())
-        if product_ids:
-            conv_ids.update(c.id for c in Conversation.query.filter(Conversation.product_id.in_(product_ids)).all())
-        if conv_ids:
-            ChatMessage.query.filter(ChatMessage.conversation_id.in_(conv_ids)).delete(synchronize_session=False)
-        if product_ids:
-            Conversation.query.filter(Conversation.product_id.in_(product_ids)).delete(synchronize_session=False)
-        Conversation.query.filter_by(seller_id=seller_id).delete()
 
     db.session.delete(user)
     db.session.commit()
@@ -2320,8 +1652,6 @@ def delete_user(id):
     flash(f"Akaunti ya {name} imefutwa kabisa kwenye mfumo.", "success")
     if role == "mechanic":
         return redirect(url_for("admin_mechanics"))
-    elif role == "seller":
-        return redirect(url_for("admin_sellers"))
     return redirect(url_for("admin_customers"))
 
 

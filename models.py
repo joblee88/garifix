@@ -23,10 +23,8 @@ class User(db.Model):
 
     # Relationships
     mechanic_profile = db.relationship("Mechanic", backref="user", uselist=False, cascade="all, delete-orphan")
-    seller_profile = db.relationship("Seller", backref="user", uselist=False, cascade="all, delete-orphan")
     service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id", cascade="all, delete-orphan")
     reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id", cascade="all, delete-orphan")
-    seller_reviews_written = db.relationship("SellerReview", backref="customer", foreign_keys="SellerReview.customer_id", cascade="all, delete-orphan")
 
 
 class Mechanic(db.Model):
@@ -80,98 +78,6 @@ class Review(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-
-class Seller(db.Model):
-    """Muuzaji wa Spea za Magari na Lubricants (duka)."""
-    __tablename__ = "sellers"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    shop_name = db.Column(db.String(150), nullable=False)
-    region = db.Column(db.String(100), nullable=False, index=True)
-    district = db.Column(db.String(100), nullable=False, index=True)
-    ward = db.Column(db.String(100))
-    street = db.Column(db.String(100))
-    description = db.Column(db.Text)
-    shop_photo = db.Column(db.String(255))
-    business_type = db.Column(db.String(100))  # "Spea za Magari", "Mafuta/Lubricants", au zote mbili
-    verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    # Relationships
-    products = db.relationship("Product", backref="seller", cascade="all, delete-orphan")
-    reviews = db.relationship("SellerReview", backref="seller", cascade="all, delete-orphan")
-
-
-class Product(db.Model):
-    """Bidhaa (spea au lubricant) anayouza muuzaji."""
-    __tablename__ = "products"
-
-    id = db.Column(db.Integer, primary_key=True)
-    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
-    name = db.Column(db.String(150), nullable=False)
-    category = db.Column(db.String(50))  # "Spea za Magari" au "Lubricants/Mafuta"
-    price = db.Column(db.Numeric(12, 2), nullable=False)
-    description = db.Column(db.Text)
-    photo = db.Column(db.String(255))  # Picha kuu/thumbnail (ya kwanza kati ya zote)
-    condition = db.Column(db.String(20), default="Mpya")  # "Mpya" au "Kimetumika"
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    photos = db.relationship("ProductPhoto", backref="product", cascade="all, delete-orphan", order_by="ProductPhoto.id")
-
-
-class ProductPhoto(db.Model):
-    """Picha za ziada za bidhaa (hadi 4 kwa bidhaa moja)."""
-    __tablename__ = "product_photos"
-
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
-    photo = db.Column(db.String(500), nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-
-class SellerReview(db.Model):
-    """Rating/review ya customer kwa muuzaji."""
-    __tablename__ = "seller_reviews"
-
-    id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
-    comment = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-
-class Conversation(db.Model):
-    """Mazungumzo (chat) kati ya mteja mmoja na muuzaji mmoja - yanaweza
-    kuhusiana na bidhaa maalum (hiari)."""
-    __tablename__ = "conversations"
-
-    id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    seller_id = db.Column(db.Integer, db.ForeignKey("sellers.id"), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    customer = db.relationship("User", foreign_keys=[customer_id])
-    seller = db.relationship("Seller", foreign_keys=[seller_id])
-    product = db.relationship("Product", foreign_keys=[product_id])
-    messages = db.relationship("ChatMessage", backref="conversation", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
-
-
-class ChatMessage(db.Model):
-    """Ujumbe mmoja ndani ya mazungumzo (conversation)."""
-    __tablename__ = "chat_messages"
-
-    id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey("conversations.id"), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    text = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    sender = db.relationship("User", foreign_keys=[sender_id])
 
 
 class Notification(db.Model):

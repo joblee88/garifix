@@ -31,14 +31,6 @@
         </div>
     </div>
     <div class="topbar-right">
-        <a href="{{ url_for('chat_list') }}" class="btn btn-outline-primary position-relative" title="Ujumbe">
-            <i class="fa-solid fa-comment-dots icon-3d"></i>
-            {% if unread_chat_count and unread_chat_count > 0 %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ unread_chat_count }}
-                </span>
-            {% endif %}
-        </a>
         <div class="dropdown">
             <button type="button" class="btn btn-outline-secondary position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside" onclick="loadGariFixNotifications(this)" title="Arifa">
                 <i class="fa-solid fa-bell icon-3d"></i>
@@ -100,12 +92,6 @@
             </a>
             <a href="{{ url_for('search_mechanics') }}">
                 <i class="fa-solid fa-magnifying-glass"></i> <span class="sidebar-text">Tafuta Fundi</span>
-            </a>
-            <a href="{{ url_for('sellers_list') }}">
-                <i class="fa-solid fa-shop"></i> <span class="sidebar-text">Duka la Spea</span>
-            </a>
-            <a href="{{ url_for('chat_list') }}">
-                <i class="fa-solid fa-comment-dots"></i> <span class="sidebar-text">Ujumbe</span>
             </a>
             <a href="{{ url_for('customer_requests') }}">
                 <i class="fa-solid fa-list-check"></i> <span class="sidebar-text">Maombi Yangu</span>
