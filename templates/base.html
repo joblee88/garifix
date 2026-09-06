@@ -17,8 +17,8 @@
             <button class="btn btn-outline-light border-0 me-2 fs-4 p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-controls="sideMenu">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <a class="navbar-brand fw-bold fs-4 mb-0" href="{{ url_for('home') }}">
-                <i class="fa-solid fa-car-side"></i> GariFix
+            <a class="navbar-brand fw-bold fs-4 mb-0 d-flex align-items-center gap-2" href="{{ url_for('home') }}">
+                <img src="{{ url_for('static', filename='images/garifix-emblem.png') }}" alt="GariFix" style="height:32px;width:32px;object-fit:contain;"> GariFix
             </a>
         </div>
 
@@ -45,8 +45,8 @@
 <!-- SIDE MENU (Offcanvas - inatoka upande wa KUSHOTO, CHINI ya navbar) -->
 <div class="offcanvas offcanvas-start public-side-menu" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
     <div class="offcanvas-header bg-primary">
-        <h5 class="offcanvas-title text-white fw-bold" id="sideMenuLabel">
-            <i class="fa-solid fa-car-side"></i> GariFix
+        <h5 class="offcanvas-title text-white fw-bold d-flex align-items-center gap-2" id="sideMenuLabel">
+            <img src="{{ url_for('static', filename='images/garifix-emblem.png') }}" alt="GariFix" style="height:28px;width:28px;object-fit:contain;"> GariFix
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
