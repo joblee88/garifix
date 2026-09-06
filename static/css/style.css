@@ -485,6 +485,12 @@ body {
     z-index: 1100;
 }
 
+@media (max-width: 400px) {
+    .public-navbar .navbar-brand img {
+        height: 36px !important;
+    }
+}
+
 .public-page-content {
     padding-top: calc(70px + 1.5rem) !important;
 }
