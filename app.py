@@ -1114,13 +1114,35 @@ def mechanic_register():
             flash("Tafadhali chagua aina ya kitambulisho ulichoambatanisha.", "danger")
             return redirect(url_for("mechanic_register"))
 
-        if User.query.filter_by(phone=phone).first():
-            flash("Namba hii ya simu tayari imesajiliwa.", "danger")
-            return redirect(url_for("mechanic_register"))
+        # Angalia kama tayari kuna akaunti na simu/email hii. Kama ni fundi
+        # aliyekataliwa (rejected) HAPO AWALI, mruhusu "kuomba upya" (update
+        # taarifa zake za zamani badala ya kumzuia kabisa) - vinginevyo
+        # (pending/approved, au akaunti ya role tofauti) mzuie kama kawaida.
+        existing_by_phone = User.query.filter_by(phone=phone).first()
+        existing_by_email = User.query.filter_by(email=email).first()
 
-        if User.query.filter_by(email=email).first():
-            flash("Barua pepe hii tayari imesajiliwa.", "danger")
-            return redirect(url_for("mechanic_register"))
+        reapplying_user = None
+        for existing in (existing_by_phone, existing_by_email):
+            if existing and existing.role == "mechanic" and existing.mechanic_profile and existing.mechanic_profile.verified == "rejected":
+                reapplying_user = existing
+                break
+
+        if not reapplying_user:
+            if existing_by_phone:
+                flash("Namba hii ya simu tayari imesajiliwa.", "danger")
+                return redirect(url_for("mechanic_register"))
+            if existing_by_email:
+                flash("Barua pepe hii tayari imesajiliwa.", "danger")
+                return redirect(url_for("mechanic_register"))
+        else:
+            # Hakikisha simu/email mpya (kama zimebadilika) hazitumiwi na
+            # akaunti NYINGINE (siyo hii hii tunayoiboresha)
+            if existing_by_phone and existing_by_phone.id != reapplying_user.id:
+                flash("Namba hii ya simu tayari imesajiliwa na akaunti nyingine.", "danger")
+                return redirect(url_for("mechanic_register"))
+            if existing_by_email and existing_by_email.id != reapplying_user.id:
+                flash("Barua pepe hii tayari imesajiliwa na akaunti nyingine.", "danger")
+                return redirect(url_for("mechanic_register"))
 
         filename = None
         id_document_filename = None
@@ -1132,37 +1154,63 @@ def mechanic_register():
             return redirect(url_for("mechanic_register"))
 
         hashed_password = generate_password_hash(password)
-        new_user = User(
-            full_name=full_name,
-            phone=phone,
-            email=email,
-            password=hashed_password,
-            role="mechanic"
-        )
-        db.session.add(new_user)
-        db.session.commit()
 
-        new_mechanic = Mechanic(
-            user_id=new_user.id,
-            garage_name=garage_name,
-            region=region,
-            district=district,
-            ward=ward,
-            street=street,
-            specialization=specialization,
-            experience=experience,
-            description=description,
-            profile_photo=filename,
-            id_document_type=id_document_type,
-            id_document=id_document_filename,
-            verified="pending"
-        )
-        db.session.add(new_mechanic)
-        db.session.commit()
+        if reapplying_user:
+            # KUOMBA UPYA - sasisha taarifa za zamani badala ya kuunda mpya
+            new_user = reapplying_user
+            new_user.full_name = full_name
+            new_user.phone = phone
+            new_user.email = email
+            new_user.password = hashed_password
+            new_user.status = "active"
 
-        send_email_verification(new_user)
+            new_mechanic = new_user.mechanic_profile
+            new_mechanic.garage_name = garage_name
+            new_mechanic.region = region
+            new_mechanic.district = district
+            new_mechanic.ward = ward
+            new_mechanic.street = street
+            new_mechanic.specialization = specialization
+            new_mechanic.experience = experience
+            new_mechanic.description = description
+            if filename:
+                new_mechanic.profile_photo = filename
+            new_mechanic.id_document_type = id_document_type
+            if id_document_filename:
+                new_mechanic.id_document = id_document_filename
+            new_mechanic.verified = "pending"
+            db.session.commit()
+        else:
+            new_user = User(
+                full_name=full_name,
+                phone=phone,
+                email=email,
+                password=hashed_password,
+                role="mechanic"
+            )
+            db.session.add(new_user)
+            db.session.commit()
 
-        # Arifisha ADMIN WOTE - fundi mpya anasubiri idhini
+            new_mechanic = Mechanic(
+                user_id=new_user.id,
+                garage_name=garage_name,
+                region=region,
+                district=district,
+                ward=ward,
+                street=street,
+                specialization=specialization,
+                experience=experience,
+                description=description,
+                profile_photo=filename,
+                id_document_type=id_document_type,
+                id_document=id_document_filename,
+                verified="pending"
+            )
+            db.session.add(new_mechanic)
+            db.session.commit()
+            send_email_verification(new_user)
+
+        # Arifisha ADMIN WOTE - fundi mpya (au anayeomba upya) anasubiri idhini
         for admin_user in User.query.filter_by(role="admin").all():
             notify_user(
                 admin_user,
@@ -1380,13 +1428,31 @@ def seller_register():
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("seller_register"))
 
-        if User.query.filter_by(phone=phone).first():
-            flash("Namba hii ya simu tayari imesajiliwa.", "danger")
-            return redirect(url_for("seller_register"))
+        # Angalia kama tayari kuna akaunti na simu/email hii. Kama ni
+        # muuzaji aliyekataliwa (rejected) HAPO AWALI, mruhusu "kuomba upya".
+        existing_by_phone = User.query.filter_by(phone=phone).first()
+        existing_by_email = User.query.filter_by(email=email).first()
 
-        if User.query.filter_by(email=email).first():
-            flash("Barua pepe hii tayari imesajiliwa.", "danger")
-            return redirect(url_for("seller_register"))
+        reapplying_user = None
+        for existing in (existing_by_phone, existing_by_email):
+            if existing and existing.role == "seller" and existing.seller_profile and existing.seller_profile.verified == "rejected":
+                reapplying_user = existing
+                break
+
+        if not reapplying_user:
+            if existing_by_phone:
+                flash("Namba hii ya simu tayari imesajiliwa.", "danger")
+                return redirect(url_for("seller_register"))
+            if existing_by_email:
+                flash("Barua pepe hii tayari imesajiliwa.", "danger")
+                return redirect(url_for("seller_register"))
+        else:
+            if existing_by_phone and existing_by_phone.id != reapplying_user.id:
+                flash("Namba hii ya simu tayari imesajiliwa na akaunti nyingine.", "danger")
+                return redirect(url_for("seller_register"))
+            if existing_by_email and existing_by_email.id != reapplying_user.id:
+                flash("Barua pepe hii tayari imesajiliwa na akaunti nyingine.", "danger")
+                return redirect(url_for("seller_register"))
 
         try:
             shop_photo_filename = save_uploaded_image(request.files.get("shop_photo"), folder_hint="shops")
@@ -1394,32 +1460,54 @@ def seller_register():
             flash(str(e), "danger")
             return redirect(url_for("seller_register"))
 
-        new_user = User(
-            full_name=full_name,
-            phone=phone,
-            email=email,
-            password=generate_password_hash(password),
-            role="seller"
-        )
-        db.session.add(new_user)
-        db.session.commit()
+        if reapplying_user:
+            # KUOMBA UPYA - sasisha taarifa za zamani badala ya kuunda mpya
+            new_user = reapplying_user
+            new_user.full_name = full_name
+            new_user.phone = phone
+            new_user.email = email
+            new_user.password = generate_password_hash(password)
+            new_user.status = "active"
 
-        new_seller = Seller(
-            user_id=new_user.id,
-            shop_name=shop_name,
-            region=region,
-            district=district,
-            ward=ward,
-            street=street,
-            description=description,
-            shop_photo=shop_photo_filename,
-            business_type=business_type,
-            verified="pending"
-        )
-        db.session.add(new_seller)
-        db.session.commit()
+            new_seller = new_user.seller_profile
+            new_seller.shop_name = shop_name
+            new_seller.region = region
+            new_seller.district = district
+            new_seller.ward = ward
+            new_seller.street = street
+            new_seller.description = description
+            if shop_photo_filename:
+                new_seller.shop_photo = shop_photo_filename
+            new_seller.business_type = business_type
+            new_seller.verified = "pending"
+            db.session.commit()
+        else:
+            new_user = User(
+                full_name=full_name,
+                phone=phone,
+                email=email,
+                password=generate_password_hash(password),
+                role="seller"
+            )
+            db.session.add(new_user)
+            db.session.commit()
 
-        # Arifisha ADMIN WOTE - muuzaji mpya anasubiri idhini
+            new_seller = Seller(
+                user_id=new_user.id,
+                shop_name=shop_name,
+                region=region,
+                district=district,
+                ward=ward,
+                street=street,
+                description=description,
+                shop_photo=shop_photo_filename,
+                business_type=business_type,
+                verified="pending"
+            )
+            db.session.add(new_seller)
+            db.session.commit()
+
+        # Arifisha ADMIN WOTE - muuzaji mpya (au anayeomba upya) anasubiri idhini
         for admin_user in User.query.filter_by(role="admin").all():
             notify_user(
                 admin_user,
@@ -1884,8 +1972,20 @@ def approve_seller(id):
 @role_required("admin")
 def reject_seller(id):
     seller = Seller.query.get_or_404(id)
+    reason = request.form.get("reason", "").strip()
     seller.verified = "rejected"
     db.session.commit()
+
+    body = f"Ombi lako la kuwa muuzaji ({seller.shop_name}) limekataliwa."
+    if reason:
+        body += f" Sababu: {reason}"
+    notify_user(
+        seller.user,
+        title="Ombi Limekataliwa - GariFix",
+        body=body,
+        data={"type": "seller_rejected", "url": "/seller/profile"}
+    )
+
     flash(f"Duka la {seller.shop_name} limekataliwa.", "warning")
     return redirect(url_for("admin_sellers"))
 
@@ -2105,8 +2205,20 @@ def approve_mechanic(id):
 @role_required("admin")
 def reject_mechanic(id):
     mechanic = Mechanic.query.get_or_404(id)
+    reason = request.form.get("reason", "").strip()
     mechanic.verified = "rejected"
     db.session.commit()
+
+    body = f"Ombi lako la kuwa fundi ({mechanic.garage_name}) limekataliwa."
+    if reason:
+        body += f" Sababu: {reason}"
+    notify_user(
+        mechanic.user,
+        title="Ombi Limekataliwa - GariFix",
+        body=body,
+        data={"type": "mechanic_rejected", "url": "/mechanic/profile"}
+    )
+
     flash("Fundi amekataliwa.", "danger")
     return redirect(url_for("admin_mechanics"))
 
