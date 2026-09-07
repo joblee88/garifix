@@ -1,6 +1,7 @@
 import os
 import uuid
 import secrets
+from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -974,11 +975,38 @@ def terms():
     return render_template("terms.html")
 
 
+# --------------------------------------------------------------------
+# GOOGLE OAUTH - Kumbuka Muhimu kuhusu WEBVIEW ya App:
+# Google INAKATAA kufanya OAuth ndani ya WebView za app (sera yao ya
+# usalama tangu 2016) - inafungua "browser ya nje" (Chrome ya kawaida)
+# badala yake. Hii inamaanisha "session" (cookies) za WebView na za
+# browser-ya-nje ni TOFAUTI KABISA - haziwezi kushirikiana moja kwa
+# moja. Kwa hiyo, kwa mtumiaji anayetumia APP (tunatambua kwa
+# User-Agent "GariFixAndroidApp"), badala ya kuweka session moja kwa
+# moja kwenye callback (ambayo ingekuwa kwenye browser-ya-nje, isiyo na
+# maana kwa WebView), tunatengeneza TOKEN FUPI YA MUDA (dakika 5) na
+# kumpeleka kupitia "deep link" (garifix://auth-callback?token=X)
+# ambayo App yenyewe (MainActivity.kt) inayo-intercept, kisha
+# inaipakia ndani ya WebView kupitia /auth/google/complete?token=X -
+# HAPO NDIYO session halisi ya WebView inawekwa.
+# --------------------------------------------------------------------
+_pending_app_google_logins = {}  # token -> {"expires": ts, ...data}
+_PENDING_TOKEN_TTL_SECONDS = 300
+
+
+def _cleanup_expired_google_tokens():
+    now = datetime.utcnow().timestamp()
+    expired = [t for t, d in _pending_app_google_logins.items() if d["expires"] < now]
+    for t in expired:
+        _pending_app_google_logins.pop(t, None)
+
+
 @app.route("/auth/google/login")
 def google_login():
     """Anzisha mchakato wa 'Ingia/Jisajili kwa Google'. ?role=customer au
     ?role=mechanic inaonyesha lengo (kwa usajili mpya - haiathiri watu
-    wanaoingia kwa akaunti iliyopo tayari)."""
+    wanaoingia kwa akaunti iliyopo tayari). Inatambua kama ombi limetoka
+    ndani ya App yetu (User-Agent) na kuchagua 'callback' sahihi."""
     if not GOOGLE_OAUTH_ENABLED:
         flash("Kuingia kwa Google hakupatikani kwa sasa.", "warning")
         return redirect(url_for("login"))
@@ -988,37 +1016,40 @@ def google_login():
         role = "customer"
     session["google_signup_role"] = role
 
-    redirect_uri = url_for("google_callback", _external=True)
+    is_from_app = "GariFixAndroidApp" in request.headers.get("User-Agent", "")
+    callback_endpoint = "google_callback_app" if is_from_app else "google_callback"
+    redirect_uri = url_for(callback_endpoint, _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
 
-@app.route("/auth/google/callback")
-def google_callback():
-    """Google inarudisha mtumiaji hapa baada ya kuidhinisha. Tunachukua
-    email yake (iliyothibitishwa na Google) - kama tayari ana akaunti,
-    tunamwingiza moja kwa moja; la sivyo, tunampeleka kwenye fomu ya
-    usajili husika ikiwa imejazwa awali jina/email (email_verified=True
-    moja kwa moja, kwa kuwa Google tayari imethibitisha anamiliki email
-    hiyo)."""
-    if not GOOGLE_OAUTH_ENABLED:
-        return redirect(url_for("login"))
-
+def _process_google_userinfo():
+    """Kazi ya pamoja: chukua taarifa za mtumiaji kutoka Google baada ya
+    authorize_access_token(). Inarudisha (email, full_name) au
+    (None, None) kama imeshindikana."""
     try:
         token = oauth.google.authorize_access_token()
         user_info = token.get("userinfo") or oauth.google.userinfo()
     except Exception as e:
-        # Chapisha hitilafu KAMILI kwenye Render logs (muhimu kwa
-        # kutatua matatizo ya OAuth - mfano state isiyofanana,
-        # redirect_uri isiyolingana, n.k.)
         app.logger.error(f"[Google OAuth] Hitilafu kwenye callback: {type(e).__name__}: {e}")
-        flash("Imeshindikana kuunganisha na Google. Jaribu tena.", "danger")
-        return redirect(url_for("login"))
+        return None, None
 
     email = (user_info or {}).get("email", "").strip().lower()
     full_name = (user_info or {}).get("name", "").strip()
+    return email, full_name
 
+
+@app.route("/auth/google/callback")
+def google_callback():
+    """Callback ya WEB ya kawaida (browser ya kompyuta/simu, SIYO app
+    yetu) - inaendelea kutumia Flask session moja kwa moja, kwa kuwa
+    ombi lote linatokea kwenye browser MOJA (hakuna 'handoff' kati ya
+    WebView na browser nyingine)."""
+    if not GOOGLE_OAUTH_ENABLED:
+        return redirect(url_for("login"))
+
+    email, full_name = _process_google_userinfo()
     if not email:
-        flash("Google haikutoa email sahihi. Jaribu tena au tumia usajili wa kawaida.", "danger")
+        flash("Imeshindikana kuunganisha na Google. Jaribu tena au tumia usajili wa kawaida.", "danger")
         return redirect(url_for("login"))
 
     existing_user = User.query.filter_by(email=email).first()
@@ -1032,13 +1063,88 @@ def google_callback():
         dashboard_url = role_dashboard_url()
         return redirect(dashboard_url or url_for("home"))
 
-    # Mtumiaji mpya - peleka kwenye fomu husika ikiwa jina/email
-    # vimejazwa awali (soma _prefill_google_signup() kwenye fomu hizo)
     role = session.pop("google_signup_role", "customer")
     session["google_pending_email"] = email
     session["google_pending_name"] = full_name
 
     if role == "mechanic":
+        return redirect(url_for("mechanic_register"))
+    return redirect(url_for("customer_register"))
+
+
+@app.route("/auth/google/callback/app")
+def google_callback_app():
+    """Callback MAALUM kwa App (inafikiwa na 'browser ya nje' baada ya
+    Google - SIYO WebView). Kwa kuwa session hii ni ya browser-ya-nje
+    (haina maana kwa WebView ya app), tunatengeneza token fupi ya muda
+    na kumrudisha kwenye APP kupitia 'deep link' - App itapakia
+    /auth/google/complete?token=X ndani ya WebView yake yenyewe ili
+    kuweka session HALISI pale."""
+    if not GOOGLE_OAUTH_ENABLED:
+        return redirect(url_for("login"))
+
+    email, full_name = _process_google_userinfo()
+    if not email:
+        # Bado tuko kwenye browser-ya-nje - onyesha ujumbe hapa, mtumiaji
+        # atarudi appni mwenyewe
+        flash("Imeshindikana kuunganisha na Google. Jaribu tena kwenye app.", "danger")
+        return redirect(url_for("login"))
+
+    _cleanup_expired_google_tokens()
+    token = secrets.token_urlsafe(32)
+    role = session.pop("google_signup_role", "customer")
+
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        _pending_app_google_logins[token] = {
+            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+            "action": "login",
+            "user_id": existing_user.id,
+        }
+    else:
+        _pending_app_google_logins[token] = {
+            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+            "action": "register",
+            "email": email,
+            "name": full_name,
+            "role": role,
+        }
+
+    return redirect(f"garifix://auth-callback?token={token}")
+
+
+@app.route("/auth/google/complete")
+def google_complete():
+    """App (MainActivity.kt) inapakia URL hii NDANI YA WEBVIEW yake
+    baada ya kupokea 'deep link' - hapa ndipo session HALISI ya
+    WebView inawekwa (tofauti na callback ya awali iliyokuwa kwenye
+    browser-ya-nje)."""
+    token = request.args.get("token", "")
+    _cleanup_expired_google_tokens()
+    data = _pending_app_google_logins.pop(token, None)
+
+    if not data or data["expires"] < datetime.utcnow().timestamp():
+        flash("Muda wa kuingia kwa Google umeisha. Jaribu tena.", "warning")
+        return redirect(url_for("login"))
+
+    if data["action"] == "login":
+        user = db.session.get(User, data["user_id"])
+        if not user:
+            flash("Akaunti haikupatikana. Jaribu tena.", "danger")
+            return redirect(url_for("login"))
+        if not user.email_verified:
+            user.email_verified = True
+            db.session.commit()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["role"] = user.role
+        dashboard_url = role_dashboard_url()
+        return redirect(dashboard_url or url_for("home"))
+
+    # action == "register"
+    session["google_pending_email"] = data["email"]
+    session["google_pending_name"] = data["name"]
+    if data["role"] == "mechanic":
         return redirect(url_for("mechanic_register"))
     return redirect(url_for("customer_register"))
 
