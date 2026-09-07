@@ -20,6 +20,15 @@ from mailer import send_verification_email, send_password_reset_email
 # Initialize Flask App
 app = Flask(__name__)
 
+# ProxyFix - Render (kama majukwaa mengine mengi) inatumia "reverse proxy"
+# kuficha HTTPS - bila hii, Flask inadhani kila ombi ni "HTTP" (siyo
+# salama), na hivyo INAKATAA kuweka "session cookie" kwa kuwa tumeweka
+# SESSION_COOKIE_SECURE=True kwenye production. Hii ilikuwa ikizuia
+# Google OAuth 'state' isihifadhiwe kabisa, na kusababisha "Imeshindikana
+# kuunganisha na Google" - bila kujali usanidi mwingine wowote ni sahihi.
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
 # 2. Pakia Configuration KWANZA kabla ya db.init_app
 app.config.from_object(Config)
 
@@ -997,7 +1006,11 @@ def google_callback():
     try:
         token = oauth.google.authorize_access_token()
         user_info = token.get("userinfo") or oauth.google.userinfo()
-    except Exception:
+    except Exception as e:
+        # Chapisha hitilafu KAMILI kwenye Render logs (muhimu kwa
+        # kutatua matatizo ya OAuth - mfano state isiyofanana,
+        # redirect_uri isiyolingana, n.k.)
+        app.logger.error(f"[Google OAuth] Hitilafu kwenye callback: {type(e).__name__}: {e}")
         flash("Imeshindikana kuunganisha na Google. Jaribu tena.", "danger")
         return redirect(url_for("login"))
 
