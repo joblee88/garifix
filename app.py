@@ -1016,7 +1016,13 @@ def google_login():
         role = "customer"
     session["google_signup_role"] = role
 
-    is_from_app = "GariFixAndroidApp" in request.headers.get("User-Agent", "")
+    # MUHIMU: Kwa kuwa Google inalazimisha ombi hili lifunguke kwenye
+    # BROWSER YA NJE (siyo WebView), kufikia hapa tayari kumefanyika
+    # kwenye browser hiyo - User-Agent HAITAKUWA na alama ya app tena!
+    # Kwa hiyo, App yenyewe (MainActivity.kt) inaongeza "?from_app=1"
+    # kwenye URL KABLA ya kuifungua kwenye browser ya nje - hii ndiyo
+    # inayosalimika hadi hapa (siyo User-Agent).
+    is_from_app = request.args.get("from_app") == "1"
     callback_endpoint = "google_callback_app" if is_from_app else "google_callback"
     redirect_uri = url_for(callback_endpoint, _external=True)
     return oauth.google.authorize_redirect(redirect_uri)

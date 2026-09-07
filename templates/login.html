@@ -45,7 +45,7 @@
                 <div class="d-flex align-items-center gap-2 my-3">
                     <hr class="flex-grow-1"><span class="text-muted small">AU</span><hr class="flex-grow-1">
                 </div>
-                <a href="{{ url_for('google_login') }}" class="btn btn-outline-secondary btn-lg w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
+                <a href="{{ url_for('google_login', from_app=1) if is_app_mode else url_for('google_login') }}" class="btn btn-outline-secondary btn-lg w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
                     <img src="https://www.google.com/favicon.ico" alt="Google" style="width:20px;height:20px;">
                     Ingia kwa Google
                 </a>

@@ -21,7 +21,7 @@
                     </a>
                     <a href="{{ url_for('customer_register') }}" class="btn btn-primary btn-lg mt-auto">Jisajili Kama Mteja</a>
                     {% if google_oauth_enabled %}
-                    <a href="{{ url_for('google_login', role='customer') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                    <a href="{{ url_for('google_login', role='customer', from_app=1) if is_app_mode else url_for('google_login', role='customer') }}" class="btn btn-outline-secondary btn-sm mt-2">
                         <img src="https://www.google.com/favicon.ico" alt="Google" style="width:14px;height:14px;"> Jisajili kwa Google
                     </a>
                     {% endif %}
@@ -36,7 +36,7 @@
                     </a>
                     <a href="{{ url_for('mechanic_register') }}" class="btn btn-success btn-lg mt-auto">Jisajili Kama Fundi</a>
                     {% if google_oauth_enabled %}
-                    <a href="{{ url_for('google_login', role='mechanic') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                    <a href="{{ url_for('google_login', role='mechanic', from_app=1) if is_app_mode else url_for('google_login', role='mechanic') }}" class="btn btn-outline-secondary btn-sm mt-2">
                         <img src="https://www.google.com/favicon.ico" alt="Google" style="width:14px;height:14px;"> Jisajili kwa Google
                     </a>
                     {% endif %}
