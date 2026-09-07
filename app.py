@@ -1,5 +1,6 @@
 import os
 import uuid
+import secrets
 from functools import wraps
 from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,6 +27,28 @@ app.config.from_object(Config)
 # CSRF Protection: inazuia tovuti nyingine kumdanganya mtumiaji aliye-login
 # kutuma fomu bila yeye kujua (Cross-Site Request Forgery)
 csrf = CSRFProtect(app)
+
+# Google Sign-In (OAuth 2.0) - "Jisajili/Ingia kwa Google". Client ID/Secret
+# zinatoka Environment Variables (Render) - hazipaswi kamwe kuandikwa
+# moja kwa moja hapa. Kama hazijawekwa bado, uwezo huu unajizima wenyewe
+# (haitoi hitilafu) - vitufe vya "Google" vitajificha kwenye templates.
+from authlib.integrations.flask_client import OAuth
+
+oauth = OAuth(app)
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+GOOGLE_OAUTH_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+
+if GOOGLE_OAUTH_ENABLED:
+    oauth.register(
+        name="google",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
+else:
+    print("[Google OAuth] ONYO: GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET hazijawekwa - 'Ingia kwa Google' imezimwa kwa sasa.")
 
 # Rate Limiting: inazuia mtu kujaribu password/usajili mara nyingi mfululizo
 # (brute-force au spam). Routes nyeti (login, forgot-password) zina vikomo
@@ -298,6 +321,7 @@ def inject_app_mode():
         is_app_mode="GariFixAndroidApp" in ua,
         is_android_browser=is_android_browser,
         apk_available=apk_available,
+        google_oauth_enabled=GOOGLE_OAUTH_ENABLED,
     )
 
 
@@ -332,14 +356,34 @@ def inject_user():
     return dict(current_user=None, notification_count=0)
 
 
-# KUMBUKA: Hitaji la "email verification" (kuzuia dashboard kabla ya
-# kuthibitisha email) LIMEZIMWA kwa sasa - barua pepe hazikuwa zinatumwa
-# kwa uhakika kupitia Render free tier (bandari za SMTP zimezuiwa na
-# Render). Msimbo wa verify_email/resend_verification bado upo tayari
-# kutumika baadaye ukisha sanidi Brevo API kikamilifu - ona mailer.py.
-#
-# Uthibitisho wa FUNDI (Mechanic.verified na Seller.verified) na Admin
-# HAUATHIRIWI na hii - unaendelea kufanya kazi kama kawaida.
+# Email Verification - INAWEZESHWA (enabled). Mteja/Fundi asiyethibitisha
+# email yake anazuiliwa kufikia dashboard au ukurasa mwingine wowote wa
+# ndani, na anaelekezwa moja kwa moja /verify-pending mpaka athibitishe.
+# Barua pepe zinatumwa kupitia Brevo API (siyo SMTP) - inafanya kazi
+# vizuri kwenye Render free tier. Uthibitisho wa FUNDI (Mechanic.verified)
+# na Admin HAUATHIRIWI na hii - unaendelea kufanya kazi kama kawaida.
+_EMAIL_VERIFICATION_EXEMPT_ENDPOINTS = {
+    "verify_pending", "resend_verification", "verify_email",
+    "logout", "static", "home", "login", "register_choice",
+    "customer_register", "mechanic_register", "search_mechanics",
+    "terms", "download_app", "app_home", "app_account",
+    "forgot_password_email", "reset_password_email",
+    "register_fcm_token", "notifications_dropdown",
+}
+
+
+@app.before_request
+def enforce_email_verification():
+    if "user_id" not in session:
+        return None
+    if request.endpoint in _EMAIL_VERIFICATION_EXEMPT_ENDPOINTS:
+        return None
+    user = db.session.get(User, session["user_id"])
+    if not user or user.role not in ("customer", "mechanic"):
+        return None
+    if not user.email_verified:
+        return redirect(url_for("verify_pending"))
+    return None
 
 
 @app.route("/download-app")
@@ -921,6 +965,71 @@ def terms():
     return render_template("terms.html")
 
 
+@app.route("/auth/google/login")
+def google_login():
+    """Anzisha mchakato wa 'Ingia/Jisajili kwa Google'. ?role=customer au
+    ?role=mechanic inaonyesha lengo (kwa usajili mpya - haiathiri watu
+    wanaoingia kwa akaunti iliyopo tayari)."""
+    if not GOOGLE_OAUTH_ENABLED:
+        flash("Kuingia kwa Google hakupatikani kwa sasa.", "warning")
+        return redirect(url_for("login"))
+
+    role = request.args.get("role", "customer")
+    if role not in ("customer", "mechanic"):
+        role = "customer"
+    session["google_signup_role"] = role
+
+    redirect_uri = url_for("google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@app.route("/auth/google/callback")
+def google_callback():
+    """Google inarudisha mtumiaji hapa baada ya kuidhinisha. Tunachukua
+    email yake (iliyothibitishwa na Google) - kama tayari ana akaunti,
+    tunamwingiza moja kwa moja; la sivyo, tunampeleka kwenye fomu ya
+    usajili husika ikiwa imejazwa awali jina/email (email_verified=True
+    moja kwa moja, kwa kuwa Google tayari imethibitisha anamiliki email
+    hiyo)."""
+    if not GOOGLE_OAUTH_ENABLED:
+        return redirect(url_for("login"))
+
+    try:
+        token = oauth.google.authorize_access_token()
+        user_info = token.get("userinfo") or oauth.google.userinfo()
+    except Exception:
+        flash("Imeshindikana kuunganisha na Google. Jaribu tena.", "danger")
+        return redirect(url_for("login"))
+
+    email = (user_info or {}).get("email", "").strip().lower()
+    full_name = (user_info or {}).get("name", "").strip()
+
+    if not email:
+        flash("Google haikutoa email sahihi. Jaribu tena au tumia usajili wa kawaida.", "danger")
+        return redirect(url_for("login"))
+
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        if not existing_user.email_verified:
+            existing_user.email_verified = True
+            db.session.commit()
+        session.permanent = True
+        session["user_id"] = existing_user.id
+        session["role"] = existing_user.role
+        dashboard_url = role_dashboard_url()
+        return redirect(dashboard_url or url_for("home"))
+
+    # Mtumiaji mpya - peleka kwenye fomu husika ikiwa jina/email
+    # vimejazwa awali (soma _prefill_google_signup() kwenye fomu hizo)
+    role = session.pop("google_signup_role", "customer")
+    session["google_pending_email"] = email
+    session["google_pending_name"] = full_name
+
+    if role == "mechanic":
+        return redirect(url_for("mechanic_register"))
+    return redirect(url_for("customer_register"))
+
+
 @app.route("/register")
 def register_choice():
     """Ukurasa wa kuchagua: Nataka kujisajili kama Mteja au kama Fundi."""
@@ -930,6 +1039,10 @@ def register_choice():
 @app.route("/customer/register", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def customer_register():
+    # Kama anatoka kwenye "Jisajili kwa Google" - email/jina tayari
+    # vimethibitishwa, password si lazima (tunatengeneza moja kwa siri)
+    via_google = "google_pending_email" in session
+
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
@@ -938,6 +1051,12 @@ def customer_register():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+
+        if via_google:
+            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google
+            email = session.get("google_pending_email", email)
+            password = password or secrets.token_urlsafe(24)
+            confirm_password = password
 
         if not first_name or not last_name:
             flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
@@ -951,7 +1070,7 @@ def customer_register():
             flash("Lazima ukubaliane na Vigezo na Masharti ili kuendelea.", "danger")
             return redirect(url_for("customer_register"))
 
-        if password != confirm_password:
+        if not via_google and password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("customer_register"))
 
@@ -976,17 +1095,31 @@ def customer_register():
             email=email,
             password=hashed_password,
             role="customer",
-            profile_photo=photo_filename
+            profile_photo=photo_filename,
+            email_verified=via_google
         )
         db.session.add(new_customer)
         db.session.commit()
+
+        if via_google:
+            session.pop("google_pending_email", None)
+            session.pop("google_pending_name", None)
+            session.permanent = True
+            session["user_id"] = new_customer.id
+            session["role"] = new_customer.role
+            flash("Usajili umefanikiwa kupitia Google! Karibu GariFix.", "success")
+            return redirect(url_for("customer_dashboard"))
 
         send_email_verification(new_customer)
 
         flash("Usajili umefanikiwa! Sasa unaweza kuingia (login).", "success")
         return redirect(url_for("login"))
 
-    return render_template("customer_register.html")
+    return render_template(
+        "customer_register.html",
+        google_prefill_email=session.get("google_pending_email"),
+        google_prefill_name=session.get("google_pending_name"),
+    )
 
 
 @app.route("/customer/dashboard")
@@ -1034,6 +1167,8 @@ def customer_reviews():
 @app.route("/mechanic/register", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def mechanic_register():
+    via_google = "google_pending_email" in session
+
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
@@ -1042,6 +1177,11 @@ def mechanic_register():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+
+        if via_google:
+            email = session.get("google_pending_email", email)
+            password = password or secrets.token_urlsafe(24)
+            confirm_password = password
 
         garage_name = request.form.get("garage_name", "").strip()
         region = request.form.get("region", "").strip()
@@ -1070,7 +1210,7 @@ def mechanic_register():
             flash("Tafadhali jaza eneo lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
             return redirect(url_for("mechanic_register"))
 
-        if password != confirm_password:
+        if not via_google and password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("mechanic_register"))
 
@@ -1155,7 +1295,8 @@ def mechanic_register():
                 phone=phone,
                 email=email,
                 password=hashed_password,
-                role="mechanic"
+                role="mechanic",
+                email_verified=via_google
             )
             db.session.add(new_user)
             db.session.commit()
@@ -1177,7 +1318,8 @@ def mechanic_register():
             )
             db.session.add(new_mechanic)
             db.session.commit()
-            send_email_verification(new_user)
+            if not via_google:
+                send_email_verification(new_user)
 
         # Arifisha ADMIN WOTE - fundi mpya (au anayeomba upya) anasubiri idhini
         for admin_user in User.query.filter_by(role="admin").all():
@@ -1188,10 +1330,23 @@ def mechanic_register():
                 data={"type": "mechanic_pending", "mechanic_id": new_mechanic.id, "url": "/admin/mechanics"}
             )
 
+        if via_google:
+            session.pop("google_pending_email", None)
+            session.pop("google_pending_name", None)
+            session.permanent = True
+            session["user_id"] = new_user.id
+            session["role"] = "mechanic"
+            flash("Usajili umefanikiwa kupitia Google! Akaunti yako inasubiri uthibitisho wa Admin.", "success")
+            return redirect(url_for("mechanic_dashboard"))
+
         flash("Usajili umefanikiwa! Akaunti yako inasubiri uthibitisho (verification) wa Admin baada ya kukagua kitambulisho chako - utaweza kuingia mara tu ukishaidhinishwa.", "success")
         return redirect(url_for("login"))
 
-    return render_template("mechanic_register.html")
+    return render_template(
+        "mechanic_register.html",
+        google_prefill_email=session.get("google_pending_email"),
+        google_prefill_name=session.get("google_pending_name"),
+    )
 
 
 @app.route("/dashboard")

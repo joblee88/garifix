@@ -19,14 +19,19 @@
                 <div class="card-body p-4 p-md-5">
                     <form method="POST" enctype="multipart/form-data" action="{{ url_for('mechanic_register') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if google_prefill_email %}
+                        <div class="alert alert-info small">
+                            <i class="fa-brands fa-google me-1"></i> Unakamilisha usajili kwa kutumia akaunti yako ya Google (<strong>{{ google_prefill_email }}</strong>). Jaza taarifa zilizobaki hapa chini.
+                        </div>
+                        {% endif %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Jina la Kwanza</label>
-                                <input type="text" name="first_name" class="form-control" required>
+                                <input type="text" name="first_name" class="form-control" value="{{ google_prefill_name.split(' ')[0] if google_prefill_name else '' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Jina la Mwisho</label>
-                                <input type="text" name="last_name" class="form-control" required>
+                                <input type="text" name="last_name" class="form-control" value="{{ google_prefill_name.split(' ', 1)[1] if google_prefill_name and ' ' in google_prefill_name else '' }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Namba ya Simu</label>
@@ -39,8 +44,9 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Email (tunatuma uthibitisho hapa)</label>
-                                <input type="email" name="email" class="form-control" required>
+                                <input type="email" name="email" class="form-control" value="{{ google_prefill_email or '' }}" {{ 'readonly' if google_prefill_email }} required>
                             </div>
+                            {% if not google_prefill_email %}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Password</label>
                                 <div class="input-group gfx-password-wrapper">
@@ -56,6 +62,7 @@
                                     <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)"><i class="fa-solid fa-eye"></i></button>
                                 </div>
                             </div>
+                            {% endif %}
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-semibold">Jina la Garage</label>

@@ -13,24 +13,34 @@
 
         <div class="row g-3">
             <div class="col-6">
-                <a href="{{ url_for('customer_register') }}" class="text-decoration-none">
-                    <div class="card glass-card role-card p-3 p-md-4 h-100 text-center">
+                <div class="card glass-card role-card p-3 p-md-4 h-100 text-center d-flex flex-column">
+                    <a href="{{ url_for('customer_register') }}" class="text-decoration-none flex-grow-1">
                         <i class="fa-solid fa-user fa-3x text-primary mb-2 icon-3d"></i>
                         <h4 class="fw-bold mb-1">Nataka Kuwa Mteja</h4>
                         <p class="text-muted mb-3">Nitafute mafundi waliothibitishwa karibu na eneo langu.</p>
-                        <span class="btn btn-primary btn-lg mt-auto">Jisajili Kama Mteja</span>
-                    </div>
-                </a>
+                    </a>
+                    <a href="{{ url_for('customer_register') }}" class="btn btn-primary btn-lg mt-auto">Jisajili Kama Mteja</a>
+                    {% if google_oauth_enabled %}
+                    <a href="{{ url_for('google_login', role='customer') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                        <img src="https://www.google.com/favicon.ico" alt="Google" style="width:14px;height:14px;"> Jisajili kwa Google
+                    </a>
+                    {% endif %}
+                </div>
             </div>
             <div class="col-6">
-                <a href="{{ url_for('mechanic_register') }}" class="text-decoration-none">
-                    <div class="card glass-card role-card p-3 p-md-4 h-100 text-center">
+                <div class="card glass-card role-card p-3 p-md-4 h-100 text-center d-flex flex-column">
+                    <a href="{{ url_for('mechanic_register') }}" class="text-decoration-none flex-grow-1">
                         <i class="fa-solid fa-screwdriver-wrench fa-3x text-success mb-2 icon-3d"></i>
                         <h4 class="fw-bold mb-1">Nataka Kuwa Fundi</h4>
                         <p class="text-muted mb-3">Nitangaze huduma zangu za ukarabati wa magari kwa wateja karibu nami.</p>
-                        <span class="btn btn-success btn-lg mt-auto">Jisajili Kama Fundi</span>
-                    </div>
-                </a>
+                    </a>
+                    <a href="{{ url_for('mechanic_register') }}" class="btn btn-success btn-lg mt-auto">Jisajili Kama Fundi</a>
+                    {% if google_oauth_enabled %}
+                    <a href="{{ url_for('google_login', role='mechanic') }}" class="btn btn-outline-secondary btn-sm mt-2">
+                        <img src="https://www.google.com/favicon.ico" alt="Google" style="width:14px;height:14px;"> Jisajili kwa Google
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
