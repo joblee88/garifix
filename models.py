@@ -12,6 +12,7 @@ class User(db.Model):
     status = db.Column(db.String(20), default="active")
     fcm_token = db.Column(db.String(255), nullable=True)  # Token ya Firebase Cloud Messaging (App ya Android)
     profile_photo = db.Column(db.String(255), nullable=True)  # Picha ya wasifu (customer hasa)
+    username = db.Column(db.String(50), unique=True, nullable=True, index=True)  # Jina la kuonekana kwenye profile (hiari)
 
     # --- Uthibitisho wa Email (Email Verification) ---
     email_verified = db.Column(db.Boolean, default=False, nullable=False)

@@ -1258,11 +1258,6 @@ def customer_register():
             return redirect(url_for("customer_register"))
 
         hashed_password = generate_password_hash(password)
-        try:
-            photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
-        except InvalidImageError as e:
-            flash(str(e), "danger")
-            return redirect(url_for("customer_register"))
 
         new_customer = User(
             full_name=full_name,
@@ -1270,7 +1265,6 @@ def customer_register():
             email=email,
             password=hashed_password,
             role="customer",
-            profile_photo=photo_filename,
             email_verified=via_google
         )
         db.session.add(new_customer)
@@ -1336,6 +1330,41 @@ def customer_reviews():
     user_id = session["user_id"]
     reviews = Review.query.filter_by(customer_id=user_id).order_by(Review.created_at.desc()).all()
     return render_template("customer_reviews.html", reviews=reviews)
+
+
+@app.route("/customer/profile", methods=["GET", "POST"])
+@login_required
+@role_required("customer")
+def own_customer_profile():
+    user = db.session.get(User, session["user_id"])
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip() or None
+
+        if username and username != user.username:
+            existing = User.query.filter_by(username=username).first()
+            if existing and existing.id != user.id:
+                flash("Jina hilo la mtumiaji (username) tayari linatumiwa na mtu mwingine.", "danger")
+                return redirect(url_for("own_customer_profile"))
+
+        if full_name:
+            user.full_name = full_name
+        user.username = username
+
+        try:
+            photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
+            if photo_filename:
+                user.profile_photo = photo_filename
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("own_customer_profile"))
+
+        db.session.commit()
+        flash("Wasifu wako umesasishwa!", "success")
+        return redirect(url_for("own_customer_profile"))
+
+    return render_template("customer_profile.html", user=user)
 
 
 # MECHANIC ROUTES
@@ -1428,10 +1457,8 @@ def mechanic_register():
                 flash("Barua pepe hii tayari imesajiliwa na akaunti nyingine.", "danger")
                 return redirect(url_for("mechanic_register"))
 
-        filename = None
         id_document_filename = None
         try:
-            filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
             id_document_filename = save_uploaded_image(id_doc_file, folder_hint="id_documents", private=True)
         except InvalidImageError as e:
             flash(str(e), "danger")
@@ -1457,8 +1484,6 @@ def mechanic_register():
             new_mechanic.specialization = specialization
             new_mechanic.experience = experience
             new_mechanic.description = description
-            if filename:
-                new_mechanic.profile_photo = filename
             new_mechanic.id_document_type = id_document_type
             if id_document_filename:
                 new_mechanic.id_document = id_document_filename
@@ -1486,7 +1511,6 @@ def mechanic_register():
                 specialization=specialization,
                 experience=experience,
                 description=description,
-                profile_photo=filename,
                 id_document_type=id_document_type,
                 id_document=id_document_filename,
                 verified="pending"
@@ -1547,11 +1571,21 @@ def own_mechanic_profile():
         mechanic.experience = safe_int(request.form.get("experience"), default=mechanic.experience or 0)
         mechanic.description = request.form.get("description", "").strip()
 
-        photo = request.files.get("profile_photo")
-        if photo and photo.filename != "":
-            filename = secure_filename(photo.filename)
-            photo.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            mechanic.profile_photo = filename
+        username = request.form.get("username", "").strip() or None
+        if username and username != user.username:
+            existing = User.query.filter_by(username=username).first()
+            if existing and existing.id != user.id:
+                flash("Jina hilo la mtumiaji (username) tayari linatumiwa na mtu mwingine.", "danger")
+                return redirect(url_for("own_mechanic_profile"))
+        user.username = username
+
+        try:
+            photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
+            if photo_filename:
+                mechanic.profile_photo = photo_filename
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("own_mechanic_profile"))
 
         db.session.commit()
         flash("Taarifa zako zimesasishwa!", "success")
@@ -2039,6 +2073,41 @@ def cancel_request(id):
 def admin_reviews():
     reviews = Review.query.order_by(Review.created_at.desc()).all()
     return render_template("admin_reviews.html", reviews=reviews)
+
+
+@app.route("/admin/profile", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def own_admin_profile():
+    user = db.session.get(User, session["user_id"])
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip() or None
+
+        if username and username != user.username:
+            existing = User.query.filter_by(username=username).first()
+            if existing and existing.id != user.id:
+                flash("Jina hilo la mtumiaji (username) tayari linatumiwa na mtu mwingine.", "danger")
+                return redirect(url_for("own_admin_profile"))
+
+        if full_name:
+            user.full_name = full_name
+        user.username = username
+
+        try:
+            photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
+            if photo_filename:
+                user.profile_photo = photo_filename
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("own_admin_profile"))
+
+        db.session.commit()
+        flash("Wasifu wako umesasishwa!", "success")
+        return redirect(url_for("own_admin_profile"))
+
+    return render_template("admin_profile.html", user=user)
 
 
 @app.cli.command("create-admin")

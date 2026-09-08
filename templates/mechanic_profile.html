@@ -46,6 +46,45 @@
             <p class="text-muted mb-0">{{ mechanic.description or 'Hakuna maelezo ya ziada.' }}</p>
         </div>
 
+        {% if is_owner %}
+        <div class="card shadow border-0 p-4 mb-4">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-user-pen text-primary me-2"></i>Hariri Wasifu Wangu</h4>
+            <hr>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label">Picha ya Wasifu</label>
+                    <input type="file" name="profile_photo" class="form-control" accept="image/*" data-compress data-compress-max="1000" data-compress-quality="0.7">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Jina la Garage</label>
+                    <input type="text" name="garage_name" class="form-control" value="{{ mechanic.garage_name or '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Username <span class="text-muted small">(hiari - litaonekana kwenye wasifu wako)</span></label>
+                    <input type="text" name="username" class="form-control" value="{{ mechanic.user.username or '' }}" placeholder="mfano: juma_fundi" pattern="[a-zA-Z0-9_]+" maxlength="50">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Uzoefu (Miaka)</label>
+                    <input type="number" name="experience" class="form-control" value="{{ mechanic.experience or 0 }}" min="0">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Maelezo</label>
+                    <textarea name="description" class="form-control" rows="3">{{ mechanic.description or '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Hifadhi Mabadiliko
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
         <div class="card shadow border-0 p-4">
             <h4 class="fw-bold mb-3"><i class="fa-solid fa-comments text-primary me-2"></i>Reviews za Wateja</h4>
             <hr>
