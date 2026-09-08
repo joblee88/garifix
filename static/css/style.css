@@ -739,3 +739,24 @@ body {
             drop-shadow(0 3px 6px rgba(0,0,0,0.6))
             drop-shadow(0 6px 12px rgba(0,0,0,0.35));
 }
+/* Kisanduku cheusi/giza kwa ajili ya logo (yenye "background" ya
+   transparent) - kinahitajika popote logo inapowekwa juu ya background
+   nyeupe/nyepesi (mfano kadi za Login/Register), vinginevyo logo
+   (nyeupe) haionekani kabisa. */
+.gfx-logo-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+    border-radius: 20px;
+    padding: 14px 24px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.gfx-logo-badge img {
+    width: 180px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+@media (max-width: 400px) {
+    .gfx-logo-badge img { width: 140px; }
+    .gfx-logo-badge { padding: 10px 18px; }
+}
