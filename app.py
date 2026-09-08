@@ -329,16 +329,16 @@ def inject_time_greeting():
     eat_hour = (datetime.utcnow() + timedelta(hours=3)).hour
     if 5 <= eat_hour < 12:
         greeting = "Habari za Asubuhi"
-        time_icon = "fa-solid fa-sun"
+        time_icon = "🌅"
     elif 12 <= eat_hour < 16:
         greeting = "Habari za Mchana"
-        time_icon = "fa-solid fa-cloud-sun"
+        time_icon = "☀️"
     elif 16 <= eat_hour < 19:
         greeting = "Habari za Jioni"
-        time_icon = "fa-solid fa-sunset"
+        time_icon = "🌇"
     else:
         greeting = "Habari za Usiku"
-        time_icon = "fa-solid fa-moon"
+        time_icon = "🌙"
     return dict(time_greeting=greeting, time_icon=time_icon)
 
 
@@ -404,10 +404,16 @@ def track_visitor():
     region = "Haijulikani"
     try:
         if ip and not ip.startswith(("127.", "10.", "192.168.", "172.")):
-            resp = requests.get(f"http://ip-api.com/json/{ip}?fields=status,regionName", timeout=2)
+            resp = requests.get(f"http://ip-api.com/json/{ip}?fields=status,country,regionName", timeout=2)
             data = resp.json()
-            if data.get("status") == "success" and data.get("regionName"):
-                region = data["regionName"]
+            # Tuhesabu MIKOA YA TANZANIA TU - mgeni akitoka nchi nyingine,
+            # tunamweka kwenye kundi la jumla ("Nje ya Tanzania") badala ya
+            # kuchanganya na majina ya mikoa ya nchi zingine.
+            if data.get("status") == "success":
+                if data.get("country") == "Tanzania" and data.get("regionName"):
+                    region = data["regionName"]
+                elif data.get("country"):
+                    region = "Nje ya Tanzania"
     except Exception:
         pass  # geo-IP ni ya hiari - kamwe isivunje ukurasa
 
@@ -1796,6 +1802,7 @@ def admin_dashboard(user_id):
     total_visitors = PageVisit.query.count()
     top_regions = (
         db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
+        .filter(PageVisit.region.notin_(["Haijulikani", "Nje ya Tanzania"]))
         .group_by(PageVisit.region)
         .order_by(func.count(PageVisit.id).desc())
         .limit(3)
@@ -1826,6 +1833,7 @@ def admin_visitors():
     total_visitors = PageVisit.query.count()
     all_regions = (
         db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
+        .filter(PageVisit.region.notin_(["Haijulikani", "Nje ya Tanzania"]))
         .group_by(PageVisit.region)
         .order_by(func.count(PageVisit.id).desc())
         .all()
