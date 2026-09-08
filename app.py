@@ -45,6 +45,20 @@ csrf = CSRFProtect(app)
 # (haitoi hitilafu) - vitufe vya "Google" vitajificha kwenye templates.
 from authlib.integrations.flask_client import OAuth
 
+# Orodha rasmi ya mikoa 31 ya Tanzania (sawa na ile inayotumika kwenye
+# static/js/tz_locations.js) - tunatumia hii kuchuja kwa UHAKIKA kabisa
+# kwamba wageni tunaowaonyesha kwenye "Mikoa" ni wa Tanzania pekee, bila
+# kutegemea usahihi wa jina la nchi linalotolewa na huduma ya geo-IP.
+TANZANIA_REGIONS = [
+    "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera",
+    "Katavi", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara",
+    "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pemba Kaskazini",
+    "Pemba Kusini", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu",
+    "Singida", "Songwe", "Tabora", "Tanga", "Unguja Kaskazini",
+    "Unguja Kusini", "Unguja Mjini Magharibi",
+]
+
+
 oauth = OAuth(app)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
@@ -406,12 +420,18 @@ def track_visitor():
         if ip and not ip.startswith(("127.", "10.", "192.168.", "172.")):
             resp = requests.get(f"http://ip-api.com/json/{ip}?fields=status,country,regionName", timeout=2)
             data = resp.json()
-            # Tuhesabu MIKOA YA TANZANIA TU - mgeni akitoka nchi nyingine,
-            # tunamweka kwenye kundi la jumla ("Nje ya Tanzania") badala ya
-            # kuchanganya na majina ya mikoa ya nchi zingine.
             if data.get("status") == "success":
-                if data.get("country") == "Tanzania" and data.get("regionName"):
-                    region = data["regionName"]
+                raw_region = (data.get("regionName") or "").strip()
+                # Linganisha na orodha yetu RASMI ya mikoa 31 (bila kujali
+                # herufi kubwa/ndogo) - hii ni ya UHAKIKA zaidi kuliko
+                # kutegemea tu jina la "country" linalotolewa na geo-IP,
+                # ambalo mara nyingine si sahihi kabisa kwa baadhi ya IP.
+                matched = next(
+                    (r for r in TANZANIA_REGIONS if r.lower() == raw_region.lower()),
+                    None
+                )
+                if matched:
+                    region = matched
                 elif data.get("country"):
                     region = "Nje ya Tanzania"
     except Exception:
@@ -1802,7 +1822,7 @@ def admin_dashboard(user_id):
     total_visitors = PageVisit.query.count()
     top_regions = (
         db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
-        .filter(PageVisit.region.notin_(["Haijulikani", "Nje ya Tanzania"]))
+        .filter(PageVisit.region.in_(TANZANIA_REGIONS))
         .group_by(PageVisit.region)
         .order_by(func.count(PageVisit.id).desc())
         .limit(3)
@@ -1833,7 +1853,7 @@ def admin_visitors():
     total_visitors = PageVisit.query.count()
     all_regions = (
         db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
-        .filter(PageVisit.region.notin_(["Haijulikani", "Nje ya Tanzania"]))
+        .filter(PageVisit.region.in_(TANZANIA_REGIONS))
         .group_by(PageVisit.region)
         .order_by(func.count(PageVisit.id).desc())
         .all()
