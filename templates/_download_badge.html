@@ -1,0 +1,65 @@
+{% if is_android_browser and apk_available and not is_app_mode %}
+<a href="{{ url_for('download_app') }}" class="gfx-download-badge" title="Pakua App ya GariFix">
+    <img src="{{ url_for('static', filename='images/garifix-logo-full.png') }}" alt="GariFix">
+    <span>
+        <strong>Pakua App</strong>
+        <small>Bofya hapa</small>
+    </span>
+    <i class="fa-solid fa-download"></i>
+</a>
+<style>
+.gfx-download-badge {
+    position: fixed;
+    top: 78px;
+    right: 12px;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0d0d0d;
+    color: #fff;
+    padding: 6px 12px 6px 6px;
+    border-radius: 50px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    text-decoration: none;
+    animation: gfxBadgePop 0.4s ease;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+.gfx-download-badge:hover {
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    transform: translateY(-1px);
+}
+.gfx-download-badge img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #000;
+}
+.gfx-download-badge span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+.gfx-download-badge strong {
+    font-size: 12px;
+}
+.gfx-download-badge small {
+    font-size: 10px;
+    opacity: 0.75;
+}
+.gfx-download-badge i {
+    font-size: 13px;
+    opacity: 0.85;
+}
+@keyframes gfxBadgePop {
+    from { transform: scale(0.7) translateY(-8px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+@media (max-width: 400px) {
+    .gfx-download-badge span { display: none; }
+    .gfx-download-badge { padding: 8px; }
+}
+</style>
+{% endif %}

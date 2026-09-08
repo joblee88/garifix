@@ -591,24 +591,21 @@ body {
     top: 50%;
     left: -10%;
     transform: translateY(-58%);
-    font-size: 26px;
+    width: 40px;
+    height: auto;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     animation-name: gariFixDriveAcross;
     animation-timing-function: linear;
     animation-iteration-count: infinite;
 }
 
-/* Rangi za magari - zinalingana na rangi za Customer (bluu), Fundi (kijani)
-   na Muuzaji (njano) zinazotumika mahali pengine kwenye mfumo.
-   Kila gari lina SPEED (muda) TOFAUTI ili yapitane barabarani, siyo
+/* Kila gari lina SPEED (muda) TOFAUTI ili yapitane barabarani, siyo
    kutembea kwa mstari sawa milele. */
 .car-customer {
-    color: #1D4ED8;
     animation-duration: 6s;
     animation-delay: 0s;
 }
 .car-mechanic {
-    color: #198754;
     animation-duration: 8.5s;
     animation-delay: 1s;
 }
