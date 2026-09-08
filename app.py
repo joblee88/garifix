@@ -1296,6 +1296,11 @@ def customer_register():
 
         send_email_verification(new_customer)
 
+        # Futa session ya AKAUNTI NYINGINE (ikiwa mtu alikuwa keshaingia
+        # awali kwa akaunti tofauti) - vinginevyo ukurasa wa /login
+        # unaonyesha "Logout" isivyo sahihi baada ya usajili huu mpya.
+        session.clear()
+
         flash(f"Usajili umefanikiwa! Tumetuma barua pepe ya uthibitisho kwenda {email} - fungua email yako na ubofye link ya uthibitisho ili uingie moja kwa moja.", "success")
         return redirect(url_for("login"))
 
@@ -1552,6 +1557,11 @@ def mechanic_register():
             session["role"] = "mechanic"
             flash("Usajili umefanikiwa kupitia Google! Akaunti yako inasubiri uthibitisho wa Admin.", "success")
             return redirect(url_for("mechanic_dashboard"))
+
+        # Futa session ya AKAUNTI NYINGINE (ikiwa mtu alikuwa keshaingia
+        # awali kwa akaunti tofauti) - vinginevyo ukurasa wa /login
+        # unaonyesha "Logout" isivyo sahihi baada ya usajili huu mpya.
+        session.clear()
 
         flash(f"Usajili umefanikiwa! Tumetuma barua pepe ya uthibitisho kwenda {email} - fungua email yako na ubofye link ya uthibitisho. Baada ya hapo, akaunti yako itasubiri ukaguzi wa Admin kabla ya kuanza kupokea maombi.", "success")
         return redirect(url_for("login"))
