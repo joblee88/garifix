@@ -302,21 +302,6 @@ app.jinja_env.globals["resolve_image_url"] = resolve_image_url
 # Context Processor - inagundua kama ukurasa unafunguliwa NDANI YA APP ya
 # Android (kupitia User-Agent maalum tuliyoongeza kwenye WebView), ili
 # templates ziweze kuficha vitu vya "website" visivyohitajika ndani ya app
-# Context Processor - salamu ya wakati (asubuhi/mchana/usiku) kwa ajili ya
-# topbar ya dashboard zote (Customer, Fundi, Muuzaji, Admin)
-@app.context_processor
-def inject_greeting():
-    from datetime import datetime
-    hour = datetime.now().hour
-    if 5 <= hour < 12:
-        greeting = "Habari za asubuhi"
-    elif 12 <= hour < 18:
-        greeting = "Habari za mchana"
-    else:
-        greeting = "Habari za usiku"
-    return dict(time_greeting=greeting)
-
-
 # (mfano footer - Bottom Navigation ya app tayari inatosha kwa urambazaji).
 @app.context_processor
 def inject_app_mode():
@@ -343,13 +328,17 @@ def inject_time_greeting():
     eat_hour = (datetime.utcnow() + timedelta(hours=3)).hour
     if 5 <= eat_hour < 12:
         greeting = "Habari za Asubuhi"
+        time_icon = "fa-solid fa-sun"
     elif 12 <= eat_hour < 16:
         greeting = "Habari za Mchana"
+        time_icon = "fa-solid fa-cloud-sun"
     elif 16 <= eat_hour < 19:
         greeting = "Habari za Jioni"
+        time_icon = "fa-solid fa-sunset"
     else:
         greeting = "Habari za Usiku"
-    return dict(time_greeting=greeting)
+        time_icon = "fa-solid fa-moon"
+    return dict(time_greeting=greeting, time_icon=time_icon)
 
 
 # Context Processor kwa ajili ya taarifa za mtumiaji aliyeingia
@@ -560,7 +549,6 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("Umetoka kwenye mfumo kikamilifu.", "info")
     return redirect(url_for("login"))
 
 
