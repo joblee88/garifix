@@ -96,3 +96,15 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     user = db.relationship("User", foreign_keys=[user_id])
+
+class PageVisit(db.Model):
+    """Kumbukumbu ya wageni waliotembelea website - moja kwa kila
+    'session' (siyo kila 'page load', ili kuepuka kuhesabu mtu mmoja
+    mara nyingi). Mkoa (region) unatambuliwa kwa kutumia huduma ya
+    'geo-IP' ya nje (bila malipo) - ikiwa haiwezekani kujua (mfano IP
+    ya ndani wakati wa majaribio), region inabaki 'Haijulikani'."""
+    __tablename__ = "page_visits"
+
+    id = db.Column(db.Integer, primary_key=True)
+    region = db.Column(db.String(100), default="Haijulikani", index=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())

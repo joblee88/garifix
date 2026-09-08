@@ -1,6 +1,7 @@
 import os
 import uuid
 import secrets
+import requests
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory
@@ -156,7 +157,7 @@ db.init_app(app)
 with app.app_context():
     try:
         import models
-        from models import User, Mechanic, ServiceRequest, Review, Notification
+        from models import User, Mechanic, ServiceRequest, Review, Notification, PageVisit
         db.create_all()
         print("Database ya SQLite imewezeshwa: Faili la garifix.db na meza zote zipo tayari!")
     except Exception as e:
@@ -382,6 +383,41 @@ def enforce_email_verification():
         return None
     if not user.email_verified:
         return redirect(url_for("verify_pending"))
+    return None
+
+
+@app.before_request
+def track_visitor():
+    """Hesabu mgeni MMOJA kwa kila 'session' (siyo kila 'page load') na
+    ujaribu kujua mkoa wake kwa kutumia huduma ya nje ya 'geo-IP' (bila
+    malipo, ip-api.com). Hii ni ya HIARI kabisa kwa uzoefu wa mtumiaji -
+    ikishindikana kwa sababu yoyote (mtandao, muda, IP ya ndani wakati wa
+    majaribio), tunaruka kimya kimya bila kuathiri ukurasa wenyewe."""
+    if session.get("visit_logged"):
+        return None
+    if request.endpoint in ("static", None) or (request.endpoint or "").startswith("admin_"):
+        return None
+
+    session["visit_logged"] = True  # weka mara moja - hata ikiwa geo-IP itashindikana, usijaribu tena
+
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    region = "Haijulikani"
+    try:
+        if ip and not ip.startswith(("127.", "10.", "192.168.", "172.")):
+            resp = requests.get(f"http://ip-api.com/json/{ip}?fields=status,regionName", timeout=2)
+            data = resp.json()
+            if data.get("status") == "success" and data.get("regionName"):
+                region = data["regionName"]
+    except Exception:
+        pass  # geo-IP ni ya hiari - kamwe isivunje ukurasa
+
+    try:
+        visit = PageVisit(region=region)
+        db.session.add(visit)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     return None
 
 
@@ -1757,6 +1793,15 @@ def admin_dashboard(user_id):
     accepted_requests = ServiceRequest.query.filter_by(status="accepted").count()
     completed_requests = ServiceRequest.query.filter_by(status="completed").count()
 
+    total_visitors = PageVisit.query.count()
+    top_regions = (
+        db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
+        .group_by(PageVisit.region)
+        .order_by(func.count(PageVisit.id).desc())
+        .limit(3)
+        .all()
+    )
+
     return render_template(
         "admin_dashboard.html",
         user=user,
@@ -1766,8 +1811,26 @@ def admin_dashboard(user_id):
         total_requests=total_requests,
         pending_requests=pending_requests,
         accepted_requests=accepted_requests,
-        completed_requests=completed_requests
+        completed_requests=completed_requests,
+        total_visitors=total_visitors,
+        top_regions=top_regions
     )
+
+
+@app.route("/admin/visitors")
+@login_required
+@role_required("admin")
+def admin_visitors():
+    """Mikoa YOTE (siyo mitatu tu) yenye wageni, iliyopangwa kwa idadi
+    kubwa kwenda ndogo."""
+    total_visitors = PageVisit.query.count()
+    all_regions = (
+        db.session.query(PageVisit.region, func.count(PageVisit.id).label("jumla"))
+        .group_by(PageVisit.region)
+        .order_by(func.count(PageVisit.id).desc())
+        .all()
+    )
+    return render_template("admin_visitors.html", total_visitors=total_visitors, all_regions=all_regions)
 
 
 @app.route("/admin/mechanics")

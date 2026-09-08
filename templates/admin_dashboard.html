@@ -72,6 +72,36 @@
 
 <div class="card p-4">
     <h5 class="fw-bold mb-3">Quick Actions</h5>
+
+    <!-- Wageni (Visitors) -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-4">
+            <a href="{{ url_for('admin_visitors') }}" class="text-decoration-none">
+                <div class="stat-card stat-card-sm">
+                    <i class="fa-solid fa-eye fa-2x text-primary mb-2 icon-3d"></i>
+                    <h4 class="fw-bold text-dark mb-0">{{ total_visitors }}</h4>
+                    <p class="text-muted small mb-0">Jumla ya Wageni</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-8">
+            <div class="border rounded-3 p-3 h-100">
+                <p class="fw-semibold small mb-2"><i class="fa-solid fa-map-location-dot me-1"></i> Mikoa 3 Bora</p>
+                {% if top_regions %}
+                    {% for region, jumla in top_regions %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small">{{ loop.index }}. {{ region }}</span>
+                        <span class="badge bg-primary">{{ jumla }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small mb-0">Bado hakuna data.</p>
+                {% endif %}
+                <a href="{{ url_for('admin_visitors') }}" class="small">Ona Mikoa Yote <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-2">
         <div class="col-4">
             <a href="{{ url_for('admin_mechanics') }}" class="btn btn-primary w-100"><i class="fa-solid fa-user-gear me-1"></i> Manage Mechanics</a>
