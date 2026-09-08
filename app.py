@@ -765,8 +765,23 @@ def verify_email(token):
 
     user.email_verified = True
     db.session.commit()
+
+    # Mwingize (login) MOJA KWA MOJA - hahitaji kuingia mwenyewe tena.
+    # Hii inafanya kazi hata kama alifungua link ya email kwenye
+    # browser/kifaa TOFAUTI na alichojisajilia (hana session ya awali).
+    session.permanent = True
+    session["user_id"] = user.id
+    session["role"] = user.role
+
+    if user.role == "mechanic":
+        flash("Hongera! Email yako imethibitishwa. Akaunti yako sasa inasubiri ukaguzi na uthibitisho wa Admin - utapata arifa (notification) mara tu ukishaidhinishwa.", "success")
+        return redirect(url_for("mechanic_dashboard"))
+    elif user.role == "customer":
+        flash("Hongera! Email yako imethibitishwa - karibu GariFix!", "success")
+        return redirect(url_for("customer_dashboard"))
+
     flash("Hongera! Email yako imethibitishwa kikamilifu.", "success")
-    return redirect(url_for("verify_pending"))
+    return redirect(url_for("login"))
 
 
 @app.route("/verify-pending")
@@ -1281,7 +1296,7 @@ def customer_register():
 
         send_email_verification(new_customer)
 
-        flash("Usajili umefanikiwa! Sasa unaweza kuingia (login).", "success")
+        flash(f"Usajili umefanikiwa! Tumetuma barua pepe ya uthibitisho kwenda {email} - fungua email yako na ubofye link ya uthibitisho ili uingie moja kwa moja.", "success")
         return redirect(url_for("login"))
 
     return render_template(
@@ -1538,7 +1553,7 @@ def mechanic_register():
             flash("Usajili umefanikiwa kupitia Google! Akaunti yako inasubiri uthibitisho wa Admin.", "success")
             return redirect(url_for("mechanic_dashboard"))
 
-        flash("Usajili umefanikiwa! Akaunti yako inasubiri uthibitisho (verification) wa Admin baada ya kukagua kitambulisho chako - utaweza kuingia mara tu ukishaidhinishwa.", "success")
+        flash(f"Usajili umefanikiwa! Tumetuma barua pepe ya uthibitisho kwenda {email} - fungua email yako na ubofye link ya uthibitisho. Baada ya hapo, akaunti yako itasubiri ukaguzi wa Admin kabla ya kuanza kupokea maombi.", "success")
         return redirect(url_for("login"))
 
     return render_template(

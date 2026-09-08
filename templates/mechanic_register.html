@@ -6,6 +6,7 @@
 <script src="{{ url_for('static', filename='js/password-hint.js') }}"></script>
 <script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
 <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prevent-double-submit.js') }}"></script>
 <div class="auth-page-bg">
 <div class="container py-4">
     <div class="row justify-content-center w-100">
@@ -17,7 +18,7 @@
                 </div>
 
                 <div class="card-body p-4 p-md-5">
-                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('mechanic_register') }}">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('mechanic_register') }}" id="gfxMechanicRegisterForm" onsubmit="return gfxPreventDoubleSubmit(this, 'gfxMechanicRegisterBtn');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {% if google_prefill_email %}
                         <div class="alert alert-info small">
@@ -156,7 +157,7 @@
                             </div>
 
                             <div class="col-12 text-center mt-3">
-                                <button type="submit" class="btn btn-primary btn-lg px-5">Jisajili Kama Fundi</button>
+                                <button type="submit" class="btn btn-primary btn-lg px-5" id="gfxMechanicRegisterBtn">Jisajili Kama Fundi</button>
                             </div>
                         </div>
                     </form>

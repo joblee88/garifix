@@ -6,6 +6,7 @@
 <script src="{{ url_for('static', filename='js/password-hint.js') }}"></script>
 <script src="{{ url_for('static', filename='js/image-compress.js') }}"></script>
 <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prevent-double-submit.js') }}"></script>
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
     <div class="col-lg-6 col-md-8">
@@ -16,7 +17,7 @@
                 <p class="text-muted">Fungua akaunti ili uweze kupata huduma za mafundi wa magari.</p>
             </div>
 
-            <form method="POST" action="{{ url_for('customer_register') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('customer_register') }}" enctype="multipart/form-data" id="gfxCustomerRegisterForm" onsubmit="return gfxPreventDoubleSubmit(this, 'gfxCustomerRegisterBtn');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {% if google_prefill_email %}
                 <div class="alert alert-info small">
@@ -74,7 +75,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100">
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="gfxCustomerRegisterBtn">
                     <i class="fa-solid fa-user-plus me-2"></i> Jisajili
                 </button>
             </form>
