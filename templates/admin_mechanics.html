@@ -10,6 +10,28 @@
     </a>
 </div>
 
+<!-- TAFUTA MAFUNDI KWA MKOA -->
+<form method="GET" class="card p-3 mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label small fw-semibold">Tafuta Mafundi kwa Mkoa</label>
+            <select name="region" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Mikoa Yote --</option>
+                {% for r in tanzania_regions %}
+                    <option value="{{ r }}" {{ "selected" if r == selected_region }}>{{ r }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if selected_region %}
+        <div class="col-md-3">
+            <a href="{{ url_for('admin_mechanics') }}" class="btn btn-outline-secondary w-100">
+                <i class="fa-solid fa-xmark me-1"></i> Ondoa Kichujio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</form>
+
 <!-- MUONEKANO WA SIMU (Cards) - columns MBILI, kubofya kunafungua taarifa+vitendo -->
 <div class="row g-2 d-md-none">
     {% for mechanic in mechanics %}

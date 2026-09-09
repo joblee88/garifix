@@ -552,9 +552,9 @@ def app_account():
     if role == "mechanic":
         return redirect(url_for("own_mechanic_profile"))
     elif role == "customer":
-        return redirect(url_for("customer_dashboard"))
+        return redirect(url_for("own_customer_profile"))
     elif role == "admin":
-        return redirect(url_for("admin_dashboard", user_id=session.get("user_id")))
+        return redirect(url_for("own_admin_profile"))
     return redirect(url_for("login"))
 
 
@@ -1938,8 +1938,17 @@ def admin_visitors():
 @login_required
 @role_required("admin")
 def admin_mechanics():
-    mechanics = Mechanic.query.all()
-    return render_template("admin_mechanics.html", mechanics=mechanics)
+    selected_region = request.args.get("region", "").strip()
+    query = Mechanic.query
+    if selected_region:
+        query = query.filter_by(region=selected_region)
+    mechanics = query.all()
+    return render_template(
+        "admin_mechanics.html",
+        mechanics=mechanics,
+        tanzania_regions=TANZANIA_REGIONS,
+        selected_region=selected_region
+    )
 
 
 @app.route("/admin/id-document/<int:mechanic_id>")
