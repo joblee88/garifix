@@ -1,0 +1,56 @@
+{% extends "admin_base.html" %}
+{% block title %}Akaunti Yangu - Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow border-0 p-4">
+            <h4 class="fw-bold mb-4"><i class="fa-solid fa-id-card me-2"></i>Akaunti Yangu</h4>
+
+            <div class="text-center mb-4">
+                {% if user.profile_photo %}
+                    <img src="{{ resolve_image_url(user.profile_photo) }}" class="rounded-circle mb-2" width="100" height="100" style="object-fit:cover;">
+                {% else %}
+                    <i class="fa-solid fa-circle-user fa-5x text-secondary mb-2"></i>
+                {% endif %}
+                <h5 class="fw-bold mb-0 mt-2">{{ user.full_name }}</h5>
+                {% if user.username %}
+                    <p class="text-muted small mb-0">@{{ user.username }}</p>
+                {% endif %}
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4">
+                <p class="mb-2"><strong>📞 Simu:</strong> {{ user.phone }}</p>
+                <p class="mb-2"><strong>📧 Email:</strong> {{ user.email or '-' }}</p>
+                <p class="mb-0"><strong>👤 Aina ya Akaunti:</strong> Msimamizi (Admin)</p>
+            </div>
+
+            <h6 class="fw-bold mb-2"><i class="fa-solid fa-chart-simple me-1"></i>Taarifa za Mfumo</h6>
+            <div class="row g-2 text-center mb-4">
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_mechanics }}</h4>
+                        <p class="small text-muted mb-0">Mafundi</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_customers }}</h4>
+                        <p class="small text-muted mb-0">Wateja</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_requests }}</h4>
+                        <p class="small text-muted mb-0">Maombi Yote</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('own_admin_profile') }}" class="btn btn-primary w-100">
+                <i class="fa-solid fa-user-pen me-1"></i> Hariri Wasifu Wangu
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

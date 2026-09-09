@@ -1,0 +1,67 @@
+{% extends "mechanic_base.html" %}
+{% block title %}Akaunti Yangu - GariFix{% endblock %}
+
+{% block mechanic_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow border-0 p-4">
+            <h4 class="fw-bold mb-4"><i class="fa-solid fa-id-card me-2"></i>Akaunti Yangu</h4>
+
+            <div class="text-center mb-4">
+                {% if mechanic.profile_photo %}
+                    <img src="{{ resolve_image_url(mechanic.profile_photo) }}" class="rounded-circle mb-2" width="100" height="100" style="object-fit:cover;">
+                {% else %}
+                    <i class="fa-solid fa-circle-user fa-5x text-secondary mb-2"></i>
+                {% endif %}
+                <h5 class="fw-bold mb-0 mt-2">{{ mechanic.user.full_name }}</h5>
+                {% if mechanic.user.username %}
+                    <p class="text-muted small mb-0">@{{ mechanic.user.username }}</p>
+                {% endif %}
+                <p class="text-muted small mb-0">{{ mechanic.garage_name }}</p>
+                {% if mechanic.verified == "approved" %}
+                    <span class="badge bg-success mt-1"><i class="fa-solid fa-circle-check me-1"></i>Verified</span>
+                {% elif mechanic.verified == "pending" %}
+                    <span class="badge bg-warning text-dark mt-1">Inasubiri Uthibitisho</span>
+                {% else %}
+                    <span class="badge bg-danger mt-1">Rejected</span>
+                {% endif %}
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4">
+                <p class="mb-2"><strong>📍 Mkoa:</strong> {{ mechanic.region }}</p>
+                <p class="mb-2"><strong>🏙 Wilaya:</strong> {{ mechanic.district }}</p>
+                <p class="mb-2"><strong>🔧 Utaalamu:</strong> {{ mechanic.specialization }}</p>
+                <p class="mb-2"><strong>🧰 Uzoefu:</strong> {{ mechanic.experience }} Miaka</p>
+                <p class="mb-2"><strong>📞 Simu:</strong> {{ mechanic.user.phone }}</p>
+                <p class="mb-0"><strong>📧 Email:</strong> {{ mechanic.user.email or '-' }}</p>
+            </div>
+
+            <h6 class="fw-bold mb-2"><i class="fa-solid fa-list-check me-1"></i>Historia ya Huduma</h6>
+            <div class="row g-2 text-center mb-4">
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_requests }}</h4>
+                        <p class="small text-muted mb-0">Jumla</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0 text-success">{{ completed_requests }}</h4>
+                        <p class="small text-muted mb-0">Kamili</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0 text-warning">{{ "%.1f"|format(average_rating) }}</h4>
+                        <p class="small text-muted mb-0">Rating (★)</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('own_mechanic_profile') }}" class="btn btn-primary w-100">
+                <i class="fa-solid fa-user-pen me-1"></i> Hariri Wasifu Wangu
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

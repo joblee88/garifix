@@ -550,11 +550,11 @@ def app_account():
     ndipo inampeleka /login."""
     role = session.get("role")
     if role == "mechanic":
-        return redirect(url_for("own_mechanic_profile"))
+        return redirect(url_for("account_view_mechanic"))
     elif role == "customer":
-        return redirect(url_for("own_customer_profile"))
+        return redirect(url_for("account_view_customer"))
     elif role == "admin":
-        return redirect(url_for("own_admin_profile"))
+        return redirect(url_for("account_view_admin"))
     return redirect(url_for("login"))
 
 
@@ -1397,6 +1397,25 @@ def own_customer_profile():
     )
 
 
+@app.route("/customer/account")
+@login_required
+@role_required("customer")
+def account_view_customer():
+    """'Akaunti' - taarifa KAMILI za mteja, KUSOMWA TU (hazibadiliki hapa).
+    Kuhariri, mtumiaji anapaswa kwenda 'Wasifu Wangu' (own_customer_profile)."""
+    user = db.session.get(User, session["user_id"])
+    total_requests = ServiceRequest.query.filter_by(customer_id=user.id).count()
+    completed_requests = ServiceRequest.query.filter_by(customer_id=user.id, status="completed").count()
+    pending_requests = ServiceRequest.query.filter_by(customer_id=user.id, status="pending").count()
+    return render_template(
+        "customer_account.html",
+        user=user,
+        total_requests=total_requests,
+        completed_requests=completed_requests,
+        pending_requests=pending_requests
+    )
+
+
 # MECHANIC ROUTES
 @app.route("/mechanic/register", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
@@ -1640,6 +1659,26 @@ def own_mechanic_profile():
         total_requests=total_requests,
         completed_requests=completed_requests,
         is_owner=True
+    )
+
+
+@app.route("/mechanic/account")
+@login_required
+@role_required("mechanic")
+def account_view_mechanic():
+    """'Akaunti' - taarifa KAMILI za fundi, KUSOMWA TU (hazibadiliki hapa).
+    Kuhariri, mtumiaji anapaswa kwenda 'Wasifu Wangu' (own_mechanic_profile)."""
+    user = db.session.get(User, session["user_id"])
+    mechanic = Mechanic.query.filter_by(user_id=user.id).first_or_404()
+    total_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id).count()
+    completed_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id, status="completed").count()
+    avg_rating = db.session.query(func.avg(Review.rating)).filter_by(mechanic_id=mechanic.id).scalar() or 0
+    return render_template(
+        "mechanic_account.html",
+        mechanic=mechanic,
+        total_requests=total_requests,
+        completed_requests=completed_requests,
+        average_rating=avg_rating
     )
 
 
@@ -2161,6 +2200,25 @@ def own_admin_profile():
 
     return render_template(
         "admin_profile.html",
+        user=user,
+        total_mechanics=total_mechanics,
+        total_customers=total_customers,
+        total_requests=total_requests
+    )
+
+
+@app.route("/admin/account")
+@login_required
+@role_required("admin")
+def account_view_admin():
+    """'Akaunti' - taarifa KAMILI za admin, KUSOMWA TU (hazibadiliki hapa).
+    Kuhariri, mtumiaji anapaswa kwenda 'Wasifu Wangu' (own_admin_profile)."""
+    user = db.session.get(User, session["user_id"])
+    total_mechanics = Mechanic.query.count()
+    total_customers = User.query.filter_by(role="customer").count()
+    total_requests = ServiceRequest.query.count()
+    return render_template(
+        "admin_account.html",
         user=user,
         total_mechanics=total_mechanics,
         total_customers=total_customers,
