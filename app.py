@@ -1285,6 +1285,15 @@ def customer_register():
         db.session.add(new_customer)
         db.session.commit()
 
+        # Arifisha ADMIN WOTE - mteja mpya amejisajili
+        for admin_user in User.query.filter_by(role="admin").all():
+            notify_user(
+                admin_user,
+                title="Mteja Mpya Amejisajili - GariFix",
+                body=f"{full_name} amejisajili kama mteja mpya.",
+                data={"type": "customer_new", "url": "/admin/customers"}
+            )
+
         if via_google:
             session.pop("google_pending_email", None)
             session.pop("google_pending_name", None)
