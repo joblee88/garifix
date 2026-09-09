@@ -48,6 +48,31 @@
                 </button>
             </form>
         </div>
+
+        <div class="card shadow border-0 p-4 mt-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-simple text-primary me-2"></i>Taarifa za Mfumo</h5>
+            <p class="text-muted small mb-3">Takwimu hizi ni kwa ajili ya kuonekana tu - haziwezi kubadilishwa hapa.</p>
+            <div class="row g-2 text-center">
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_mechanics }}</h4>
+                        <p class="small text-muted mb-0">Mafundi</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_customers }}</h4>
+                        <p class="small text-muted mb-0">Wateja</p>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-2">
+                        <h4 class="fw-bold mb-0">{{ total_requests }}</h4>
+                        <p class="small text-muted mb-0">Maombi Yote</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

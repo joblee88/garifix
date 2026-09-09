@@ -31,17 +31,30 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background: #f4f6f9;
+    background: linear-gradient(160deg, #eef2ff 0%, #e0f2f1 50%, #eef7ee 100%);
+    background-attachment: fixed;
     color: #333;
     overflow-x: hidden;
 }
 
-/* CARDS & UI ELEMENTS */
+/* CARDS & UI ELEMENTS - "glass" material ya jumla, inayotumika kila
+   mahali (dashboard zote, home page, n.k.) - sawa na muonekano wa
+   kurasa za Login/Kujisajili, bila kuhitaji kubadilisha kila ukurasa
+   mmoja mmoja. */
 .card {
     border: none;
     border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+[data-bs-theme="dark"] .card {
+    background: rgba(26, 35, 50, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .card:hover {
@@ -61,11 +74,19 @@ body {
 }
 
 .stat-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 16px;
     padding: 24px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.06);
     text-align: center;
+}
+
+[data-bs-theme="dark"] .stat-card {
+    background: rgba(26, 35, 50, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* SIDEBAR LAYOUT FRAMEWORK (ADMIN, MECHANIC, CUSTOMER & SELLER)

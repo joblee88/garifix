@@ -1384,7 +1384,17 @@ def own_customer_profile():
         flash("Wasifu wako umesasishwa!", "success")
         return redirect(url_for("own_customer_profile"))
 
-    return render_template("customer_profile.html", user=user)
+    total_requests = ServiceRequest.query.filter_by(customer_id=user.id).count()
+    completed_requests = ServiceRequest.query.filter_by(customer_id=user.id, status="completed").count()
+    pending_requests = ServiceRequest.query.filter_by(customer_id=user.id, status="pending").count()
+
+    return render_template(
+        "customer_profile.html",
+        user=user,
+        total_requests=total_requests,
+        completed_requests=completed_requests,
+        pending_requests=pending_requests
+    )
 
 
 # MECHANIC ROUTES
@@ -1618,6 +1628,8 @@ def own_mechanic_profile():
 
     reviews = Review.query.filter_by(mechanic_id=mechanic.id).all()
     avg_rating = db.session.query(func.avg(Review.rating)).filter_by(mechanic_id=mechanic.id).scalar() or 0
+    total_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id).count()
+    completed_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id, status="completed").count()
 
     return render_template(
         "mechanic_profile.html",
@@ -1625,6 +1637,8 @@ def own_mechanic_profile():
         reviews=reviews,
         average_rating=avg_rating,
         review_count=len(reviews),
+        total_requests=total_requests,
+        completed_requests=completed_requests,
         is_owner=True
     )
 
@@ -2132,7 +2146,17 @@ def own_admin_profile():
         flash("Wasifu wako umesasishwa!", "success")
         return redirect(url_for("own_admin_profile"))
 
-    return render_template("admin_profile.html", user=user)
+    total_mechanics = Mechanic.query.count()
+    total_customers = User.query.filter_by(role="customer").count()
+    total_requests = ServiceRequest.query.count()
+
+    return render_template(
+        "admin_profile.html",
+        user=user,
+        total_mechanics=total_mechanics,
+        total_customers=total_customers,
+        total_requests=total_requests
+    )
 
 
 @app.cli.command("create-admin")
