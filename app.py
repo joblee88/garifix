@@ -1353,10 +1353,10 @@ def customer_register():
         confirm_password = request.form.get("confirm_password", "")
 
         if via_google:
-            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google
+            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google -
+            # LAKINI password bado ni ya LAZIMA, mtumiaji anaiweka mwenyewe
+            # hapa hapa wakati wa kujisajili (siyo baadaye).
             email = session.get("google_pending_email", email)
-            password = password or secrets.token_urlsafe(24)
-            confirm_password = password
 
         if not first_name or not last_name:
             flash("Tafadhali jaza jina la kwanza na la mwisho.", "danger")
@@ -1370,7 +1370,11 @@ def customer_register():
             flash("Lazima ukubaliane na Vigezo na Masharti ili kuendelea.", "danger")
             return redirect(url_for("customer_register"))
 
-        if not via_google and password != confirm_password:
+        if len(password) < 6:
+            flash("Password lazima iwe na urefu wa herufi 6 au zaidi.", "danger")
+            return redirect(url_for("customer_register"))
+
+        if password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("customer_register"))
 
@@ -1390,8 +1394,7 @@ def customer_register():
             email=email,
             password=hashed_password,
             role="customer",
-            email_verified=via_google,
-            registered_via_google=via_google
+            email_verified=via_google
         )
         db.session.add(new_customer)
         db.session.commit()
@@ -1552,9 +1555,10 @@ def mechanic_register():
         confirm_password = request.form.get("confirm_password", "")
 
         if via_google:
+            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google -
+            # LAKINI password bado ni ya LAZIMA, mtumiaji anaiweka mwenyewe
+            # hapa hapa wakati wa kujisajili (siyo baadaye).
             email = session.get("google_pending_email", email)
-            password = password or secrets.token_urlsafe(24)
-            confirm_password = password
 
         garage_name = request.form.get("garage_name", "").strip()
         region = request.form.get("region", "").strip()
@@ -1583,7 +1587,11 @@ def mechanic_register():
             flash("Tafadhali jaza eneo lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
             return redirect(url_for("mechanic_register"))
 
-        if not via_google and password != confirm_password:
+        if len(password) < 6:
+            flash("Password lazima iwe na urefu wa herufi 6 au zaidi.", "danger")
+            return redirect(url_for("mechanic_register"))
+
+        if password != confirm_password:
             flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("mechanic_register"))
 
@@ -1665,8 +1673,7 @@ def mechanic_register():
                 email=email,
                 password=hashed_password,
                 role="mechanic",
-                email_verified=via_google,
-                registered_via_google=via_google
+                email_verified=via_google
             )
             db.session.add(new_user)
             db.session.commit()
@@ -2197,6 +2204,21 @@ def reject_mechanic(id):
         body=body,
         data={"type": "mechanic_rejected", "url": "/mechanic/pending"}
     )
+
+    try:
+        html_body = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
+            <h2 style="color:#dc3545;">Ombi Lako Halikukubaliwa</h2>
+            <p>Habari {mechanic.user.full_name}, samahani, ombi lako la kuwa fundi GariFix
+            ({mechanic.garage_name}) halikuidhinishwa na Admin.</p>
+            {"<p><strong>Sababu:</strong> " + reason + "</p>" if reason else ""}
+            <p>Unaweza kujaribu kujisajili tena kwa taarifa sahihi zaidi.</p>
+        </div>
+        """
+        text_body = f"Habari {mechanic.user.full_name}, ombi lako la kuwa fundi GariFix limekataliwa." + (f" Sababu: {reason}" if reason else "")
+        send_email(mechanic.user.email, "Ombi Limekataliwa - GariFix", html_body, text_body)
+    except Exception as e:
+        print(f"[Mailer-ERROR] Imeshindikana kutuma email ya kukataliwa: {e}")
 
     flash("Fundi amekataliwa.", "danger")
     return redirect(url_for("admin_mechanics"))

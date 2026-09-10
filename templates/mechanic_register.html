@@ -44,7 +44,11 @@
                                 <label class="form-label fw-semibold">Email (tunatuma uthibitisho hapa)</label>
                                 <input type="email" name="email" class="form-control" value="{{ google_prefill_email or '' }}" {{ 'readonly' if google_prefill_email }} required>
                             </div>
-                            {% if not google_prefill_email %}
+                            {% if google_prefill_email %}
+                            <div class="col-12">
+                                <p class="text-muted small mb-2"><i class="fa-solid fa-circle-info me-1"></i>Weka password utakayotumia kuingia kwenye GariFix (unaweza kutumia hii au Google, vyote viwili baadaye).</p>
+                            </div>
+                            {% endif %}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Password</label>
                                 <div class="input-group gfx-password-wrapper">
@@ -60,7 +64,6 @@
                                     <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)"><i class="fa-solid fa-eye"></i></button>
                                 </div>
                             </div>
-                            {% endif %}
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-semibold">Jina la Garage</label>

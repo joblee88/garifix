@@ -48,7 +48,9 @@
                     <input type="email" name="email" class="form-control" placeholder="example@gmail.com" value="{{ google_prefill_email or '' }}" {{ 'readonly' if google_prefill_email }} required>
                 </div>
 
-                {% if not google_prefill_email %}
+                {% if google_prefill_email %}
+                <p class="text-muted small mb-3"><i class="fa-solid fa-circle-info me-1"></i>Weka password utakayotumia kuingia kwenye GariFix (unaweza kutumia hii au Google, vyote viwili baadaye).</p>
+                {% endif %}
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <label class="form-label">Password</label>
@@ -66,7 +68,6 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
 
                 <div class="form-check mb-4">
                     <input class="form-check-input" type="checkbox" name="agree_terms" id="agreeTerms" required>
