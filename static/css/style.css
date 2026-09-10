@@ -367,6 +367,7 @@ body {
 @media (max-width: 991.98px) {
     .app-sidebar {
         margin-left: -260px;
+        transition: margin-left 0.08s ease-out;
     }
     .app-sidebar.show {
         margin-left: 0;
