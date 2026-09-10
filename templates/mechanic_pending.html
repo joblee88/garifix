@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Inasubiri Uthibitisho - GariFix{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-lg-6">
+        <div class="card glass-card p-5 text-center">
+            {% if mechanic.verified == "rejected" %}
+                <i class="fa-solid fa-circle-xmark fa-4x text-danger mb-3"></i>
+                <h3 class="fw-bold mb-3">Ombi Lako Halikukubaliwa</h3>
+                <p class="text-muted mb-4">
+                    Samahani, Admin hakuidhinisha usajili wako kama fundi.
+                    {% if mechanic.rejection_reason %}
+                        <br><br><strong>Sababu:</strong> {{ mechanic.rejection_reason }}
+                    {% endif %}
+                </p>
+                <p class="text-muted small mb-4">Unaweza kujaribu kujisajili tena kwa taarifa sahihi zaidi.</p>
+                <a href="{{ url_for('mechanic_register') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-rotate me-1"></i> Jaribu Tena
+                </a>
+            {% else %}
+                <i class="fa-solid fa-hourglass-half fa-4x text-warning mb-3"></i>
+                <h3 class="fw-bold mb-3">Akaunti Yako Inasubiri Uthibitisho</h3>
+                <p class="text-muted mb-4">
+                    Admin bado anakagua taarifa na kitambulisho chako. Hutaweza kufikia sehemu nyingine za mfumo
+                    (maombi, wasifu, n.k.) mpaka uidhinishwe. Utapata arifa (notification) mara tu ukishaidhinishwa.
+                </p>
+                <p class="text-muted small mb-0">Hii kwa kawaida huchukua muda mfupi. Asante kwa uvumilivu wako!</p>
+            {% endif %}
+            <hr class="my-4">
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

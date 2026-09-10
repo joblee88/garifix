@@ -17,7 +17,7 @@ from flask_limiter.util import get_remote_address
 from config import Config
 from extensions import db
 from notifications import send_notification
-from mailer import send_verification_email, send_password_reset_email
+from mailer import send_verification_email, send_password_reset_email, send_email
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -387,6 +387,25 @@ _EMAIL_VERIFICATION_EXEMPT_ENDPOINTS = {
 
 
 @app.before_request
+def verify_session_user_still_exists():
+    """Ikiwa mtumiaji alifutwa (delete_user na Admin) wakati session yake
+    bado ipo kwenye browser (mfano alikuwa ameingia kwenye kifaa kingine),
+    session hiyo LAZIMA ifutwe na amwongoze home - vinginevyo routes
+    nyingine zinajaribu kutafuta mtumiaji asiyepo tena, na kusababisha
+    '500 Internal Server Error' badala ya ujumbe wa kawaida."""
+    if "user_id" not in session:
+        return None
+    if request.endpoint in ("static", None):
+        return None
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        session.clear()
+        flash("Akaunti yako haipo tena kwenye mfumo. Tafadhali jisajili upya ikiwa unahitaji.", "warning")
+        return redirect(url_for("home"))
+    return None
+
+
+@app.before_request
 def enforce_email_verification():
     if "user_id" not in session:
         return None
@@ -445,6 +464,44 @@ def track_visitor():
         db.session.rollback()
 
     return None
+
+
+# Fundi asiyethibitishwa BADO na Admin (Mechanic.verified != "approved")
+# HAWEZI kufanya CHOCHOTE zaidi ya kuona ukurasa wa "Inasubiri
+# Uthibitisho" - haoni maombi, hawezi kuhariri wasifu, wala kufikia
+# kipengele kingine chochote cha mfundi, mpaka Admin amwidhinishe.
+_MECHANIC_PENDING_EXEMPT_ENDPOINTS = {
+    "logout", "static", "mechanic_pending", "home", "login",
+    "register_choice", "search_mechanics", "terms", "download_app",
+    "app_home", "app_account", "register_fcm_token", "notifications_dropdown",
+    "mark_all_notifications_read", "verify_pending",
+}
+
+
+@app.before_request
+def enforce_mechanic_verification():
+    if session.get("role") != "mechanic":
+        return None
+    if request.endpoint in _MECHANIC_PENDING_EXEMPT_ENDPOINTS:
+        return None
+    mechanic = Mechanic.query.filter_by(user_id=session.get("user_id")).first()
+    if mechanic and mechanic.verified != "approved":
+        return redirect(url_for("mechanic_pending"))
+    return None
+
+
+@app.route("/mechanic/pending")
+@login_required
+@role_required("mechanic")
+def mechanic_pending():
+    """Ukurasa rahisi anaouona fundi asiyethibitishwa BADO - hana namna
+    nyingine ya kufikia sehemu yoyote nyingine ya mfumo mpaka
+    aidhinishwe na Admin."""
+    user = db.session.get(User, session["user_id"])
+    mechanic = Mechanic.query.filter_by(user_id=user.id).first_or_404()
+    if mechanic.verified == "approved":
+        return redirect(url_for("mechanic_dashboard"))
+    return render_template("mechanic_pending.html", mechanic=mechanic)
 
 
 @app.route("/download-app")
@@ -873,6 +930,48 @@ def reset_password_email(token):
     return render_template("reset_password_email.html", user=user)
 
 
+@app.route("/set-password/<token>", methods=["GET", "POST"])
+def set_password_after_google(token):
+    """Fundi (au mteja) aliyejisajili kwa Google ana password ya siri/
+    random asiyoijua - hii inamruhusu kuunda password HALISI ili aweze
+    kuingia kwa password au kwa Google, vyote viwili. Muda mrefu (siku
+    7) kwa kuwa huenda asifungue email mara moja baada ya kuidhinishwa."""
+    try:
+        email = get_serializer().loads(token, salt="set-password-salt", max_age=604800)  # Siku 7
+    except SignatureExpired:
+        flash("Link ya kuweka password imeisha muda. Tumia 'Umesahau Password' kuomba mpya.", "warning")
+        return redirect(url_for("forgot_password_email"))
+    except BadSignature:
+        flash("Link si sahihi.", "danger")
+        return redirect(url_for("login"))
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.reset_token != token:
+        flash("Link hii tayari imetumika au si sahihi.", "danger")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if len(password) < 6:
+            flash("Password lazima iwe na urefu wa herufi 6 au zaidi.", "danger")
+            return redirect(request.url)
+
+        if password != confirm_password:
+            flash("Password na Rudia Password hazifanani.", "danger")
+            return redirect(request.url)
+
+        user.password = generate_password_hash(password)
+        user.reset_token = None
+        db.session.commit()
+
+        flash("Password yako imewekwa kikamilifu! Sasa unaweza kuingia kwa password au kwa Google.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("reset_password_email.html", user=user, is_new_password=True)
+
+
 @app.route("/setup-migrate")
 def setup_migrate():
     """
@@ -1280,7 +1379,8 @@ def customer_register():
             email=email,
             password=hashed_password,
             role="customer",
-            email_verified=via_google
+            email_verified=via_google,
+            registered_via_google=via_google
         )
         db.session.add(new_customer)
         db.session.commit()
@@ -1554,7 +1654,8 @@ def mechanic_register():
                 email=email,
                 password=hashed_password,
                 role="mechanic",
-                email_verified=via_google
+                email_verified=via_google,
+                registered_via_google=via_google
             )
             db.session.add(new_user)
             db.session.commit()
@@ -2038,6 +2139,30 @@ def approve_mechanic(id):
         body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
         data={"type": "mechanic_approved", "url": "/dashboard"}
     )
+
+    # Barua pepe ya uthibitisho - kwa waliojisajili kwa Google (password
+    # yao ni ya siri/random), tunaongeza kiungo cha kuunda password
+    # HALISI ili waweze kuingia kwa password AU kwa Google.
+    set_password_link = None
+    if mechanic.user.registered_via_google:
+        token = get_serializer().dumps(mechanic.user.email, salt="set-password-salt")
+        mechanic.user.reset_token = token
+        db.session.commit()
+        set_password_link = url_for("set_password_after_google", token=token, _external=True)
+
+    try:
+        html_body = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
+            <h2 style="color:#198754;">Hongera, {mechanic.user.full_name}!</h2>
+            <p>Akaunti yako ya ufundi GariFix ({mechanic.garage_name}) imeidhinishwa na Admin.
+            Sasa unaweza kuingia na kuanza kupokea maombi ya huduma kutoka kwa wateja.</p>
+            {"<p style='text-align:center; margin: 24px 0;'><a href='" + set_password_link + "' style='background:#198754;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;'>Unda Password Yako</a></p><p style='color:#666;font-size:13px;'>Uliingia kwa Google - unda password hapa ili uweze kuingia kwa password AU kwa Google, vyote viwili.</p>" if set_password_link else ""}
+        </div>
+        """
+        send_email(mechanic.user.email, "Umeidhinishwa - GariFix", html_body)
+    except Exception as e:
+        print(f"[Mailer-ERROR] Imeshindikana kutuma email ya uthibitisho: {e}")
+
     flash("Fundi ameidhinishwa!", "success")
     return redirect(url_for("admin_mechanics"))
 
@@ -2049,6 +2174,7 @@ def reject_mechanic(id):
     mechanic = Mechanic.query.get_or_404(id)
     reason = request.form.get("reason", "").strip()
     mechanic.verified = "rejected"
+    mechanic.rejection_reason = reason or None
     db.session.commit()
 
     body = f"Ombi lako la kuwa fundi ({mechanic.garage_name}) limekataliwa."
@@ -2058,7 +2184,7 @@ def reject_mechanic(id):
         mechanic.user,
         title="Ombi Limekataliwa - GariFix",
         body=body,
-        data={"type": "mechanic_rejected", "url": "/mechanic/profile"}
+        data={"type": "mechanic_rejected", "url": "/mechanic/pending"}
     )
 
     flash("Fundi amekataliwa.", "danger")

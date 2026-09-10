@@ -13,6 +13,7 @@ class User(db.Model):
     fcm_token = db.Column(db.String(255), nullable=True)  # Token ya Firebase Cloud Messaging (App ya Android)
     profile_photo = db.Column(db.String(255), nullable=True)  # Picha ya wasifu (customer hasa)
     username = db.Column(db.String(50), unique=True, nullable=True, index=True)  # Jina la kuonekana kwenye profile (hiari)
+    registered_via_google = db.Column(db.Boolean, default=False)  # Alijisajili kwa Google (password ni ya siri/random)
 
     # --- Uthibitisho wa Email (Email Verification) ---
     email_verified = db.Column(db.Boolean, default=False, nullable=False)
@@ -44,6 +45,7 @@ class Mechanic(db.Model):
     latitude = db.Column(db.Numeric(10, 8))
     longitude = db.Column(db.Numeric(11, 8))
     verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
+    rejection_reason = db.Column(db.Text, nullable=True)  # sababu ya Admin kukataa (ikiwa verified="rejected")
     profile_photo = db.Column(db.String(255))
 
     # --- Kitambulisho cha Fundi (kwa ukaguzi wa Admin) ---
