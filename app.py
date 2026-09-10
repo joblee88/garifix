@@ -474,7 +474,8 @@ _MECHANIC_PENDING_EXEMPT_ENDPOINTS = {
     "logout", "static", "mechanic_pending", "home", "login",
     "register_choice", "search_mechanics", "terms", "download_app",
     "app_home", "app_account", "register_fcm_token", "notifications_dropdown",
-    "mark_all_notifications_read", "verify_pending",
+    "mark_all_notifications_read", "verify_pending", "forgot_password_email",
+    "reset_password_email",
 }
 
 
@@ -482,11 +483,20 @@ _MECHANIC_PENDING_EXEMPT_ENDPOINTS = {
 def enforce_mechanic_verification():
     if session.get("role") != "mechanic":
         return None
-    if request.endpoint in _MECHANIC_PENDING_EXEMPT_ENDPOINTS:
+    if request.endpoint in _MECHANIC_PENDING_EXEMPT_ENDPOINTS or request.endpoint == "set_password_after_google":
         return None
     mechanic = Mechanic.query.filter_by(user_id=session.get("user_id")).first()
-    if mechanic and mechanic.verified != "approved":
+    if not mechanic:
+        return None
+    if mechanic.verified != "approved":
         return redirect(url_for("mechanic_pending"))
+    # Ameidhinishwa, LAKINI kama alijisajili kwa Google na bado hajaunda
+    # password halisi (bado ni "registered_via_google") - HAWEZI kufanya
+    # CHOCHOTE mpaka aweke password kwanza. Tunamrudisha kwenye link ile
+    # ile ya kuunda password (token bado ipo, ilihifadhiwa wakati wa
+    # kuidhinishwa) badala ya kumhitaji atafute email tena.
+    if mechanic.user.registered_via_google and mechanic.user.reset_token:
+        return redirect(url_for("set_password_after_google", token=mechanic.user.reset_token))
     return None
 
 
@@ -964,6 +974,7 @@ def set_password_after_google(token):
 
         user.password = generate_password_hash(password)
         user.reset_token = None
+        user.registered_via_google = False  # sasa ana password halisi - kizuizi hakihitajiki tena
         db.session.commit()
 
         flash("Password yako imewekwa kikamilifu! Sasa unaweza kuingia kwa password au kwa Google.", "success")
