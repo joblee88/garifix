@@ -641,19 +641,6 @@ def app_account():
     return redirect(url_for("login"))
 
 
-@app.route("/admin/login")
-def admin_login():
-    """Ukurasa WA PEKEE wa kuingia kwa Admin - haujitokezi kwenye login
-    ya kawaida (ambayo ni ya Mteja/Fundi), unafikiwa tu kupitia kiungo
-    kidogo chini kabisa. Fomu inatuma kwenye /login ile ile (logic moja,
-    kurasa mbili tu)."""
-    if "user_id" in session:
-        dashboard_url = role_dashboard_url()
-        if dashboard_url:
-            return redirect(dashboard_url)
-    return render_template("admin_login.html")
-
-
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute", methods=["POST"])
 def login():
