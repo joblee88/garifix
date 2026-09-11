@@ -641,6 +641,19 @@ def app_account():
     return redirect(url_for("login"))
 
 
+@app.route("/admin/login")
+def admin_login():
+    """Ukurasa WA PEKEE wa kuingia kwa Admin - haujitokezi kwenye login
+    ya kawaida (ambayo ni ya Mteja/Fundi), unafikiwa tu kupitia kiungo
+    kidogo chini kabisa. Fomu inatuma kwenye /login ile ile (logic moja,
+    kurasa mbili tu)."""
+    if "user_id" in session:
+        dashboard_url = role_dashboard_url()
+        if dashboard_url:
+            return redirect(dashboard_url)
+    return render_template("admin_login.html")
+
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute", methods=["POST"])
 def login():
@@ -1297,6 +1310,9 @@ def google_callback():
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
+        if existing_user.role == "admin":
+            flash("Akaunti za Admin haziwezi kuingia kwa Google. Tumia password kwenye ukurasa wa Admin.", "warning")
+            return redirect(url_for("admin_login"))
         if not existing_user.email_verified:
             existing_user.email_verified = True
             db.session.commit()
@@ -1345,7 +1361,12 @@ def google_callback_app():
     role = session.pop("google_signup_role", "customer")
 
     existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
+    if existing_user and existing_user.role == "admin":
+        _pending_app_google_logins[token] = {
+            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+            "action": "admin_blocked",
+        }
+    elif existing_user:
         _pending_app_google_logins[token] = {
             "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
             "action": "login",
@@ -1386,6 +1407,10 @@ def google_complete():
     if not data or data["expires"] < datetime.utcnow().timestamp():
         flash("Muda wa kuingia kwa Google umeisha. Jaribu tena.", "warning")
         return redirect(url_for("login"))
+
+    if data["action"] == "admin_blocked":
+        flash("Akaunti za Admin haziwezi kuingia kwa Google. Tumia password kwenye ukurasa wa Admin.", "warning")
+        return redirect(url_for("admin_login"))
 
     if data["action"] == "login":
         user = db.session.get(User, data["user_id"])

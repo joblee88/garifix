@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Admin Login - GariFix{% endblock %}
+
+{% block content %}
+<script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+<div class="auth-page-bg">
+<div class="row justify-content-center w-100">
+    <div class="col-lg-4 col-md-7">
+        <div class="card glass-card p-4">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fa-solid fa-user-shield fa-3x text-dark mb-2"></i>
+                    <h4 class="fw-bold">Admin Login</h4>
+                </div>
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email</label>
+                        <input type="text" name="identifier" class="form-control form-control-lg" placeholder="admin@example.com" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Password</label>
+                        <div class="input-group input-group-lg gfx-password-wrapper">
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark btn-lg w-100">Ingia</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('forgot_password_email') }}" class="text-decoration-none small">
+                        Umesahau Password?
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
