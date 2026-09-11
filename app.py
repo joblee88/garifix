@@ -480,6 +480,22 @@ _MECHANIC_PENDING_EXEMPT_ENDPOINTS = {
 
 
 @app.before_request
+def enforce_customer_phone_completion():
+    """Mteja aliyejisajili kwa Google hana namba ya simu mpaka aijaze -
+    kabla ya hapo, hawezi kufikia sehemu nyingine yoyote ya mfumo."""
+    if session.get("role") != "customer":
+        return None
+    if request.endpoint in ("logout", "static", "complete_customer_phone",
+                             "home", "login", "app_home", "app_account",
+                             "register_fcm_token", "notifications_dropdown"):
+        return None
+    user = db.session.get(User, session.get("user_id"))
+    if user and not user.phone:
+        return redirect(url_for("complete_customer_phone"))
+    return None
+
+
+@app.before_request
 def enforce_mechanic_verification():
     if session.get("role") != "mechanic":
         return None
@@ -642,6 +658,10 @@ def login():
         ).first()
 
         if user and check_password_hash(user.password, password):
+            if user.role == "customer":
+                flash("Wateja wanaingia kwa 'Google' pekee sasa - tumia kitufe cha 'Ingia kwa Google' hapa chini.", "warning")
+                return redirect(url_for("login"))
+
             if user.status == "blocked":
                 flash("Akaunti yako imezuiwa (blocked) na Admin. Wasiliana na msimamizi wa mfumo kwa maelezo zaidi.", "danger")
                 return redirect(url_for("login"))
@@ -1219,6 +1239,33 @@ def _process_google_userinfo():
     return email, full_name
 
 
+def _create_google_customer(email, full_name):
+    """Unda akaunti ya MTEJA moja kwa moja kutoka taarifa za Google - bila
+    fomu ya kujaza (jina na email tayari vinatoka Google, email tayari
+    imethibitishwa). Namba ya simu bado haipo - itaombwa ukurasa
+    unaofuata (complete_customer_phone). Password ni ya siri/random kwa
+    kuwa Google ndiyo njia PEKEE ya mteja kuingia."""
+    new_customer = User(
+        full_name=full_name or "Mteja GariFix",
+        phone=None,
+        email=email,
+        password=generate_password_hash(secrets.token_urlsafe(24)),
+        role="customer",
+        email_verified=True
+    )
+    db.session.add(new_customer)
+    db.session.commit()
+
+    for admin_user in User.query.filter_by(role="admin").all():
+        notify_user(
+            admin_user,
+            title="Mteja Mpya Amejisajili - GariFix",
+            body=f"{new_customer.full_name} amejisajili kama mteja mpya.",
+            data={"type": "customer_new", "url": "/admin/customers"}
+        )
+    return new_customer
+
+
 @app.route("/auth/google/callback")
 def google_callback():
     """Callback ya WEB ya kawaida (browser ya kompyuta/simu, SIYO app
@@ -1245,12 +1292,19 @@ def google_callback():
         return redirect(dashboard_url or url_for("home"))
 
     role = session.pop("google_signup_role", "customer")
-    session["google_pending_email"] = email
-    session["google_pending_name"] = full_name
 
     if role == "mechanic":
+        session["google_pending_email"] = email
+        session["google_pending_name"] = full_name
         return redirect(url_for("mechanic_register"))
-    return redirect(url_for("customer_register"))
+
+    # MTEJA - akaunti inaundwa MOJA KWA MOJA (bila fomu), kisha
+    # anaelekezwa kujaza namba yake ya simu pekee.
+    new_customer = _create_google_customer(email, full_name)
+    session.permanent = True
+    session["user_id"] = new_customer.id
+    session["role"] = "customer"
+    return redirect(url_for("complete_customer_phone"))
 
 
 @app.route("/auth/google/callback/app")
@@ -1282,13 +1336,23 @@ def google_callback_app():
             "action": "login",
             "user_id": existing_user.id,
         }
-    else:
+    elif role == "mechanic":
         _pending_app_google_logins[token] = {
             "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
             "action": "register",
             "email": email,
             "name": full_name,
             "role": role,
+        }
+    else:
+        # MTEJA - akaunti inaundwa MOJA KWA MOJA (bila fomu) hata kwenye
+        # njia ya App. Baada ya deep-link kurudi WebView-ni, tutampeleka
+        # moja kwa moja kujaza namba yake ya simu.
+        new_customer = _create_google_customer(email, full_name)
+        _pending_app_google_logins[token] = {
+            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+            "action": "login",
+            "user_id": new_customer.id,
         }
 
     return redirect(f"garifix://auth-callback?token={token}")
@@ -1432,6 +1496,35 @@ def customer_register():
         google_prefill_email=session.get("google_pending_email"),
         google_prefill_name=session.get("google_pending_name"),
     )
+
+
+@app.route("/customer/complete-phone", methods=["GET", "POST"])
+@login_required
+@role_required("customer")
+def complete_customer_phone():
+    """Baada ya kujisajili kwa Google, mteja hana namba ya simu bado -
+    hii ndiyo hatua ya MWISHO kabla ya kufikia mfumo. Bila namba ya
+    simu, mafundi/admin hawawezi kumpigia/kumfikia mteja."""
+    user = db.session.get(User, session["user_id"])
+    if user.phone:
+        return redirect(url_for("customer_dashboard"))
+
+    if request.method == "POST":
+        phone = request.form.get("phone", "").strip()
+        if len(phone) != 10 or not phone.isdigit():
+            flash("Tafadhali weka namba sahihi ya simu (tarakimu 10).", "danger")
+            return redirect(url_for("complete_customer_phone"))
+
+        if User.query.filter_by(phone=phone).first():
+            flash("Namba hii ya simu tayari inatumiwa na akaunti nyingine.", "danger")
+            return redirect(url_for("complete_customer_phone"))
+
+        user.phone = phone
+        db.session.commit()
+        flash("Karibu GariFix! Umekamilisha usajili wako.", "success")
+        return redirect(url_for("customer_dashboard"))
+
+    return render_template("complete_customer_phone.html", user=user)
 
 
 @app.route("/customer/dashboard")
