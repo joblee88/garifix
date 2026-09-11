@@ -475,7 +475,7 @@ _MECHANIC_PENDING_EXEMPT_ENDPOINTS = {
     "register_choice", "search_mechanics", "terms", "download_app",
     "app_home", "app_account", "register_fcm_token", "notifications_dropdown",
     "mark_all_notifications_read", "verify_pending", "forgot_password_email",
-    "reset_password_email",
+    "reset_password_email", "mechanic_register",
 }
 
 
@@ -1638,6 +1638,13 @@ def account_view_customer():
 def mechanic_register():
     via_google = "google_pending_email" in session
 
+    # Fundi anaingia kwa Google PEKEE sasa - akifikia ukurasa huu moja
+    # kwa moja (GET) bila kupitia Google kwanza WALA bila kuwa
+    # ameshaingia tayari (mfano anayejaribu tena baada ya kukataliwa),
+    # mpeleke Google kwanza.
+    if request.method == "GET" and not via_google and session.get("role") != "mechanic":
+        return redirect(url_for("google_login", role="mechanic"))
+
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
@@ -1646,6 +1653,15 @@ def mechanic_register():
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+
+        # Anayejaribu TENA baada ya kukataliwa (tayari ameingia - session
+        # ina user_id ya fundi aliyepo tayari database) - tumia email
+        # yake ILIYOPO tayari, hahitaji kuandika upya (fomu haina uga
+        # huo wa kuonekana kwa hali hii).
+        if session.get("role") == "mechanic" and session.get("user_id"):
+            _reapplying_user = db.session.get(User, session["user_id"])
+            if _reapplying_user:
+                email = _reapplying_user.email
 
         if via_google:
             # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google -
