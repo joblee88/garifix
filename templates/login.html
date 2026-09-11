@@ -2,7 +2,6 @@
 {% block title %}Login - GariFix Tanzania{% endblock %}
 
 {% block content %}
-<script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
 <div class="auth-page-bg">
 <div class="row justify-content-center w-100">
     <div class="col-lg-5 col-md-8">
@@ -13,61 +12,21 @@
                         <img src="{{ url_for('static', filename='images/garifix-logo-full.png') }}" alt="GariFix">
                     </div>
                     <h3 class="fw-bold mt-3">Karibu GariFix</h3>
-                    <p class="text-muted">Ingia kwenye akaunti yako</p>
+                    <p class="text-muted">Ingia kwenye akaunti yako kwa Google</p>
                 </div>
 
                 {% if google_oauth_enabled %}
-                <div class="alert alert-info small text-center py-2 mb-3">
-                    <i class="fa-solid fa-circle-info me-1"></i> Wateja: tumia <strong>"Ingia kwa Google"</strong> hapa chini. Fomu iliyo chini ni kwa Mafundi pekee.
-                </div>
-                {% endif %}
-
-                <form method="POST" action="{{ url_for('login') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Namba ya Simu au Email</label>
-                        <input type="text" name="identifier" class="form-control form-control-lg" placeholder="07XXXXXXXX au email@mfano.com" required autofocus>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Password</label>
-                        <div class="input-group input-group-lg gfx-password-wrapper">
-                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                            <button class="btn btn-outline-secondary" type="button" onclick="toggleGariFixPasswordVisibility(this)">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe">
-                        <label class="form-check-label" for="rememberMe">
-                            Nikumbuke (Remember Me)
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Login</button>
-                </form>
-
-                {% if google_oauth_enabled %}
-                <div class="d-flex align-items-center gap-2 my-3">
-                    <hr class="flex-grow-1"><span class="text-muted small">AU</span><hr class="flex-grow-1">
-                </div>
-                <a href="{{ url_for('google_login', from_app=1) if is_app_mode else url_for('google_login') }}" class="btn btn-outline-secondary btn-lg w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
-                    <img src="https://www.google.com/favicon.ico" alt="Google" style="width:20px;height:20px;">
+                <a href="{{ url_for('google_login', from_app=1) if is_app_mode else url_for('google_login') }}" class="btn btn-primary btn-lg w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
+                    <img src="https://www.google.com/favicon.ico" alt="Google" style="width:22px;height:22px;background:#fff;border-radius:4px;padding:2px;">
                     Ingia kwa Google
                 </a>
+                {% else %}
+                <div class="alert alert-warning text-center">Kuingia hakupatikani kwa sasa. Jaribu baadaye.</div>
                 {% endif %}
-
-                <div class="text-center mb-2">
-                    <a href="{{ url_for('forgot_password_email') }}" class="text-decoration-none">
-                        <i class="fa-solid fa-key me-1"></i> Umesahau Password?
-                    </a>
-                </div>
 
                 <hr>
                 <div class="text-center">
-                    <a href="{{ url_for('register_choice') }}" class="btn btn-primary w-100">
+                    <a href="{{ url_for('register_choice') }}" class="btn btn-outline-primary w-100">
                         <i class="fa-solid fa-user-plus me-1"></i> Jisajili Sasa
                     </a>
                 </div>

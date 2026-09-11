@@ -671,8 +671,8 @@ def login():
         ).first()
 
         if user and check_password_hash(user.password, password):
-            if user.role == "customer":
-                flash("Wateja wanaingia kwa 'Google' pekee sasa - tumia kitufe cha 'Ingia kwa Google' hapa chini.", "warning")
+            if user.role in ("customer", "mechanic"):
+                flash("Wateja na Mafundi wanaingia kwa 'Google' pekee sasa - tumia kitufe cha 'Ingia kwa Google' hapa chini.", "warning")
                 return redirect(url_for("login"))
 
             if user.status == "blocked":
@@ -1691,8 +1691,11 @@ def mechanic_register():
         full_name = f"{first_name} {last_name}".strip()
         phone = request.form.get("phone", "").strip()
         email = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
+        # Fundi anaingia kwa Google PEKEE (siyo password) - password
+        # inatengenezwa kiotomatiki, ya siri, isiyowahi kutumika moja
+        # kwa moja na mtumiaji.
+        password = secrets.token_urlsafe(24)
+        confirm_password = password
 
         # Anayejaribu TENA baada ya kukataliwa (tayari ameingia - session
         # ina user_id ya fundi aliyepo tayari database) - tumia email
@@ -1704,9 +1707,7 @@ def mechanic_register():
                 email = _reapplying_user.email
 
         if via_google:
-            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google -
-            # LAKINI password bado ni ya LAZIMA, mtumiaji anaiweka mwenyewe
-            # hapa hapa wakati wa kujisajili (siyo baadaye).
+            # Email haiwezi kubadilishwa (imefungwa) ikiwa inatoka Google.
             email = session.get("google_pending_email", email)
 
         garage_name = request.form.get("garage_name", "").strip()
@@ -1734,14 +1735,6 @@ def mechanic_register():
 
         if not region or not district or not ward or not street:
             flash("Tafadhali jaza eneo lako kamili (Mkoa, Wilaya, Kata na Mtaa).", "danger")
-            return redirect(url_for("mechanic_register"))
-
-        if len(password) < 6:
-            flash("Password lazima iwe na urefu wa herufi 6 au zaidi.", "danger")
-            return redirect(url_for("mechanic_register"))
-
-        if password != confirm_password:
-            flash("Password na Rudia Password hazifanani.", "danger")
             return redirect(url_for("mechanic_register"))
 
         id_doc_file = request.files.get("id_document")
