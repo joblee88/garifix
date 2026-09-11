@@ -1734,6 +1734,13 @@ def mechanic_register():
             flash(str(e), "danger")
             return redirect(url_for("mechanic_register"))
 
+        profile_photo_filename = None
+        try:
+            profile_photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
+        except InvalidImageError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("mechanic_register"))
+
         hashed_password = generate_password_hash(password)
 
         if reapplying_user:
@@ -1757,6 +1764,8 @@ def mechanic_register():
             new_mechanic.id_document_type = id_document_type
             if id_document_filename:
                 new_mechanic.id_document = id_document_filename
+            if profile_photo_filename:
+                new_mechanic.profile_photo = profile_photo_filename
             new_mechanic.verified = "pending"
             db.session.commit()
         else:
@@ -1781,6 +1790,7 @@ def mechanic_register():
                 specialization=specialization,
                 experience=experience,
                 description=description,
+                profile_photo=profile_photo_filename,
                 id_document_type=id_document_type,
                 id_document=id_document_filename,
                 verified="pending"
