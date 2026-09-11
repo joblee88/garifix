@@ -1040,6 +1040,7 @@ def setup_migrate():
         existing_tables = set(inspector.get_table_names())  # SWALI MOJA TU (round-trip 1)
         added = []
         enum_updated = []
+        nullable_updated = []
         errors = []
 
         # LOOP MOJA TU kwa kila jedwali - inachukua taarifa za columns
@@ -1078,6 +1079,17 @@ def setup_migrate():
                             with db.engine.begin() as conn:
                                 conn.execute(text(ddl))
                             enum_updated.append(f"{table.name}.{column.name}: {sorted(db_values)} -> {sorted(model_values)}")
+                    elif column.nullable and not db_columns[column.name]["nullable"]:
+                        # Column IPO tayari LAKINI database halisi bado
+                        # inaitaka "NOT NULL" wakati model sasa inaruhusu
+                        # kuwa tupu (mfano: User.phone kwa waliojisajili
+                        # kwa Google, ambao wanaijaza baadaye) - badilisha
+                        # iruhusu NULL.
+                        col_type_sql = column.type.compile(dialect=db.engine.dialect)
+                        ddl = f"ALTER TABLE {table.name} MODIFY COLUMN `{column.name}` {col_type_sql} NULL"
+                        with db.engine.begin() as conn:
+                            conn.execute(text(ddl))
+                        nullable_updated.append(f"{table.name}.{column.name}")
                 except Exception as e:
                     errors.append(f"{table.name}.{column.name}: {e}")
 
@@ -1088,7 +1100,10 @@ def setup_migrate():
         if enum_updated:
             html += "<p><strong>ENUM zilizopanuliwa (thamani mpya ziliongezwa):</strong></p><ul>"
             html += "".join(f"<li>{u}</li>" for u in enum_updated) + "</ul>"
-        if not added and not enum_updated:
+        if nullable_updated:
+            html += "<p><strong>Columns zilizoruhusiwa kuwa tupu (nullable):</strong></p><ul>"
+            html += "".join(f"<li>{n}</li>" for n in nullable_updated) + "</ul>"
+        if not added and not enum_updated and not nullable_updated:
             html += "<p>Database tayari inalingana kikamilifu na models.py.</p>"
         if errors:
             html += "<p style='color:red'><strong>Hitilafu (kama zipo):</strong></p><ul>"
