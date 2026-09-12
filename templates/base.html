@@ -214,6 +214,78 @@
 <script>
 (function () {
   var cap = window.Capacitor;
+  if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
+
+  var Push = cap.Plugins.PushNotifications;
+  if (!Push) {
+    console.log('[GariFix] Plugin ya PushNotifications haipo');
+    return;
+  }
+
+  var BASE = 'https://garifix.com';
+
+  // --- 1. Omba ruhusa na sajili ---
+  (function sajili() {
+    Push.checkPermissions().then(function (perm) {
+      if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
+        return Push.requestPermissions();
+      }
+      return perm;
+    }).then(function (perm) {
+      if (perm.receive !== 'granted') {
+        console.log('[GariFix] Ruhusa ya notifications imekataliwa');
+        return;
+      }
+      return Push.register();
+    }).catch(function (e) {
+      console.log('[GariFix] Push register error:', e.message);
+    });
+  })();
+
+  // --- 2. Token imepatikana -> tuma kwa Flask ---
+  Push.addListener('registration', function (token) {
+    console.log('[GariFix] FCM token:', token.value.slice(0, 20) + '...');
+
+    fetch(BASE + '/api/register-fcm-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ fcm_token: token.value })
+    }).then(function (r) {
+      return r.json();
+    }).then(function (res) {
+      console.log('[GariFix] Token imesajiliwa:', res.status);
+    }).catch(function (e) {
+      console.log('[GariFix] Kushindwa kutuma token:', e.message);
+    });
+  });
+
+  Push.addListener('registrationError', function (err) {
+    console.log('[GariFix] Registration error:', JSON.stringify(err));
+  });
+
+  // --- 3. Notification imefika app ikiwa wazi ---
+  Push.addListener('pushNotificationReceived', function (notif) {
+    console.log('[GariFix] Notification imefika:', notif.title);
+  });
+
+  // --- 4. Mtumiaji amebonyeza notification ---
+  Push.addListener('pushNotificationActionPerformed', function (action) {
+    var data = (action.notification && action.notification.data) || {};
+    console.log('[GariFix] Notification imebonyezwa, url:', data.url);
+
+    if (data.url) {
+      var target = data.url.charAt(0) === '/' ? BASE + data.url : data.url;
+      window.location.href = target;
+    }
+  });
+
+  console.log('[GariFix] Push notifications zimeanzishwa');
+})();
+</script>
+<script>
+(function () {
+  var cap = window.Capacitor;
   var isApp = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
 
   window.GariFixNative = { isApp: isApp };
