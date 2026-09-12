@@ -2096,7 +2096,7 @@ def search_mechanics():
                 "count": cnt
             }
 
-    return render_template("search_mechanics.html", mechanics=mechanics, ratings=ratings)
+    return render_template("search_mechanics.html", mechanics=mechanics, ratings=ratings, has_searched=(request.method == "POST"))
 
 
 @app.route("/mechanic/<int:mechanic_id>")
