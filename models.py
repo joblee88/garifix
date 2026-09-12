@@ -78,6 +78,7 @@ class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     mechanic_id = db.Column(db.Integer, db.ForeignKey("mechanics.id"), nullable=False)
+    service_request_id = db.Column(db.Integer, db.ForeignKey("service_requests.id"), nullable=True, unique=True)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

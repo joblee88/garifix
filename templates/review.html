@@ -2,14 +2,16 @@
 {% block title %}Weka Review - GariFix{% endblock %}
 
 {% block customer_content %}
+<script src="{{ url_for('static', filename='js/prevent-double-submit.js') }}"></script>
 <div class="row justify-content-center">
     <div class="col-lg-6">
         <div class="card shadow p-4">
             <h3 class="fw-bold mb-3 text-center"><i class="fa-solid fa-star text-warning me-2"></i>Mpe {{ mechanic.user.full_name }} Rating</h3>
             <p class="text-muted text-center">{{ mechanic.garage_name or '' }}</p>
 
-            <form method="POST">
+            <form method="POST" id="gfxReviewForm" onsubmit="return gfxPreventDoubleSubmit(this, 'gfxReviewBtn');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="request_id" value="{{ request_id or '' }}">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Rating (1 - 5 Stars)</label>
                     <select name="rating" class="form-select form-select-lg" required>
@@ -26,7 +28,7 @@
                     <textarea name="comment" class="form-control" rows="4" placeholder="Andika uzoefu wako kuhusu huduma uliyopokea (siyo lazima)..."></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100">Tuma Review</button>
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="gfxReviewBtn">Tuma Review</button>
             </form>
         </div>
     </div>

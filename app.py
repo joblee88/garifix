@@ -2055,7 +2055,7 @@ def complete_request(id):
             )
         flash("Hongera! Umethibitisha kuwa huduma imekamilika. Tafadhali mpe fundi rating.", "success")
         if service_request.mechanic:
-            return redirect(url_for("add_review", mechanic_id=service_request.mechanic.id))
+            return redirect(url_for("add_review", mechanic_id=service_request.mechanic.id, request_id=service_request.id))
         return redirect(url_for("customer_requests"))
 
     flash("Hauruhusiwi kubadilisha taarifa hii.", "danger")
@@ -2160,6 +2160,15 @@ def request_service(mechanic_id):
 @role_required("customer")
 def add_review(mechanic_id):
     mechanic = Mechanic.query.get_or_404(mechanic_id)
+    request_id = request.args.get("request_id", type=int) or request.form.get("request_id", type=int)
+
+    # Kama huduma HII HASA tayari imepewa rating - HAIWEZI kutolewa
+    # tena. Mwambie asante kwa uaminifu wake na umpeleke mbele.
+    if request_id:
+        existing_review = Review.query.filter_by(service_request_id=request_id).first()
+        if existing_review:
+            flash("Tayari umeshampa fundi huyu rating kwa huduma hii - asante kwa uaminifu wako!", "info")
+            return redirect(url_for("customer_requests"))
 
     if request.method == "POST":
         rating = request.form.get("rating")
@@ -2168,6 +2177,7 @@ def add_review(mechanic_id):
         review = Review(
             customer_id=session["user_id"],
             mechanic_id=mechanic.id,
+            service_request_id=request_id,
             rating=int(rating),
             comment=comment
         )
@@ -2181,10 +2191,10 @@ def add_review(mechanic_id):
             data={"type": "new_review", "mechanic_id": mechanic.id, "url": "/mechanic/reviews"}
         )
 
-        flash("Maoni yako yamehifadhiwa!", "success")
+        flash("Asante kwa maoni yako na uaminifu wako kwa GariFix!", "success")
         return redirect(url_for("mechanic_profile", mechanic_id=mechanic.id))
 
-    return render_template("review.html", mechanic=mechanic)
+    return render_template("review.html", mechanic=mechanic, request_id=request_id)
 
 
 # ADMIN ROUTES
