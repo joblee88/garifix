@@ -173,7 +173,35 @@
       ? BASE + '/auth/google/complete?token=' + encodeURIComponent(token)
       : BASE + '/login';
   });
+  // Njia ya akiba: WebView za zamani wakati mwingine hazitumi appUrlOpen
+  // vizuri app inapokuwa tayari wazi - hapa tunakagua wenyewe.
+  var lastHandledToken = null;
 
+  function angaliaTokenInayosubiri(chanzo) {
+    App.getLaunchUrl().then(function (launch) {
+      var url = (launch && launch.url) || '';
+      if (url.indexOf('garifix://auth-callback') !== 0) return;
+
+      var t = new URL(url).searchParams.get('token');
+      if (!t || t === lastHandledToken) return;
+      if (window.location.href.indexOf('/auth/google/complete') !== -1) return;
+
+      lastHandledToken = t;
+      console.log('[GariFix] Token kupitia ' + chanzo + ':', t);
+      try { Browser.close(); } catch (e) {}
+      window.location.href = BASE + '/auth/google/complete?token=' + encodeURIComponent(t);
+    }).catch(function (e) {
+      console.log('[GariFix] getLaunchUrl:', e.message);
+    });
+  }
+
+  App.addListener('resume', function () { angaliaTokenInayosubiri('resume'); });
+  App.addListener('appStateChange', function (state) {
+    if (state.isActive) angaliaTokenInayosubiri('appStateChange');
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) angaliaTokenInayosubiri('visibility');
+  });
   // 3. Back button
   App.addListener('backButton', function (state) {
     if (state.canGoBack) window.history.back();
