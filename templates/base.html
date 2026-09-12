@@ -183,5 +183,115 @@
   console.log('[GariFix] Script ya app imepakiwa');
 })();
 </script>
+<script>
+(function () {
+  var cap = window.Capacitor;
+  var isApp = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
+
+  window.GariFixNative = { isApp: isApp };
+
+  // ---------- KAMERA ----------
+  // Inarudisha dataURL ya picha, au null kama mtumiaji amefuta
+  window.GariFixNative.pigaPicha = async function (chanzo) {
+    if (!isApp) return null;
+    var Camera = cap.Plugins.Camera;
+    try {
+      var perm = await Camera.checkPermissions();
+      if (perm.camera !== 'granted' || perm.photos !== 'granted') {
+        perm = await Camera.requestPermissions();
+      }
+      var photo = await Camera.getPhoto({
+        quality: 75,
+        allowEditing: false,
+        resultType: 'dataUrl',
+        width: 1280,
+        correctOrientation: true,
+        source: chanzo || 'PROMPT',
+        promptLabelHeader: 'Picha ya gari',
+        promptLabelPhoto: 'Chagua kwenye ghala',
+        promptLabelPicture: 'Piga picha',
+        promptLabelCancel: 'Ghairi'
+      });
+      return photo.dataUrl;
+    } catch (err) {
+      console.log('[GariFix] Kamera imeghairiwa:', err.message);
+      return null;
+    }
+  };
+
+  // ---------- GPS ----------
+  // Inarudisha {lat, lng, accuracy} au null
+  window.GariFixNative.pataMahali = async function () {
+    try {
+      if (isApp) {
+        var Geo = cap.Plugins.Geolocation;
+        var perm = await Geo.checkPermissions();
+        if (perm.location !== 'granted') {
+          perm = await Geo.requestPermissions();
+        }
+        if (perm.location !== 'granted') {
+          alert('Tafadhali ruhusu location ili tuweze kukuonyesha mafundi walio karibu nawe.');
+          return null;
+        }
+        var pos = await Geo.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000
+        });
+        return {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        };
+      }
+
+      // Browser ya kawaida
+      return await new Promise(function (resolve) {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+          function (p) {
+            resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy });
+          },
+          function () { resolve(null); },
+          { enableHighAccuracy: true, timeout: 15000 }
+        );
+      });
+    } catch (err) {
+      console.log('[GariFix] GPS imeshindikana:', err.message);
+      return null;
+    }
+  };
+
+  console.log('[GariFix] Native helpers tayari. isApp =', isApp);
+})();
+</script>
+<script>
+(function () {
+  if (!window.GariFixNative || !window.GariFixNative.isApp) return;
+
+  document.addEventListener('click', async function (e) {
+    var input = e.target.closest('input[type="file"]');
+    if (!input) return;
+    var accept = (input.getAttribute('accept') || '').toLowerCase();
+    if (accept && accept.indexOf('image') === -1) return;  // si picha, iachwe
+
+    e.preventDefault();
+
+    var dataUrl = await window.GariFixNative.pigaPicha();
+    if (!dataUrl) return;
+
+    // Geuza dataURL kuwa File ili form isubmit kama kawaida
+    var res = await fetch(dataUrl);
+    var blob = await res.blob();
+    var file = new File([blob], 'picha_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+
+    var dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+
+    console.log('[GariFix] Picha imewekwa kwenye input');
+  }, true);
+})();
+</script>
 </body>
 </html>
