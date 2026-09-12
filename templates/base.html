@@ -139,49 +139,48 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
-  const cap = window.Capacitor;
-  if (!cap?.isNativePlatform?.()) return;   // browser ya kawaida: hakuna kinachobadilika
+  var cap = window.Capacitor;
+  if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
 
-  const { Browser, App } = cap.Plugins;
-  const BASE = 'https://garifix.com';
+  var Browser = cap.Plugins.Browser;
+  var App = cap.Plugins.App;
+  var BASE = 'https://garifix.com';
 
-  // 1. Kamata mibofyo ya vitufe vya Google
-  document.addEventListener('click', async function (e) {
-    const link = e.target.closest('a[href*="/auth/google/login"], .btn-google');
+  // 1. Fungua login/usajili wa Google kwenye browser ya nje
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href*="/auth/google/login"], .btn-google');
     if (!link) return;
     e.preventDefault();
 
-    let url = link.getAttribute('href') || '/auth/google/login';
-    if (url.startsWith('/')) url = BASE + url;
+    var url = link.getAttribute('href') || '/auth/google/login';
+    if (url.charAt(0) === '/') url = BASE + url;
+    url += (url.indexOf('?') > -1 ? '&' : '?') + 'from_app=1';
 
-    // Ongeza from_app=1 (kazi iliyokuwa ikifanywa na MainActivity.kt)
-    url += (url.includes('?') ? '&' : '?') + 'from_app=1';
-
-    await Browser.open({ url: url, presentationStyle: 'popover' });
+    console.log('[GariFix] Kufungua browser:', url);
+    Browser.open({ url: url, presentationStyle: 'popover' });
   }, true);
 
-  // 2. Pokea mrejesho kutoka browser ya nje
-  App.addListener('appUrlOpen', async function (event) {
-    const url = event.url || '';
-    if (!url.startsWith('com.garifix.app://')) return;
+  // 2. Pokea deep link ya kurudi
+  App.addListener('appUrlOpen', function (event) {
+    var url = event.url || '';
+    console.log('[GariFix] Deep link:', url);
+    if (url.indexOf('garifix://auth-callback') !== 0) return;
 
-    try { await Browser.close(); } catch (err) {}
+    try { Browser.close(); } catch (err) {}
 
-    const params = new URL(url).searchParams;
-    const code = params.get('code');
-
-    if (code) {
-      window.location.href = BASE + '/auth/mobile-exchange?code=' + encodeURIComponent(code);
-    } else {
-      window.location.href = BASE + '/login?error=google';
-    }
+    var token = new URL(url).searchParams.get('token');
+    window.location.href = token
+      ? BASE + '/auth/google/complete?token=' + encodeURIComponent(token)
+      : BASE + '/login';
   });
 
-  // 3. Back button ya simu
+  // 3. Back button
   App.addListener('backButton', function (state) {
     if (state.canGoBack) window.history.back();
     else App.exitApp();
   });
+
+  console.log('[GariFix] Script ya app imepakiwa');
 })();
 </script>
 </body>
