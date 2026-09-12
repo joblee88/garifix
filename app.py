@@ -1221,10 +1221,10 @@ def google_login():
         flash("Kuingia kwa Google hakupatikani kwa sasa.", "warning")
         return redirect(url_for("login"))
 
-    role = request.args.get("role", "customer")
-    if role not in ("customer", "mechanic"):
-        role = "customer"
-    session["google_signup_role"] = role
+    role = request.args.get("role")  # None ikiwa hakuna (kutoka /login - "kuingia" tu)
+    is_registration_intent = role in ("customer", "mechanic")
+    session["google_signup_role"] = role if is_registration_intent else "customer"
+    session["google_registration_intent"] = is_registration_intent
 
     # MUHIMU: Kwa kuwa Google inalazimisha ombi hili lifunguke kwenye
     # BROWSER YA NJE (siyo WebView), kufikia hapa tayari kumefanyika
@@ -1307,6 +1307,14 @@ def google_callback():
         return redirect(dashboard_url or url_for("home"))
 
     role = session.pop("google_signup_role", "customer")
+    was_registration_intent = session.pop("google_registration_intent", False)
+
+    if not was_registration_intent:
+        # Alibofya "Ingia kwa Google" (kuingia tu) lakini hajasajiliwa
+        # bado - HATUMWUNDII akaunti kiotomatiki. Mpeleke kwenye ukurasa
+        # wa kuchagua kujisajili badala yake.
+        flash("Bado hujajisajili GariFix - tafadhali jisajili kwanza.", "warning")
+        return redirect(url_for("register_choice"))
 
     if role == "mechanic":
         session["google_pending_email"] = email
@@ -1343,6 +1351,7 @@ def google_callback_app():
     _cleanup_expired_google_tokens()
     token = secrets.token_urlsafe(32)
     role = session.pop("google_signup_role", "customer")
+    was_registration_intent = session.pop("google_registration_intent", False)
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
@@ -1350,6 +1359,13 @@ def google_callback_app():
             "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
             "action": "login",
             "user_id": existing_user.id,
+        }
+    elif not was_registration_intent:
+        # Alibofya "Ingia kwa Google" (kuingia tu) lakini hajasajiliwa
+        # bado - HATUMWUNDII akaunti kiotomatiki.
+        _pending_app_google_logins[token] = {
+            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+            "action": "not_registered",
         }
     elif role == "mechanic":
         _pending_app_google_logins[token] = {
@@ -1386,6 +1402,10 @@ def google_complete():
     if not data or data["expires"] < datetime.utcnow().timestamp():
         flash("Muda wa kuingia kwa Google umeisha. Jaribu tena.", "warning")
         return redirect(url_for("login"))
+
+    if data["action"] == "not_registered":
+        flash("Bado hujajisajili GariFix - tafadhali jisajili kwanza.", "warning")
+        return redirect(url_for("register_choice"))
 
     if data["action"] == "login":
         user = db.session.get(User, data["user_id"])
