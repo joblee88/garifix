@@ -18,7 +18,12 @@ from config import Config
 from extensions import db
 from notifications import send_notification
 from mailer import send_verification_email, send_password_reset_email, send_email
-
+from mailer import send_verification_email, send_password_reset_email, send_email
+from google_auth_store import (
+    PendingGoogleAuth,
+    save_pending_google_auth,
+    pop_pending_google_auth,
+)
 # Initialize Flask App
 app = Flask(__name__)
 
@@ -1200,15 +1205,9 @@ def terms():
 # inaipakia ndani ya WebView kupitia /auth/google/complete?token=X -
 # HAPO NDIYO session halisi ya WebView inawekwa.
 # --------------------------------------------------------------------
-_pending_app_google_logins = {}  # token -> {"expires": ts, ...data}
+# Tokens za muda sasa zinahifadhiwa kwenye DATABASE (google_auth_store.py),
+# siyo kwenye kumbukumbu. Angalia maelezo ndani ya file hiyo kwa sababu.
 _PENDING_TOKEN_TTL_SECONDS = 300
-
-
-def _cleanup_expired_google_tokens():
-    now = datetime.utcnow().timestamp()
-    expired = [t for t, d in _pending_app_google_logins.items() if d["expires"] < now]
-    for t in expired:
-        _pending_app_google_logins.pop(t, None)
 
 
 @app.route("/auth/google/login")
@@ -1348,28 +1347,19 @@ def google_callback_app():
         flash("Imeshindikana kuunganisha na Google. Jaribu tena kwenye app.", "danger")
         return redirect(url_for("login"))
 
-    _cleanup_expired_google_tokens()
-    token = secrets.token_urlsafe(32)
+        token = secrets.token_urlsafe(32)
     role = session.pop("google_signup_role", "customer")
     was_registration_intent = session.pop("google_registration_intent", False)
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        _pending_app_google_logins[token] = {
-            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
-            "action": "login",
-            "user_id": existing_user.id,
-        }
+        payload = {"action": "login", "user_id": existing_user.id}
     elif not was_registration_intent:
         # Alibofya "Ingia kwa Google" (kuingia tu) lakini hajasajiliwa
         # bado - HATUMWUNDII akaunti kiotomatiki.
-        _pending_app_google_logins[token] = {
-            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
-            "action": "not_registered",
-        }
+        payload = {"action": "not_registered"}
     elif role == "mechanic":
-        _pending_app_google_logins[token] = {
-            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
+        payload = {
             "action": "register",
             "email": email,
             "name": full_name,
@@ -1380,26 +1370,23 @@ def google_callback_app():
         # njia ya App. Baada ya deep-link kurudi WebView-ni, tutampeleka
         # moja kwa moja kujaza namba yake ya simu.
         new_customer = _create_google_customer(email, full_name)
-        _pending_app_google_logins[token] = {
-            "expires": datetime.utcnow().timestamp() + _PENDING_TOKEN_TTL_SECONDS,
-            "action": "login",
-            "user_id": new_customer.id,
-        }
+        payload = {"action": "login", "user_id": new_customer.id}
+
+    if not save_pending_google_auth(token, payload):
+        flash("Tatizo la kiufundi limetokea. Jaribu tena.", "danger")
+        return redirect(url_for("login"))
 
     return redirect(f"garifix://auth-callback?token={token}")
 
-
 @app.route("/auth/google/complete")
 def google_complete():
-    """App (MainActivity.kt) inapakia URL hii NDANI YA WEBVIEW yake
-    baada ya kupokea 'deep link' - hapa ndipo session HALISI ya
-    WebView inawekwa (tofauti na callback ya awali iliyokuwa kwenye
-    browser-ya-nje)."""
+    """App (Capacitor) inapakia URL hii NDANI YA WEBVIEW yake baada ya
+    kupokea 'deep link' - hapa ndipo session HALISI ya WebView inawekwa
+    (tofauti na callback ya awali iliyokuwa kwenye browser-ya-nje)."""
     token = request.args.get("token", "")
-    _cleanup_expired_google_tokens()
-    data = _pending_app_google_logins.pop(token, None)
+    data = pop_pending_google_auth(token)
 
-    if not data or data["expires"] < datetime.utcnow().timestamp():
+    if not data:
         flash("Muda wa kuingia kwa Google umeisha. Jaribu tena.", "warning")
         return redirect(url_for("login"))
 
@@ -2550,7 +2537,86 @@ def account_view_admin():
         total_requests=total_requests
     )
 
+# google_auth_store.py
+"""Huhifadhi tokens za muda za Google login (njia ya App) kwenye DATABASE
+badala ya kumbukumbu ya Python.
 
+SABABU: dictionary ya kawaida inapotea kila Render inapoanzisha upya
+service au inapolala (free tier). Ikitokea hivyo kati ya mtumiaji
+kubonyeza Google na kurudi kwenye app, token yake inakuwa haipo tena -
+na anarudishwa /login bila sababu yoyote inayoonekana."""
+
+from datetime import datetime, timedelta
+from extensions import db
+
+PENDING_TOKEN_TTL_SECONDS = 300  # dakika 5
+
+
+class PendingGoogleAuth(db.Model):
+    __tablename__ = "pending_google_auth"
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    action = db.Column(db.String(20), nullable=False)   # login | register | not_registered
+    user_id = db.Column(db.Integer, nullable=True)
+    email = db.Column(db.String(255), nullable=True)
+    name = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(20), nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+
+def save_pending_google_auth(token, data):
+    """Hifadhi token pamoja na taarifa zake. Inarudisha True/False."""
+    try:
+        db.session.query(PendingGoogleAuth).filter(
+            PendingGoogleAuth.expires_at < datetime.utcnow()
+        ).delete(synchronize_session=False)
+
+        db.session.add(PendingGoogleAuth(
+            token=token,
+            action=data.get("action"),
+            user_id=data.get("user_id"),
+            email=data.get("email"),
+            name=data.get("name"),
+            role=data.get("role"),
+            expires_at=datetime.utcnow() + timedelta(seconds=PENDING_TOKEN_TTL_SECONDS),
+        ))
+        db.session.commit()
+        return True
+    except Exception as exc:
+        db.session.rollback()
+        print(f"[GoogleAuthStore] Imeshindikana kuhifadhi token: {exc}")
+        return False
+
+
+def pop_pending_google_auth(token):
+    """Chukua taarifa za token MARA MOJA TU kisha ifute. Inarudisha dict
+    au None (kama haipo au muda umeisha)."""
+    if not token:
+        return None
+    try:
+        row = PendingGoogleAuth.query.filter_by(token=token).first()
+        if not row:
+            return None
+
+        expired = row.expires_at < datetime.utcnow()
+        data = {
+            "action": row.action,
+            "user_id": row.user_id,
+            "email": row.email,
+            "name": row.name,
+            "role": row.role,
+        }
+
+        db.session.delete(row)
+        db.session.commit()
+
+        return None if expired else data
+    except Exception as exc:
+        db.session.rollback()
+        print(f"[GoogleAuthStore] Imeshindikana kusoma token: {exc}")
+        return None
+    
 @app.cli.command("create-admin")
 def create_admin():
     """
