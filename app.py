@@ -2620,7 +2620,25 @@ def setup_create_admin():
 
 @app.route("/setup-delete-mechanic")
 def setup_delete_mechanic():
-    ...
+    """Futa akaunti ya fundi kwa email (kwa majaribio). Tumia:
+    https://<server>/setup-delete-mechanic?key=ADMIN_SETUP_KEY&email=mfano@gmail.com
+    ONYO: futa route hii baada ya matumizi."""
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo (key) si sahihi au hakijawezeshwa.", 403
+
+    email = request.args.get("email", "").strip().lower()
+    if not email:
+        return "Weka ?email=... kwenye URL.", 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"Hakuna akaunti yenye email '{email}'.", 404
+
+    name = user.full_name
+    Notification.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
     return f"Akaunti ya '{name}' ({email}) imefutwa kikamilifu.", 200
 
 
