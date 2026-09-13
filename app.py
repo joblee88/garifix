@@ -2572,6 +2572,13 @@ def create_admin():
     db.session.commit()
     print(f"\nAdmin '{full_name}' ameundwa! Ingia kwa namba: {phone}")
 
+    from flask_jwt_extended import JWTManager
+    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "badilisha-hii-kwenye-production")
+    jwt = JWTManager(app)
+
+    from api import api_bp
+    csrf.exempt(api_bp)
+    app.register_blueprint(api_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)
