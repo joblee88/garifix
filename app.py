@@ -2580,5 +2580,41 @@ from api import api_bp
 csrf.exempt(api_bp)
 app.register_blueprint(api_bp)
 
+
+@app.route("/setup-create-admin")
+def setup_create_admin():
+    """Unda akaunti ya Admin bila Shell (kwa Render free tier). Tumia:
+    https://<jina-la-server>.onrender.com/setup-create-admin?key=ADMIN_SETUP_KEY&full_name=Jina&phone=0712345678&password=SiriYako
+    ONYO: futa route hii baada ya kuitumia mara moja - siyo salama kubaki milele."""
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key:
+        return "Kipengele hiki hakijawezeshwa kwenye server hii.", 403
+    if request.args.get("key") != setup_key:
+        return "Ufunguo (key) si sahihi.", 403
+
+    full_name = request.args.get("full_name", "").strip()
+    phone = request.args.get("phone", "").strip()
+    email = request.args.get("email", "").strip() or None
+    password = request.args.get("password", "").strip()
+
+    if not full_name or not phone or not password:
+        return "Weka full_name, phone, na password kwenye URL (query params).", 400
+
+    if User.query.filter_by(phone=phone).first():
+        return f"Hitilafu: Namba ya simu '{phone}' tayari inatumika.", 400
+
+    admin = User(
+        full_name=full_name,
+        phone=phone,
+        email=email,
+        password=generate_password_hash(password),
+        role="admin",
+        status="active",
+        email_verified=True,
+    )
+    db.session.add(admin)
+    db.session.commit()
+    return f"Admin '{full_name}' ameundwa! Ingia kwa namba: {phone}", 200
+    
 if __name__ == "__main__":
     app.run(debug=True)
