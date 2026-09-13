@@ -854,3 +854,38 @@ def api_update_profile():
 @api_bp.route("/regions", methods=["GET"])
 def api_regions():
     return jsonify({"status": "ok", "regions": TANZANIA_REGIONS}), 200
+
+
+_locations_cache = None
+
+
+def _load_locations_data():
+    """Soma static/js/tz_locations.js (Mkoa -> Wilaya -> [Kata]) na uigeuze
+    kuwa Python dict, ukihifadhi kwenye cache ya module ili tusisome faili
+    kutoka disk kwenye kila ombi. Faili hilo ni JS object literal ambalo ni
+    JSON halali (funguo/thamani zote zina alama za nukuu mbili)."""
+    global _locations_cache
+    if _locations_cache is not None:
+        return _locations_cache
+
+    path = os.path.join(current_app.root_path, "static", "js", "tz_locations.js")
+    try:
+        with open(path, encoding="utf-8") as f:
+            content = f.read()
+        start = content.index("{")
+        end = content.rindex("}") + 1
+        import json
+        _locations_cache = json.loads(content[start:end])
+    except Exception as e:
+        current_app.logger.error(f"[API] Imeshindikana kusoma tz_locations.js: {e}")
+        _locations_cache = {}
+    return _locations_cache
+
+
+@api_bp.route("/locations", methods=["GET"])
+def api_locations():
+    """Inarudisha muundo KAMILI: {"Mkoa": {"Wilaya": ["Kata1", "Kata2", ...]}}
+    - sawa kabisa na tz_locations.js inayotumika kwenye website. Flutter
+    inapaswa kuomba hii MARA MOJA tu (mfano kwenye splash/fomu ya fundi) na
+    kuihifadhi kwenye kumbukumbu (state) kwa dropdown zinazofuatana."""
+    return jsonify({"status": "ok", "locations": _load_locations_data()}), 200
