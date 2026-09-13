@@ -2615,6 +2615,22 @@ def setup_create_admin():
     db.session.add(admin)
     db.session.commit()
     return f"Admin '{full_name}' ameundwa! Ingia kwa namba: {phone}", 200
-    
+
+@app.route("/setup-create-admin")
+def setup_create_admin():
+    ...
+    return f"Admin '{full_name}' ameundwa! Ingia kwa namba: {phone}", 200
+
+
+@app.route("/setup-delete-mechanic")
+def setup_delete_mechanic():
+    ...
+    return f"Akaunti ya '{name}' ({email}) imefutwa kikamilifu.", 200
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
