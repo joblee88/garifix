@@ -2616,10 +2616,6 @@ def setup_create_admin():
     db.session.commit()
     return f"Admin '{full_name}' ameundwa! Ingia kwa namba: {phone}", 200
 
-@app.route("/setup-create-admin")
-def setup_create_admin():
-    ...
-    return f"Admin '{full_name}' ameundwa! Ingia kwa namba: {phone}", 200
 
 
 @app.route("/setup-delete-mechanic")
