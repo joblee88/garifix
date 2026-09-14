@@ -68,7 +68,7 @@ class ServiceRequest(db.Model):
     vehicle_model = db.Column(db.String(100), nullable=False)
     problem_description = db.Column(db.Text, nullable=False)
     location = db.Column(db.String(255), nullable=False)
-        status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled", "rejected", name="service_request_status"), default="pending", index=True)
+    status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled", "rejected", name="service_request_status"), default="pending", index=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
