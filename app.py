@@ -2662,7 +2662,16 @@ def setup_debug_mechanics():
     ]
     return jsonify(out)
 
-
+@app.route("/setup-create-tables")
+def setup_create_tables():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    try:
+        db.create_all()
+        return "Majedwali yameundwa kikamilifu!", 200
+    except Exception as e:
+        return f"Kosa: {e}", 500
 
 
 if __name__ == "__main__":
