@@ -168,6 +168,17 @@ def user_to_dict(user):
     }
 
 
+ONLINE_THRESHOLD_MINUTES = 5
+
+
+def _is_online(user):
+    """Fundi/Mtumiaji anahesabiwa 'mtandaoni' kama app yake ilituma 'heartbeat'
+    ndani ya dakika 5 zilizopita."""
+    if not user or not user.last_active:
+        return False
+    return (datetime.utcnow() - user.last_active) < timedelta(minutes=ONLINE_THRESHOLD_MINUTES)
+
+
 def mechanic_to_dict(m, include_avg=True):
     d = {
         "id": m.id,
@@ -184,6 +195,7 @@ def mechanic_to_dict(m, include_avg=True):
         "profile_photo": m.profile_photo,
         "verified": m.verified,
         "phone": m.user.phone if m.user else None,
+        "is_online": _is_online(m.user),
     }
     if include_avg:
         avg = db.session.query(func.avg(Review.rating)).filter_by(mechanic_id=m.id).scalar()
@@ -810,6 +822,19 @@ def api_register_fcm_token():
     if not token:
         return err("fcm_token haipo.")
     user.fcm_token = token
+    db.session.commit()
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/heartbeat", methods=["POST"])
+@jwt_required()
+def api_heartbeat():
+    """App inaita hii mara kwa mara (mfano kila dakika 2) ili tuweke
+    kumbukumbu kuwa mtumiaji bado 'yupo hai' (mtandaoni)."""
+    user, error = current_user_or_error()
+    if error:
+        return error
+    user.last_active = datetime.utcnow()
     db.session.commit()
     return jsonify({"status": "ok"}), 200
 

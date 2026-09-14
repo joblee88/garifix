@@ -2672,6 +2672,22 @@ def setup_create_tables():
         return "Majedwali yameundwa kikamilifu!", 200
     except Exception as e:
         return f"Kosa: {e}", 500
+@app.route("/setup-add-column")
+
+def setup_add_column():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    from sqlalchemy import text
+    dialect = db.engine.dialect.name
+    col_type = "TIMESTAMP" if dialect == "postgresql" else "DATETIME"
+    try:
+        db.session.execute(text(f"ALTER TABLE users ADD COLUMN last_active {col_type} NULL"))
+        db.session.commit()
+        return f"Safu 'last_active' imeongezwa kikamilifu ({dialect}).", 200
+    except Exception as e:
+        db.session.rollback()
+        return f"Kosa (labda tayari ipo): {e}", 500
 
 
 if __name__ == "__main__":
