@@ -11,6 +11,9 @@ class User(db.Model):
     role = db.Column(db.String(20), default="customer")  # customer, mechanic, admin
     status = db.Column(db.String(20), default="active")
     fcm_token = db.Column(db.String(255), nullable=True)  # Token ya Firebase Cloud Messaging (App ya Android)
+    fcm_token = db.Column(db.String(255), nullable=True)  # Token ya Firebase Cloud Messaging (App ya Android)
+    last_active = db.Column(db.DateTime, nullable=True)  # Muda wa mwisho aliokuwa 'mtandaoni' (heartbeat kutoka app)
+    profile_photo = db.Column(db.String(255), nullable=True)  # Picha ya wasifu (customer hasa)
     profile_photo = db.Column(db.String(255), nullable=True)  # Picha ya wasifu (customer hasa)
     username = db.Column(db.String(50), unique=True, nullable=True, index=True)  # Jina la kuonekana kwenye profile (hiari)
     registered_via_google = db.Column(db.Boolean, default=False)  # Alijisajili kwa Google (password ni ya siri/random)
@@ -27,6 +30,7 @@ class User(db.Model):
     mechanic_profile = db.relationship("Mechanic", backref="user", uselist=False, cascade="all, delete-orphan")
     service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id", cascade="all, delete-orphan")
     reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id", cascade="all, delete-orphan")
+    last_active = db.Column(db.DateTime, nullable=True)
 
 
 class Mechanic(db.Model):
