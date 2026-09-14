@@ -2641,9 +2641,27 @@ def setup_delete_mechanic():
     db.session.commit()
     return f"Akaunti ya '{name}' ({email}) imefutwa kikamilifu.", 200
 
+@app.route("/setup-debug-mechanics")
+def setup_debug_mechanics():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    mechanics = Mechanic.query.all()
+    out = [
+        {
+            "id": m.id,
+            "user_id": m.user_id,
+            "email": m.user.email if m.user else None,
+            "full_name": m.user.full_name if m.user else None,
+            "verified": m.verified,
+            "region": m.region,
+            "district": m.district,
+        }
+        for m in mechanics
+    ]
+    return jsonify(out)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
 
 
 if __name__ == "__main__":
