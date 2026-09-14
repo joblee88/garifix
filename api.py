@@ -22,6 +22,7 @@ JINSI YA KUUNGANISHA NA app.py (angalia ujumbe wa chat kwa maelezo kamili):
 """
 
 import os
+import requests
 import secrets
 import uuid
 from datetime import timedelta, datetime
@@ -218,6 +219,8 @@ def request_to_dict(r):
         "vehicle_model": r.vehicle_model,
         "problem_description": r.problem_description,
         "location": r.location,
+        "latitude": r.latitude,
+        "longitude": r.longitude,
         "status": r.status,
         "created_at": r.created_at.isoformat() if r.created_at else None,
     }
@@ -643,17 +646,37 @@ def api_create_request():
     mechanic = Mechanic.query.get_or_404(mechanic_id) if mechanic_id else None
     vehicle_model = (data.get("vehicle_model") or "").strip()
     problem_description = (data.get("problem_description") or "").strip()
-    region = (data.get("region") or "").strip()
-    district = (data.get("district") or "").strip()
-    ward = (data.get("ward") or "").strip()
-    street = (data.get("street") or "").strip()
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
 
     if not vehicle_model or not problem_description:
         return err("vehicle_model na problem_description vinahitajika.")
-    if not (region and district and ward and street):
-        return err("Eneo kamili (region, district, ward, street) linahitajika.")
+    if latitude is None or longitude is None:
+        return err("Chagua eneo lako kwenye ramani (latitude/longitude).")
 
-    full_location = f"{region}, {district}, Kata ya {ward} ({street})"
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
+        return err("Kuratibu za eneo (latitude/longitude) si sahihi.")
+
+    # Jaribu kupata jina la mtaa/eneo kwa "reverse geocoding" (OpenStreetMap
+    # Nominatim - bure, haihitaji key). Ikishindikana (mtandao mbovu, n.k),
+    # tunatumia kuratibu tu kama maandishi ya "location" - si tatizo.
+    full_location = f"{latitude:.5f}, {longitude:.5f}"
+    try:
+        geo_response = requests.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={"format": "json", "lat": latitude, "lon": longitude, "zoom": 16},
+            headers={"User-Agent": "GariFixApp/1.0 (garifix2026@gmail.com)"},
+            timeout=5,
+        )
+        if geo_response.status_code == 200:
+            display_name = geo_response.json().get("display_name")
+            if display_name:
+                full_location = display_name
+    except Exception:
+        pass
 
     new_request = ServiceRequest(
         customer_id=user.id,
@@ -661,6 +684,8 @@ def api_create_request():
         vehicle_model=vehicle_model,
         problem_description=problem_description,
         location=full_location,
+        latitude=latitude,
+        longitude=longitude,
     )
     db.session.add(new_request)
     db.session.commit()

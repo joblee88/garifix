@@ -2689,6 +2689,23 @@ def setup_add_column():
         db.session.rollback()
         return f"Kosa (labda tayari ipo): {e}", 500
 
+@app.route("/setup-add-request-location")
+def setup_add_request_location():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    from sqlalchemy import text
+    dialect = db.engine.dialect.name
+    col_type = "DOUBLE PRECISION" if dialect == "postgresql" else "DOUBLE"
+    try:
+        db.session.execute(text(f"ALTER TABLE service_requests ADD COLUMN latitude {col_type} NULL"))
+        db.session.execute(text(f"ALTER TABLE service_requests ADD COLUMN longitude {col_type} NULL"))
+        db.session.commit()
+        return f"Safu latitude/longitude zimeongezwa kikamilifu ({dialect}).", 200
+    except Exception as e:
+        db.session.rollback()
+        return f"Kosa: {e}", 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
