@@ -33,8 +33,13 @@ class Config:
     if _database_url:
         # Baadhi ya watoa huduma (Render/Heroku) hutoa URL zenye "postgres://"
         # ambazo SQLAlchemy ya sasa hazielewi - lazima ziwe "postgresql://"
-        if _database_url.startswith('postgres://'):
+        if _database_url.startswith('postgres://') or _database_url.startswith('postgresql://'):
+            # Render/Neon hutoa "postgres://" au "postgresql://" - lakini
+            # tunahitaji dereva wa "psycopg" (v3), siyo psycopg2 wa
+            # zamani, kwa sababu psycopg2-binary haina toleo linaloendana
+            # na Python mpya (3.14) kwenye Render.
             _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
+            _database_url = _database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
             SQLALCHEMY_DATABASE_URI = _database_url
 
         elif _database_url.startswith('mysql://') or _database_url.startswith('mysql+pymysql://'):

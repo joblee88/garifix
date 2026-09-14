@@ -4,7 +4,7 @@ import secrets
 import requests
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, or_
@@ -12,6 +12,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_wtf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
 
 # 1. Import Config na extensions
 from config import Config
@@ -2641,9 +2642,36 @@ def setup_delete_mechanic():
     db.session.commit()
     return f"Akaunti ya '{name}' ({email}) imefutwa kikamilifu.", 200
 
+@app.route("/setup-debug-mechanics")
+def setup_debug_mechanics():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    mechanics = Mechanic.query.all()
+    out = [
+        {
+            "id": m.id,
+            "user_id": m.user_id,
+            "email": m.user.email if m.user else None,
+            "full_name": m.user.full_name if m.user else None,
+            "verified": m.verified,
+            "region": m.region,
+            "district": m.district,
+        }
+        for m in mechanics
+    ]
+    return jsonify(out)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route("/setup-create-tables")
+def setup_create_tables():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    try:
+        db.create_all()
+        return "Majedwali yameundwa kikamilifu!", 200
+    except Exception as e:
+        return f"Kosa: {e}", 500
 
 
 if __name__ == "__main__":
