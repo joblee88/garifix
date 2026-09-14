@@ -529,19 +529,22 @@ def api_mechanic_complete_profile():
 def api_search_mechanics():
     region = request.args.get("region", "").strip()
     district = request.args.get("district", "").strip()
-    specialization = request.args.get("specialization", "").strip()
-    q = request.args.get("q", "").strip()
+    ward = request.args.get("ward", "").strip()
+    specializations = [s.strip() for s in request.args.getlist("specialization") if s.strip()]
 
     query = Mechanic.query.filter(Mechanic.verified == "approved")
     if region:
         query = query.filter(Mechanic.region.ilike(f"%{region}%"))
     if district:
         query = query.filter(Mechanic.district.ilike(f"%{district}%"))
-    if specialization:
-        query = query.filter(Mechanic.specialization.ilike(f"%{specialization}%"))
-    if q:
-        query = query.join(User, Mechanic.user_id == User.id).filter(
-            db.or_(Mechanic.garage_name.ilike(f"%{q}%"), User.full_name.ilike(f"%{q}%"))
+    if ward:
+        query = query.filter(Mechanic.ward.ilike(f"%{ward}%"))
+    if specializations:
+        # Mechanic ana specialization moja au zaidi (comma-separated) - mtu
+        # akichagua kadhaa, tunaonyesha fundi anayefanana na ANGALAU MOJA
+        # ya alizochagua (OR), si lazima zote.
+        query = query.filter(
+            db.or_(*[Mechanic.specialization.ilike(f"%{s}%") for s in specializations])
         )
 
     mechanics = query.all()
