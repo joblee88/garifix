@@ -44,7 +44,7 @@ class Mechanic(db.Model):
     description = db.Column(db.Text)
     latitude = db.Column(db.Numeric(10, 8))
     longitude = db.Column(db.Numeric(11, 8))
-    verified = db.Column(db.Enum("pending", "approved", "rejected"), default="pending", index=True)
+    verified = db.Column(db.Enum("pending", "approved", "rejected", name="mechanic_verified_status"), default="pending", index=True)
     rejection_reason = db.Column(db.Text, nullable=True)  # sababu ya Admin kukataa (ikiwa verified="rejected")
     profile_photo = db.Column(db.String(255))
 
@@ -68,7 +68,7 @@ class ServiceRequest(db.Model):
     vehicle_model = db.Column(db.String(100), nullable=False)
     problem_description = db.Column(db.Text, nullable=False)
     location = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled", "rejected"), default="pending", index=True)
+        status = db.Column(db.Enum("pending", "accepted", "completed", "cancelled", "rejected", name="service_request_status"), default="pending", index=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
