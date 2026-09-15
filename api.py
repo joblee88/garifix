@@ -1172,3 +1172,88 @@ def api_admin_reject_mechanic(mechanic_id):
             data={"type": "mechanic_rejected"},
         )
     return jsonify({"status": "ok"}), 200
+
+
+# =============================================================
+# 11. ADMIN - usimamizi wa watumiaji na maombi
+# =============================================================
+
+def _user_admin_dict(u):
+    return {
+        "id": u.id,
+        "full_name": u.full_name,
+        "phone": u.phone,
+        "email": u.email,
+        "role": u.role,
+        "status": u.status,
+        "created_at": u.created_at.isoformat() if getattr(u, "created_at", None) else None,
+    }
+
+
+@api_bp.route("/admin/customers", methods=["GET"])
+@jwt_required()
+def api_admin_list_customers():
+    admin, error = _require_admin()
+    if error:
+        return error
+    status_filter = request.args.get("status", "all")
+    query = User.query.filter_by(role="customer")
+    if status_filter != "all":
+        query = query.filter_by(status=status_filter)
+    customers = query.order_by(User.id.desc()).all()
+    return jsonify({"status": "ok", "customers": [_user_admin_dict(c) for c in customers]}), 200
+
+
+@api_bp.route("/admin/requests", methods=["GET"])
+@jwt_required()
+def api_admin_list_requests():
+    admin, error = _require_admin()
+    if error:
+        return error
+    status_filter = request.args.get("status", "all")
+    query = ServiceRequest.query
+    if status_filter != "all":
+        query = query.filter_by(status=status_filter)
+    requests_list = query.order_by(ServiceRequest.created_at.desc()).limit(200).all()
+    return jsonify({"status": "ok", "requests": [request_to_dict(r) for r in requests_list]}), 200
+
+
+@api_bp.route("/admin/users/<int:user_id>/block", methods=["POST"])
+@jwt_required()
+def api_admin_block_user(user_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    target = User.query.get_or_404(user_id)
+    if target.role == "admin":
+        return err("Huwezi kumzuia Admin mwingine.", 403)
+    target.status = "blocked"
+    db.session.commit()
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/admin/users/<int:user_id>/unblock", methods=["POST"])
+@jwt_required()
+def api_admin_unblock_user(user_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    target = User.query.get_or_404(user_id)
+    target.status = "active"
+    db.session.commit()
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@jwt_required()
+def api_admin_delete_user(user_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    target = User.query.get_or_404(user_id)
+    if target.role == "admin":
+        return err("Huwezi kumfuta Admin mwingine.", 403)
+    Notification.query.filter_by(user_id=target.id).delete()
+    db.session.delete(target)
+    db.session.commit()
+    return jsonify({"status": "ok"}), 200
