@@ -81,6 +81,10 @@ def send_notification(user, title, body, data=None):
             notification=messaging.Notification(title=title, body=body),
             data={k: str(v) for k, v in (data or {}).items()},
             token=user.fcm_token,
+            android=messaging.AndroidConfig(
+                priority="high",  # inapunguza uwezekano wa Android kuchelewesha (Doze mode/battery saver)
+                notification=messaging.AndroidNotification(channel_id="garifix_default_channel"),
+            ),
         )
         messaging.send(message)
         return True
