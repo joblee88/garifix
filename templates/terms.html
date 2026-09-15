@@ -1,64 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Vigezo na Masharti - GariFix{% endblock %}
-
+{% block title %}Masharti na Vigezo - GariFix{% endblock %}
 {% block content %}
-<div class="row justify-content-center py-4">
-    <div class="col-lg-9">
-        <div class="card shadow border-0 p-4 p-md-5">
-            <h2 class="fw-bold mb-1">Vigezo na Masharti ya Matumizi</h2>
-            <p class="text-muted mb-4">GariFix Tanzania &mdash; Yamesasishwa mara ya mwisho: 2026</p>
+<div class="container py-5" style="max-width: 800px;">
+    {% if lang == 'en' %}
+    <h2 class="mb-4">GariFix Terms &amp; Conditions</h2>
 
-            <h5 class="fw-bold mt-4">1. Kuhusu GariFix</h5>
-            <p>GariFix ni jukwaa (platform) linalounganisha wateja wenye mahitaji ya ukarabati wa
-            magari na mafundi. GariFix HAITOI huduma za ukarabati yenyewe &mdash; ni njia ya
-            kuwaunganisha pande husika.</p>
+    <h5 class="mt-4">1. About GariFix</h5>
+    <p>GariFix is a platform connecting customers who need car repair services with verified car mechanics within Tanzania.</p>
 
-            <h5 class="fw-bold mt-4">2. Usajili wa Akaunti</h5>
-            <p>Kila mtumiaji (mteja au fundi) anawajibika kutoa taarifa sahihi wakati wa
-            usajili. Taarifa za uongo, ikiwemo vitambulisho bandia, zinaweza kusababisha kufungwa
-            au kufutwa kwa akaunti bila taarifa ya awali.</p>
+    <h5 class="mt-4">2. User Responsibilities</h5>
+    <p>Users are responsible for providing accurate information during registration and using GariFix services in good faith. False information may result in account suspension.</p>
 
-            <h5 class="fw-bold mt-4">3. Uthibitisho wa Mafundi</h5>
-            <p>Mafundi wanapaswa kuwasilisha taarifa/kitambulisho sahihi kwa ajili ya
-            ukaguzi wa Admin kabla ya kuanza kupokea maombi au kuonekana kwa wateja. GariFix
-            haithibitishi ubora wa kazi &mdash; alama ya "Verified" inaonesha tu kuwa
-            taarifa za msingi zimekaguliwa na Admin.</p>
+    <h5 class="mt-4">3. Mechanic Responsibilities</h5>
+    <p>Registering mechanics are responsible for providing accurate identification and expertise information. GariFix reserves the right to review and approve or reject any registration.</p>
 
-            <h5 class="fw-bold mt-4">4. Malipo</h5>
-            <p>Malipo kati ya mteja na fundi yanafanyika moja kwa moja kati yao wenyewe
-            (nje ya mfumo wa GariFix), isipokuwa kama itaelezwa vinginevyo. GariFix haihusiki na
-            mizozo ya kifedha kati ya pande hizo, ingawa Admin anaweza kusaidia kupatanisha
-            pale inapowezekana.</p>
+    <h5 class="mt-4">4. Payments</h5>
+    <p>GariFix currently does not process payments directly between customer and mechanic - payment arrangements are between those two parties.</p>
 
-            <h5 class="fw-bold mt-4">5. Tabia za Kukatazwa</h5>
-            <ul>
-                <li>Kutoa taarifa za uongo au kujifanya mtu mwingine.</li>
-                <li>Kutumia lugha ya matusi, vitisho, au unyanyasaji kwa watumiaji wengine.</li>
-                <li>Kupakia vitambulisho au nyaraka za mtu mwingine bila ridhaa yake.</li>
-                <li>Kutangaza huduma haramu au zisizo halali kisheria Tanzania.</li>
-            </ul>
-            <p>Ukiukwaji wa vigezo hivi unaweza kusababisha kuzuiwa (block) au kufutwa kwa akaunti
-            na Admin, bila taarifa ya awali.</p>
+    <h5 class="mt-4">5. Privacy</h5>
+    <p>Your personal information is kept secure and will not be shared with any third party without your consent, except where legally required. See our <a href="{{ url_for('privacy_policy_page', lang='en') }}">Privacy Policy</a> for details.</p>
 
-            <h5 class="fw-bold mt-4">6. Faragha ya Taarifa</h5>
-            <p>Taarifa binafsi (jina, namba ya simu, email, vitambulisho) zinahifadhiwa kwa ajili
-            ya uendeshaji wa mfumo na ukaguzi wa Admin pekee. Hazitauzwa au kushirikishwa na
-            watu wa tatu bila ridhaa yako, isipokuwa panapohitajika kisheria.</p>
+    <h5 class="mt-4">6. Changes to Terms</h5>
+    <p>GariFix may change these terms at any time. Major changes will be announced within the app.</p>
 
-            <h5 class="fw-bold mt-4">7. Mabadiliko ya Vigezo</h5>
-            <p>GariFix inaweza kubadilisha vigezo hivi wakati wowote. Matumizi endelevu ya mfumo
-            baada ya mabadiliko yanamaanisha umekubaliana na vigezo vipya.</p>
+    <p class="text-muted mt-5">For further questions, contact us at <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a>.</p>
+    <a href="{{ url_for('terms_page', lang='sw') }}">Soma kwa Kiswahili</a>
+    {% else %}
+    <h2 class="mb-4">Masharti na Vigezo vya GariFix</h2>
 
-            <h5 class="fw-bold mt-4">8. Mawasiliano</h5>
-            <p>Kwa maswali kuhusu vigezo hivi, wasiliana nasi kupitia email:
-            <strong>garifix2026@gmail.com</strong></p>
+    <h5 class="mt-4">1. Kuhusu GariFix</h5>
+    <p>GariFix ni jukwaa linalounganisha wateja wanaohitaji huduma za ukarabati wa magari na mafundi wa magari waliothibitishwa, ndani ya Tanzania.</p>
 
-            <div class="text-center mt-5">
-                <a href="javascript:history.back()" class="btn btn-primary px-4">
-                    <i class="fa-solid fa-arrow-left me-2"></i> Rudi Nyuma
-                </a>
-            </div>
-        </div>
-    </div>
+    <h5 class="mt-4">2. Wajibu wa Mtumiaji</h5>
+    <p>Mtumiaji anawajibika kutoa taarifa sahihi wakati wa usajili na kutumia huduma za GariFix kwa nia njema. Taarifa za uongo zinaweza kusababisha kufungiwa kwa akaunti.</p>
+
+    <h5 class="mt-4">3. Wajibu wa Fundi</h5>
+    <p>Mafundi wanaojisajili wanawajibika kutoa taarifa sahihi za kitambulisho na utaalamu. GariFix inahifadhi haki ya kukagua na kuidhinisha au kukataa usajili wowote.</p>
+
+    <h5 class="mt-4">4. Malipo</h5>
+    <p>GariFix kwa sasa haishughulikii malipo moja kwa moja kati ya mteja na fundi - makubaliano ya malipo ni kati ya pande hizo mbili.</p>
+
+    <h5 class="mt-4">5. Faragha</h5>
+    <p>Taarifa zako binafsi zinahifadhiwa kwa usalama na hazitatolewa kwa mtu/kampuni ya tatu bila ridhaa yako, isipokuwa panapohitajika kisheria. Angalia <a href="{{ url_for('privacy_policy_page', lang='sw') }}">Sera yetu ya Faragha</a> kwa maelezo zaidi.</p>
+
+    <h5 class="mt-4">6. Mabadiliko ya Masharti</h5>
+    <p>GariFix inaweza kubadilisha masharti haya wakati wowote. Mabadiliko makubwa yatatangazwa ndani ya app.</p>
+
+    <p class="text-muted mt-5">Kwa maswali zaidi, wasiliana nasi kupitia <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a>.</p>
+    <a href="{{ url_for('terms_page', lang='en') }}">Read in English</a>
+    {% endif %}
 </div>
 {% endblock %}

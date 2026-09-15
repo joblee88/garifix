@@ -2707,5 +2707,17 @@ def setup_add_request_location():
         return f"Kosa: {e}", 500
 
 
+@app.route("/terms")
+def terms_page():
+    lang = request.args.get("lang", "sw")
+    return render_template("terms.html", lang=lang)
+
+
+@app.route("/privacy-policy")
+def privacy_policy_page():
+    lang = request.args.get("lang", "sw")
+    return render_template("privacy_policy.html", lang=lang)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
