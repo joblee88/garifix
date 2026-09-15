@@ -27,12 +27,12 @@ import secrets
 import uuid
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, redirect, send_from_directory
 from flask_jwt_extended import (
     create_access_token, create_refresh_token, jwt_required,
     get_jwt_identity, get_jwt, verify_jwt_in_request,
 )
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func
 
@@ -1033,3 +1033,142 @@ def api_send_chat_message(request_id):
         )
 
     return jsonify({"status": "ok", "message": chat_message_to_dict(chat_message)}), 201
+
+
+# =============================================================
+# 10. ADMIN (login ya phone/password + kuidhinisha mafundi)
+# =============================================================
+
+def _require_admin():
+    """Rudisha (user, None) kama ni admin sahihi, vinginevyo (None, error_response)."""
+    user, error = current_user_or_error()
+    if error:
+        return None, error
+    if user.role != "admin":
+        return None, err("Huna ruhusa ya sehemu hii.", 403)
+    return user, None
+
+
+@api_bp.route("/auth/admin-login", methods=["POST"])
+def api_admin_login():
+    data = request.get_json(silent=True) or {}
+    identifier = (data.get("identifier") or "").strip()
+    password = data.get("password") or ""
+    if not identifier or not password:
+        return err("Namba ya simu/Email na password vinahitajika.")
+
+    user = User.query.filter(
+        db.or_(User.phone == identifier, User.email == identifier)
+    ).first()
+
+    if not user or user.role != "admin" or not user.password or not check_password_hash(user.password, password):
+        return err("Namba ya simu/Email au password si sahihi.", 401)
+    if user.status == "blocked":
+        return err("Akaunti yako imezuiwa.", 403)
+
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=7))
+    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=60))
+    return jsonify({
+        "status": "ok",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": user_to_dict(user),
+    }), 200
+
+
+@api_bp.route("/admin/stats", methods=["GET"])
+@jwt_required()
+def api_admin_stats():
+    admin, error = _require_admin()
+    if error:
+        return error
+    return jsonify({
+        "status": "ok",
+        "stats": {
+            "total_customers": User.query.filter_by(role="customer").count(),
+            "total_mechanics": Mechanic.query.count(),
+            "pending_mechanics": Mechanic.query.filter_by(verified="pending").count(),
+            "approved_mechanics": Mechanic.query.filter_by(verified="approved").count(),
+            "total_requests": ServiceRequest.query.count(),
+        },
+    }), 200
+
+
+@api_bp.route("/admin/mechanics", methods=["GET"])
+@jwt_required()
+def api_admin_list_mechanics():
+    admin, error = _require_admin()
+    if error:
+        return error
+    status_filter = request.args.get("status", "pending")
+    query = Mechanic.query
+    if status_filter != "all":
+        query = query.filter_by(verified=status_filter)
+    mechanics = query.order_by(Mechanic.id.desc()).all()
+    result = []
+    for m in mechanics:
+        d = mechanic_to_dict(m, include_avg=False)
+        d["email"] = m.user.email if m.user else None
+        d["id_document_type"] = m.id_document_type
+        d["has_id_document"] = bool(m.id_document)
+        result.append(d)
+    return jsonify({"status": "ok", "mechanics": result}), 200
+
+
+@api_bp.route("/admin/mechanics/<int:mechanic_id>/id-document", methods=["GET"])
+@jwt_required()
+def api_admin_id_document(mechanic_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    if not mechanic.id_document:
+        return err("Hakuna kitambulisho kilichopakiwa.", 404)
+    if _cloudinary_configured():
+        import cloudinary.utils
+        url = cloudinary.utils.private_download_url(mechanic.id_document, "jpg", resource_type="image", type="private")
+        return redirect(url)
+    folder = current_app.config.get("PRIVATE_UPLOAD_FOLDER") or "private_uploads"
+    return send_from_directory(folder, mechanic.id_document)
+
+
+@api_bp.route("/admin/mechanics/<int:mechanic_id>/approve", methods=["POST"])
+@jwt_required()
+def api_admin_approve_mechanic(mechanic_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    mechanic.verified = "approved"
+    db.session.commit()
+    if mechanic.user:
+        notify_user(
+            mechanic.user,
+            title="Umeidhinishwa - GariFix",
+            body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
+            data={"type": "mechanic_approved"},
+        )
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/admin/mechanics/<int:mechanic_id>/reject", methods=["POST"])
+@jwt_required()
+def api_admin_reject_mechanic(mechanic_id):
+    admin, error = _require_admin()
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    reason = (data.get("reason") or "").strip()
+    mechanic = Mechanic.query.get_or_404(mechanic_id)
+    mechanic.verified = "rejected"
+    if hasattr(mechanic, "rejection_reason"):
+        mechanic.rejection_reason = reason or None
+    db.session.commit()
+    if mechanic.user:
+        notify_user(
+            mechanic.user,
+            title="Usajili Haukukubaliwa - GariFix",
+            body=reason or "Tafadhali wasiliana na admin kwa maelezo zaidi, au jaribu kusajili tena.",
+            data={"type": "mechanic_rejected"},
+        )
+    return jsonify({"status": "ok"}), 200
