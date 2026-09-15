@@ -169,7 +169,7 @@ def user_to_dict(user):
     }
 
 
-ONLINE_THRESHOLD_MINUTES = 5
+ONLINE_THRESHOLD_MINUTES = 15
 
 
 def _is_online(user):
