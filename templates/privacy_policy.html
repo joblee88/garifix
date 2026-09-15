@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Sera ya Faragha - GariFix{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 800px;">
+    {% if lang == 'en' %}
+    <h2 class="mb-4">GariFix Privacy Policy</h2>
+
+    <h5 class="mt-4">1. Information We Collect</h5>
+    <p>We collect your name, phone number, email, and profile photo. For mechanics, we also collect location, specialization, and a verification ID document.</p>
+
+    <h5 class="mt-4">2. How We Use Information</h5>
+    <p>Your information is used to connect you with other customers/mechanics, send you important notifications, and improve GariFix services.</p>
+
+    <h5 class="mt-4">3. Sharing Information</h5>
+    <p>We do not share your personal information with any third party without your consent, except where legally required.</p>
+
+    <h5 class="mt-4">4. Third-Party Services</h5>
+    <p>We use Google Sign-In for authentication, Firebase Cloud Messaging for push notifications, and Cloudinary for secure image storage. These providers process limited data strictly to provide their service to us.</p>
+
+    <h5 class="mt-4">5. Data Security</h5>
+    <p>We use secure methods (encryption) to store your information - however, no network system is 100% secure.</p>
+
+    <h5 class="mt-4">6. Children's Privacy</h5>
+    <p>GariFix is not intended for use by children under 18. We do not knowingly collect information from minors.</p>
+
+    <h5 class="mt-4">7. Your Rights</h5>
+    <p>You may request to view, change, or delete your information at any time through your account settings or by contacting us.</p>
+
+    <h5 class="mt-4">8. Changes to This Policy</h5>
+    <p>We may change this privacy policy at any time. Major changes will be announced within the app.</p>
+
+    <p class="text-muted mt-5">Contact us: <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a></p>
+    <a href="{{ url_for('privacy_policy_page', lang='sw') }}">Soma kwa Kiswahili</a>
+    {% else %}
+    <h2 class="mb-4">Sera ya Faragha ya GariFix</h2>
+
+    <h5 class="mt-4">1. Taarifa Tunazokusanya</h5>
+    <p>Tunakusanya jina lako, namba ya simu, barua pepe, na picha ya wasifu. Kwa mafundi, pia tunakusanya eneo, utaalamu, na kitambulisho cha uthibitisho.</p>
+
+    <h5 class="mt-4">2. Jinsi Tunavyotumia Taarifa</h5>
+    <p>Taarifa zako zinatumika kukuunganisha na wateja/mafundi wengine, kukutumia arifa muhimu, na kuboresha huduma za GariFix.</p>
+
+    <h5 class="mt-4">3. Kushiriki Taarifa</h5>
+    <p>Hatushiriki taarifa zako binafsi na kampuni au mtu wa tatu bila ridhaa yako, isipokuwa panapohitajika kisheria.</p>
+
+    <h5 class="mt-4">4. Huduma za Wahusika Wengine</h5>
+    <p>Tunatumia Google Sign-In kwa uthibitishaji, Firebase Cloud Messaging kwa arifa, na Cloudinary kuhifadhi picha kwa usalama. Watoa huduma hawa wanashughulikia data kidogo tu kwa ajili ya kutupatia huduma yao.</p>
+
+    <h5 class="mt-4">5. Usalama wa Taarifa</h5>
+    <p>Tunatumia njia za kiusalama (usimbaji/encryption) kuhifadhi taarifa zako - lakini hakuna mfumo wowote wa mtandao ulio salama 100%.</p>
+
+    <h5 class="mt-4">6. Faragha ya Watoto</h5>
+    <p>GariFix haikusudiwi kutumiwa na watoto walio chini ya miaka 18. Hatukusanyi taarifa za watoto kwa makusudi.</p>
+
+    <h5 class="mt-4">7. Haki Zako</h5>
+    <p>Unaweza kuomba kuona, kubadilisha, au kufuta taarifa zako wakati wowote kupitia mipangilio ya akaunti yako au kwa kuwasiliana nasi.</p>
+
+    <h5 class="mt-4">8. Mabadiliko ya Sera</h5>
+    <p>Tunaweza kubadilisha sera hii ya faragha wakati wowote. Mabadiliko makubwa yatatangazwa ndani ya app.</p>
+
+    <p class="text-muted mt-5">Wasiliana nasi: <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a></p>
+    <a href="{{ url_for('terms_page', lang='en') }}">Read in English</a>
+    {% endif %}
+</div>
+{% endblock %}
