@@ -37,7 +37,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import func
 
 from extensions import db
-from models import User, Mechanic, ServiceRequest, Review, Notification
+from models import User, Mechanic, ServiceRequest, Review, Notification, ChatMessage
 from notifications import send_notification
 
 # --- Google ID token verification ---
@@ -945,3 +945,91 @@ def api_locations():
     inapaswa kuomba hii MARA MOJA tu (mfano kwenye splash/fomu ya fundi) na
     kuihifadhi kwenye kumbukumbu (state) kwa dropdown zinazofuatana."""
     return jsonify({"status": "ok", "locations": _load_locations_data()}), 200
+
+
+# =============================================================
+# 9. CHAT (kati ya Mteja na Fundi, kwa ombi maalum lililokubaliwa)
+# =============================================================
+
+def _can_access_chat(user, service):
+    """Mteja au Fundi husika wa ombi hili pekee ndio wenye ruhusa."""
+    if user.role == "customer" and service.customer_id == user.id:
+        return True
+    if user.role == "mechanic" and user.mechanic_profile and service.mechanic_id == user.mechanic_profile.id:
+        return True
+    return False
+
+
+def chat_message_to_dict(m):
+    return {
+        "id": m.id,
+        "service_request_id": m.service_request_id,
+        "sender_id": m.sender_id,
+        "sender_name": m.sender.full_name if m.sender else None,
+        "message": m.message,
+        "created_at": m.created_at.isoformat() if m.created_at else None,
+    }
+
+
+@api_bp.route("/requests/<int:request_id>/messages", methods=["GET"])
+@jwt_required()
+def api_list_chat_messages(request_id):
+    user, error = current_user_or_error()
+    if error:
+        return error
+
+    service = ServiceRequest.query.get_or_404(request_id)
+    if not _can_access_chat(user, service):
+        return err("Huna ruhusa ya kuona mazungumzo haya.", 403)
+
+    messages = ChatMessage.query.filter_by(service_request_id=request_id).order_by(ChatMessage.created_at.asc()).all()
+
+    # Weka ujumbe wa mtu MWINGINE kama 'umesomwa' sasa kwa kuwa ameufungua.
+    ChatMessage.query.filter(
+        ChatMessage.service_request_id == request_id,
+        ChatMessage.sender_id != user.id,
+        ChatMessage.is_read == False,  # noqa: E712
+    ).update({"is_read": True})
+    db.session.commit()
+
+    return jsonify({"status": "ok", "messages": [chat_message_to_dict(m) for m in messages]}), 200
+
+
+@api_bp.route("/requests/<int:request_id>/messages", methods=["POST"])
+@jwt_required()
+def api_send_chat_message(request_id):
+    user, error = current_user_or_error()
+    if error:
+        return error
+
+    service = ServiceRequest.query.get_or_404(request_id)
+    if not _can_access_chat(user, service):
+        return err("Huna ruhusa ya kutuma ujumbe kwenye ombi hili.", 403)
+    if service.status not in ("accepted", "completed"):
+        return err("Mazungumzo yanapatikana tu baada ya ombi kukubaliwa.", 409)
+
+    data = request.get_json(silent=True) or {}
+    text = (data.get("message") or "").strip()
+    if not text:
+        return err("Ujumbe hauwezi kuwa tupu.")
+
+    chat_message = ChatMessage(service_request_id=request_id, sender_id=user.id, message=text)
+    db.session.add(chat_message)
+    db.session.commit()
+
+    # Mjulishe upande mwingine (Mteja au Fundi) kwa push notification.
+    other_user = None
+    if user.role == "customer" and service.mechanic and service.mechanic.user:
+        other_user = service.mechanic.user
+    elif user.role == "mechanic" and service.customer:
+        other_user = service.customer
+
+    if other_user:
+        notify_user(
+            other_user,
+            title=f"Ujumbe Mpya kutoka {user.full_name}",
+            body=text if len(text) <= 100 else f"{text[:100]}...",
+            data={"type": "new_chat_message", "request_id": request_id, "url": "/chat"},
+        )
+
+    return jsonify({"status": "ok", "message": chat_message_to_dict(chat_message)}), 201

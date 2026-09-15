@@ -120,3 +120,17 @@ class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     region = db.Column(db.String(100), default="Haijulikani", index=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+class ChatMessage(db.Model):
+    """Ujumbe kati ya Mteja na Fundi kwa ombi maalum (baada ya kukubaliwa)."""
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    service_request_id = db.Column(db.Integer, db.ForeignKey("service_requests.id"), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    service_request = db.relationship("ServiceRequest", backref=db.backref("chat_messages", lazy="dynamic", cascade="all, delete-orphan"))
+    sender = db.relationship("User")
