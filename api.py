@@ -133,6 +133,17 @@ def notify_user(user, title, body, data=None):
     send_notification(user, title=title, body=body, data=data)
 
 
+def notify_bilingual(user, title_sw, title_en, body_sw, body_en, data=None):
+    """Sawa na notify_user, lakini inachagua Kiswahili au Kiingereza
+    kulingana na 'language' aliyoihifadhi mtumiaji kwenye wasifu wake
+    (default: Kiswahili, kama hajaweka)."""
+    lang = getattr(user, "language", None) or "sw"
+    if lang == "en":
+        notify_user(user, title=title_en, body=body_en, data=data)
+    else:
+        notify_user(user, title=title_sw, body=body_sw, data=data)
+
+
 def safe_int(value, default=0):
     try:
         return int(value)
@@ -618,10 +629,11 @@ def api_add_review(mechanic_id):
     db.session.commit()
 
     if mechanic.user:
-        notify_user(
+        notify_bilingual(
             mechanic.user,
-            title="Umepata Review Mpya - GariFix",
-            body=f"{user.full_name} amekupa rating ya {rating}/5.",
+            title_sw="Umepata Review Mpya - GariFix", title_en="New Review - GariFix",
+            body_sw=f"{user.full_name} amekupa rating ya {rating}/5.",
+            body_en=f"{user.full_name} gave you a {rating}/5 rating.",
             data={"type": "new_review", "mechanic_id": mechanic.id, "url": "/mechanic/reviews"},
         )
 
@@ -691,10 +703,11 @@ def api_create_request():
     db.session.commit()
 
     if mechanic and mechanic.user:
-        notify_user(
+        notify_bilingual(
             mechanic.user,
-            title="Ombi Jipya la Huduma - GariFix",
-            body=f"Mteja {user.full_name} ana tatizo la {vehicle_model}. Bofya kuona zaidi.",
+            title_sw="Ombi Jipya la Huduma - GariFix", title_en="New Service Request - GariFix",
+            body_sw=f"Mteja {user.full_name} ana tatizo la {vehicle_model}. Bofya kuona zaidi.",
+            body_en=f"Customer {user.full_name} has an issue with {vehicle_model}. Tap to view.",
             data={"type": "new_request", "request_id": new_request.id, "url": "/mechanic/requests"},
         )
 
@@ -743,10 +756,11 @@ def api_accept_request(request_id):
     service.status = "accepted"
     db.session.commit()
     if service.customer:
-        notify_user(
+        notify_bilingual(
             service.customer,
-            title="Fundi Amekubali Ombi Lako - GariFix",
-            body=f"{user.full_name} amekubali kukusaidia na {service.vehicle_model}. Anakuja!",
+            title_sw="Fundi Amekubali Ombi Lako - GariFix", title_en="Mechanic Accepted Your Request - GariFix",
+            body_sw=f"{user.full_name} amekubali kukusaidia na {service.vehicle_model}. Anakuja!",
+            body_en=f"{user.full_name} accepted to help with your {service.vehicle_model}. They're on their way!",
             data={"type": "request_accepted", "request_id": service.id, "url": "/customer/requests"},
         )
     return jsonify({"status": "ok", "request": request_to_dict(service)}), 200
@@ -768,10 +782,11 @@ def api_reject_request(request_id):
     service.status = "rejected"
     db.session.commit()
     if service.customer:
-        notify_user(
+        notify_bilingual(
             service.customer,
-            title="Fundi Hawezi Kukusaidia kwa Sasa - GariFix",
-            body=f"{user.full_name} hawezi kushughulikia tatizo la {service.vehicle_model} kwa muda huu.",
+            title_sw="Fundi Hawezi Kukusaidia kwa Sasa - GariFix", title_en="Mechanic Can't Help Right Now - GariFix",
+            body_sw=f"{user.full_name} hawezi kushughulikia tatizo la {service.vehicle_model} kwa muda huu.",
+            body_en=f"{user.full_name} is unable to handle your {service.vehicle_model} issue at this time.",
             data={"type": "request_rejected", "request_id": service.id, "url": "/customer/requests"},
         )
     return jsonify({"status": "ok", "request": request_to_dict(service)}), 200
@@ -792,10 +807,11 @@ def api_complete_request(request_id):
         service.status = "completed"
         db.session.commit()
         if service.mechanic and service.mechanic.user:
-            notify_user(
+            notify_bilingual(
                 service.mechanic.user,
-                title="Huduma Imethibitishwa Kukamilika - GariFix",
-                body=f"{user.full_name} amethibitisha kuwa kazi ya {service.vehicle_model} imekamilika.",
+                title_sw="Huduma Imethibitishwa Kukamilika - GariFix", title_en="Service Confirmed Completed - GariFix",
+                body_sw=f"{user.full_name} amethibitisha kuwa kazi ya {service.vehicle_model} imekamilika.",
+                body_en=f"{user.full_name} confirmed that the {service.vehicle_model} job is complete.",
                 data={"type": "request_completed", "request_id": service.id, "url": "/mechanic/requests"},
             )
         return jsonify({"status": "ok", "request": request_to_dict(service)}), 200
@@ -860,6 +876,24 @@ def api_heartbeat():
     if error:
         return error
     user.last_active = datetime.utcnow()
+    db.session.commit()
+    return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/set-language", methods=["POST"])
+@jwt_required()
+def api_set_language():
+    """Flutter inaita hii kila mtumiaji anapobadilisha lugha (SW/EN) kwenye
+    app, ili arifa za baadaye (push notifications) ziweze kutumwa kwa
+    lugha aliyochagua badala ya Kiswahili pekee."""
+    user, error = current_user_or_error()
+    if error:
+        return error
+    data = request.get_json(silent=True) or {}
+    language = (data.get("language") or "").strip().lower()
+    if language not in ("sw", "en"):
+        return err("Lugha lazima iwe 'sw' au 'en'.")
+    user.language = language
     db.session.commit()
     return jsonify({"status": "ok"}), 200
 
@@ -1025,10 +1059,11 @@ def api_send_chat_message(request_id):
         other_user = service.customer
 
     if other_user:
-        notify_user(
+        notify_bilingual(
             other_user,
-            title=f"Ujumbe Mpya kutoka {user.full_name}",
-            body=text if len(text) <= 100 else f"{text[:100]}...",
+            title_sw=f"Ujumbe Mpya kutoka {user.full_name}", title_en=f"New Message from {user.full_name}",
+            body_sw=text if len(text) <= 100 else f"{text[:100]}...",
+            body_en=text if len(text) <= 100 else f"{text[:100]}...",
             data={"type": "new_chat_message", "request_id": request_id, "url": "/chat"},
         )
 
@@ -1142,10 +1177,11 @@ def api_admin_approve_mechanic(mechanic_id):
     mechanic.verified = "approved"
     db.session.commit()
     if mechanic.user:
-        notify_user(
+        notify_bilingual(
             mechanic.user,
-            title="Umeidhinishwa - GariFix",
-            body="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
+            title_sw="Umeidhinishwa - GariFix", title_en="You're Approved - GariFix",
+            body_sw="Hongera! Akaunti yako ya ufundi imeidhinishwa na Admin. Sasa unaweza kupokea maombi ya huduma.",
+            body_en="Congratulations! Your mechanic account has been approved by Admin. You can now receive service requests.",
             data={"type": "mechanic_approved"},
         )
     return jsonify({"status": "ok"}), 200
@@ -1165,10 +1201,11 @@ def api_admin_reject_mechanic(mechanic_id):
         mechanic.rejection_reason = reason or None
     db.session.commit()
     if mechanic.user:
-        notify_user(
+        notify_bilingual(
             mechanic.user,
-            title="Usajili Haukukubaliwa - GariFix",
-            body=reason or "Tafadhali wasiliana na admin kwa maelezo zaidi, au jaribu kusajili tena.",
+            title_sw="Usajili Haukukubaliwa - GariFix", title_en="Registration Not Approved - GariFix",
+            body_sw=reason or "Tafadhali wasiliana na admin kwa maelezo zaidi, au jaribu kusajili tena.",
+            body_en=reason or "Please contact admin for more details, or try registering again.",
             data={"type": "mechanic_rejected"},
         )
     return jsonify({"status": "ok"}), 200
