@@ -2608,6 +2608,20 @@ def privacy_policy_page():
     lang = request.args.get("lang", "sw")
     return render_template("privacy_policy.html", lang=lang)
 
+@app.route("/setup-add-language-column")
+def setup_add_language_column():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    from sqlalchemy import text
+    try:
+        db.session.execute(text("ALTER TABLE users ADD COLUMN language VARCHAR(5) DEFAULT 'sw'"))
+        db.session.commit()
+        return "Safu 'language' imeongezwa kikamilifu.", 200
+    except Exception as e:
+        db.session.rollback()
+        return f"Kosa (labda tayari ipo): {e}", 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
