@@ -1183,6 +1183,27 @@ def setup_admin():
 
     return render_template("setup_admin.html", setup_key=setup_key)
 
+@app.route("/setup-debug-user")
+def setup_debug_user():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    identifier = request.args.get("identifier", "").strip()
+    user = User.query.filter(
+        db.or_(User.phone == identifier, User.email == identifier)
+    ).first()
+    if not user:
+        return jsonify({"found": False}), 200
+    return jsonify({
+        "found": True,
+        "id": user.id,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "email": user.email,
+        "role": user.role,
+        "status": user.status,
+        "has_password": bool(user.password),
+    }), 200
 
 # CUSTOMER ROUTES
 @app.route("/terms")
