@@ -2609,5 +2609,6 @@ def privacy_policy_page():
     return render_template("privacy_policy.html", lang=lang)
 
 
+
 if __name__ == "__main__":
     app.run(debug=True)
