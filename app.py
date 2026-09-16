@@ -1205,6 +1205,26 @@ def setup_debug_user():
         "has_password": bool(user.password),
     }), 200
 
+
+@app.route("/setup-reset-password")
+def setup_reset_password():
+    setup_key = os.environ.get("ADMIN_SETUP_KEY")
+    if not setup_key or request.args.get("key") != setup_key:
+        return "Ufunguo si sahihi.", 403
+    identifier = request.args.get("identifier", "").strip()
+    new_password = request.args.get("password", "").strip()
+    if not identifier or not new_password:
+        return "Weka identifier na password.", 400
+    user = User.query.filter(
+        db.or_(User.phone == identifier, User.email == identifier)
+    ).first()
+    if not user:
+        return "Haipo.", 404
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+    return f"Password ya '{user.full_name}' imebadilishwa kikamilifu.", 200
+
+
 # CUSTOMER ROUTES
 @app.route("/terms")
 def terms():
