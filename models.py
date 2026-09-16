@@ -31,6 +31,7 @@ class User(db.Model):
     service_requests = db.relationship("ServiceRequest", backref="customer", foreign_keys="ServiceRequest.customer_id", cascade="all, delete-orphan")
     reviews_written = db.relationship("Review", backref="customer", foreign_keys="Review.customer_id", cascade="all, delete-orphan")
     last_active = db.Column(db.DateTime, nullable=True)
+    language = db.Column(db.String(5), default="sw")  # 'sw' au 'en' - kwa ajili ya arifa
 
 
 class Mechanic(db.Model):
