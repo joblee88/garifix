@@ -2595,6 +2595,11 @@ def privacy_policy_page():
     lang = request.args.get("lang", "sw")
     return render_template("privacy_policy.html", lang=lang)
 
+@app.route("/delete-account")
+def delete_account_page():
+    lang = request.args.get("lang", "sw")
+    return render_template("delete_account.html", lang=lang)
+
 
 
 if __name__ == "__main__":
