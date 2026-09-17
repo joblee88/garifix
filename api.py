@@ -330,6 +330,13 @@ def api_google_login():
     if user:
         if user.status == "blocked":
             return err("Akaunti yako imezuiwa (blocked) na Admin.", 403)
+        if user.role != chosen_role:
+            return err(
+                f"Akaunti hii ({email}) tayari imesajiliwa kama '{user.role}'. "
+                f"Tumia akaunti nyingine ya Google, au ingia kwenye jukumu sahihi.",
+                409,
+                error_code="role_mismatch",
+            )
         if not user.email_verified:
             user.email_verified = True
             db.session.commit()
