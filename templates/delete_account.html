@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Futa Akaunti - GariFix{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 800px;">
+    {% if lang == 'en' %}
+    <h2 class="mb-4">Delete Your GariFix Account</h2>
+
+    <p>If you would like to delete your GariFix account (Customer or Mechanic), please follow these steps:</p>
+
+    <h5 class="mt-4">1. Send a deletion request</h5>
+    <p>Email us at <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a> from the email address registered on your GariFix account, with the subject line "Delete My Account". Include your registered phone number.</p>
+
+    <h5 class="mt-4">2. What we delete</h5>
+    <p>Once verified, we permanently delete: your name, phone number, email, profile photo, mechanic profile details (garage name, specialization, location, ID document), and your notification history.</p>
+
+    <h5 class="mt-4">3. What we may retain</h5>
+    <p>For legal, safety, and fraud-prevention purposes, we may retain anonymized records of completed service requests (without your name or contact details) for a limited period, as well as any information we are legally required to keep.</p>
+
+    <h5 class="mt-4">4. Processing time</h5>
+    <p>Account deletion requests are typically processed within 7 business days. You will receive a confirmation email once your account and associated data have been deleted.</p>
+
+    <p class="text-muted mt-5">Questions? Contact <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a>.</p>
+    <a href="{{ url_for('delete_account_page', lang='sw') }}">Soma kwa Kiswahili</a>
+    {% else %}
+    <h2 class="mb-4">Futa Akaunti Yako ya GariFix</h2>
+
+    <p>Ukitaka kufuta akaunti yako ya GariFix (Mteja au Fundi), fuata hatua hizi:</p>
+
+    <h5 class="mt-4">1. Tuma ombi la kufuta</h5>
+    <p>Tutumie barua pepe kwenye <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a> kutoka kwenye barua pepe iliyosajiliwa kwenye akaunti yako ya GariFix, ukiwa na kichwa cha habari "Futa Akaunti Yangu". Ambatanisha namba yako ya simu iliyosajiliwa.</p>
+
+    <h5 class="mt-4">2. Tunachofuta</h5>
+    <p>Baada ya kuthibitisha, tunafuta kabisa: jina lako, namba ya simu, barua pepe, picha ya wasifu, taarifa za wasifu wa ufundi (jina la garage, utaalamu, eneo, kitambulisho), na historia yako ya arifa.</p>
+
+    <h5 class="mt-4">3. Tunachoweza kubakiza</h5>
+    <p>Kwa sababu za kisheria, usalama, na kuzuia udanganyifu, tunaweza kubakiza kumbukumbu zisizo na jina lako (anonymized) za maombi ya huduma yaliyokamilika kwa muda mfupi, pamoja na taarifa yoyote inayotakiwa kisheria kubakizwa.</p>
+
+    <h5 class="mt-4">4. Muda wa kushughulikia</h5>
+    <p>Maombi ya kufuta akaunti kwa kawaida yanashughulikiwa ndani ya siku 7 za kazi. Utapokea barua pepe ya uthibitisho mara akaunti yako na taarifa zake zitakapokuwa zimefutwa.</p>
+
+    <p class="text-muted mt-5">Maswali? Wasiliana na <a href="mailto:garifix2026@gmail.com">garifix2026@gmail.com</a>.</p>
+    <a href="{{ url_for('delete_account_page', lang='en') }}">Read in English</a>
+    {% endif %}
+</div>
+{% endblock %}
