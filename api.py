@@ -144,6 +144,34 @@ def notify_bilingual(user, title_sw, title_en, body_sw, body_en, data=None):
         notify_user(user, title=title_sw, body=body_sw, data=data)
 
 
+def _reverse_geocode_in_background(app, service_request_id, latitude, longitude):
+    """Inapata jina la mtaa/eneo (Nominatim) NYUMA YA PAZIA (thread tofauti)
+    ili isizuie (block) jibu la haraka kwa Mteja wala arifa kwa Fundi.
+    'app' inahitajika ili thread hii iweze kutumia database context."""
+    import threading
+
+    def _run():
+        with app.app_context():
+            try:
+                geo_response = requests.get(
+                    "https://nominatim.openstreetmap.org/reverse",
+                    params={"format": "json", "lat": latitude, "lon": longitude, "zoom": 16},
+                    headers={"User-Agent": "GariFixApp/1.0 (garifix2026@gmail.com)"},
+                    timeout=6,
+                )
+                if geo_response.status_code == 200:
+                    display_name = geo_response.json().get("display_name")
+                    if display_name:
+                        sr = db.session.get(ServiceRequest, service_request_id)
+                        if sr:
+                            sr.location = display_name
+                            db.session.commit()
+            except Exception as e:
+                current_app.logger.warning(f"[Reverse-Geocode-BG] Imeshindikana: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def safe_int(value, default=0):
     try:
         return int(value)
@@ -151,8 +179,15 @@ def safe_int(value, default=0):
         return default
 
 
-def err(message, code=400):
-    return jsonify({"status": "error", "message": message}), code
+def err(message, code=400, error_code=None):
+    """error_code (hiari) ni 'kanuni' fupi isiyobadilika (mfano
+    'phone_taken') ambayo Flutter inaweza kuitumia kutafsiri ujumbe kwa
+    lugha sahihi (SW/EN) - 'message' hapa inabaki Kiswahili tu, ni kwa
+    ajili ya website (admin panel) na kwa ajili ya 'debug'."""
+    payload = {"status": "error", "message": message}
+    if error_code:
+        payload["error_code"] = error_code
+    return jsonify(payload), code
 
 
 def current_user_or_error():
@@ -299,8 +334,8 @@ def api_google_login():
             user.email_verified = True
             db.session.commit()
 
-        access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=7))
-        refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=60))
+        access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+        refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=3650))
         needs_mechanic_profile = (user.role == "mechanic" and not user.mechanic_profile)
         mechanic_status = None
         if user.role == "mechanic" and user.mechanic_profile:
@@ -347,8 +382,8 @@ def api_google_login():
     db.session.add(new_user)
     db.session.commit()
 
-    access_token = create_access_token(identity=str(new_user.id), expires_delta=timedelta(days=7))
-    refresh_token = create_refresh_token(identity=str(new_user.id), expires_delta=timedelta(days=60))
+    access_token = create_access_token(identity=str(new_user.id), expires_delta=timedelta(days=30))
+    refresh_token = create_refresh_token(identity=str(new_user.id), expires_delta=timedelta(days=3650))
     return jsonify({
         "status": "ok",
         "is_new_user": True,
@@ -366,7 +401,7 @@ def api_refresh():
     uid = get_jwt_identity()
     if uid == "pending":
         return err("Token ya muda haiwezi kuongezwa.", 403)
-    new_access = create_access_token(identity=uid, expires_delta=timedelta(days=7))
+    new_access = create_access_token(identity=uid, expires_delta=timedelta(days=30))
     return jsonify({"status": "ok", "access_token": new_access}), 200
 
 
@@ -397,7 +432,7 @@ def api_complete_customer_phone():
     if len(phone) != 10 or not phone.isdigit():
         return err("Tafadhali weka namba sahihi ya simu (tarakimu 10).")
     if User.query.filter(User.phone == phone, User.id != user.id).first():
-        return err("Namba hii ya simu tayari inatumiwa na akaunti nyingine.")
+        return err("Namba hii ya simu tayari inatumiwa na akaunti nyingine.", 409, error_code="phone_taken")
 
     user.phone = phone
     db.session.commit()
@@ -470,7 +505,7 @@ def api_mechanic_complete_profile():
 
     existing_phone = User.query.filter(User.phone == phone).first()
     if existing_phone and (not reapplying_user or existing_phone.id != reapplying_user.id):
-        return err("Namba hii ya simu tayari imesajiliwa.", 409)
+        return err("Namba hii ya simu tayari imesajiliwa.", 409, error_code="phone_taken")
 
     try:
         id_document_filename = save_uploaded_image(id_doc_file, folder_hint="id_documents", private=True) if id_doc_file and id_doc_file.filename else None
@@ -537,8 +572,8 @@ def api_mechanic_complete_profile():
             data={"type": "mechanic_pending", "mechanic_id": m.id, "url": "/admin/mechanics"},
         )
 
-    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=7))
-    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=60))
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=3650))
     return jsonify({
         "status": "ok",
         "message": "Usajili umefanikiwa. Akaunti yako inasubiri uthibitisho wa Admin.",
@@ -672,23 +707,11 @@ def api_create_request():
     except (TypeError, ValueError):
         return err("Kuratibu za eneo (latitude/longitude) si sahihi.")
 
-    # Jaribu kupata jina la mtaa/eneo kwa "reverse geocoding" (OpenStreetMap
-    # Nominatim - bure, haihitaji key). Ikishindikana (mtandao mbovu, n.k),
-    # tunatumia kuratibu tu kama maandishi ya "location" - si tatizo.
+    # Jina la mtaa/eneo (reverse geocoding) - hii inafanyika NYUMA YA PAZIA
+    # (background thread) ili isichelewesha jibu kwa Mteja WALA arifa kwa
+    # Fundi. "location" inaanza kama kuratibu tu, kisha inasasishwa
+    # kiotomatiki mara jina la eneo litakapopatikana (dakika chache baadaye).
     full_location = f"{latitude:.5f}, {longitude:.5f}"
-    try:
-        geo_response = requests.get(
-            "https://nominatim.openstreetmap.org/reverse",
-            params={"format": "json", "lat": latitude, "lon": longitude, "zoom": 16},
-            headers={"User-Agent": "GariFixApp/1.0 (garifix2026@gmail.com)"},
-            timeout=5,
-        )
-        if geo_response.status_code == 200:
-            display_name = geo_response.json().get("display_name")
-            if display_name:
-                full_location = display_name
-    except Exception:
-        pass
 
     new_request = ServiceRequest(
         customer_id=user.id,
@@ -710,6 +733,8 @@ def api_create_request():
             body_en=f"Customer {user.full_name} has an issue with {vehicle_model}. Tap to view.",
             data={"type": "new_request", "request_id": new_request.id, "url": "/mechanic/requests"},
         )
+
+    _reverse_geocode_in_background(current_app._get_current_object(), new_request.id, latitude, longitude)
 
     return jsonify({"status": "ok", "request": request_to_dict(new_request)}), 201
 
@@ -1101,8 +1126,8 @@ def api_admin_login():
     if user.status == "blocked":
         return err("Akaunti yako imezuiwa.", 403)
 
-    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=7))
-    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=60))
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=3650))
     return jsonify({
         "status": "ok",
         "access_token": access_token,
