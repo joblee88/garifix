@@ -2628,5 +2628,40 @@ def setup_fix_chat_messages():
     return "<br>".join(results)
 
 
+@app.route("/setup-fix-chat-messages-v2")
+def setup_fix_chat_messages_v2():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    results = []
+
+    required_columns = {
+        "service_request_id": "INT",
+        "sender_id": "INT",
+        "message": "TEXT",
+        "is_read": "BOOLEAN DEFAULT FALSE",
+        "created_at": "DATETIME",
+    }
+
+    with db.engine.connect() as conn:
+        existing = conn.execute(text("SHOW COLUMNS FROM chat_messages")).fetchall()
+        existing_names = [row[0] for row in existing]
+        results.append(f"Safu zilizopo KABLA: {existing_names}")
+
+        for col_name, col_type in required_columns.items():
+            if col_name not in existing_names:
+                conn.execute(text(f"ALTER TABLE chat_messages ADD COLUMN {col_name} {col_type}"))
+                conn.commit()
+                results.append(f"Imeongeza safu '{col_name}' ({col_type}).")
+            else:
+                results.append(f"Safu '{col_name}' tayari ipo.")
+
+        existing_after = conn.execute(text("SHOW COLUMNS FROM chat_messages")).fetchall()
+        results.append(f"Safu zilizopo BAADA: {[row[0] for row in existing_after]}")
+
+    return "<br>".join(results)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
