@@ -2682,5 +2682,21 @@ def setup_copy_text_to_message():
         return f"Imehamisha data kwa safu {result.rowcount} (kutoka 'text' kwenda 'message')."
 
 
+@app.route("/setup-fix-conversation-id")
+def setup_fix_conversation_id():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        cols = conn.execute(text("SHOW COLUMNS FROM chat_messages WHERE Field = 'conversation_id'")).fetchall()
+        if not cols:
+            return "Safu 'conversation_id' haipo kabisa - hakuna cha kufanya."
+        col_type = cols[0][1]  # mfano 'int(11)' au 'varchar(255)'
+        conn.execute(text(f"ALTER TABLE chat_messages MODIFY COLUMN conversation_id {col_type} NULL"))
+        conn.commit()
+        return f"Safu 'conversation_id' ({col_type}) sasa ni hiari (nullable) - ujumbe mpya utaweza kuongezwa."
+
+
 if __name__ == "__main__":
     app.run(debug=True)
