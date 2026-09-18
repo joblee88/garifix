@@ -247,7 +247,7 @@ def mechanic_to_dict(m, include_avg=True):
     if include_avg:
         avg = db.session.query(func.avg(Review.rating)).filter_by(mechanic_id=m.id).scalar()
         cnt = Review.query.filter_by(mechanic_id=m.id).count()
-        d["average_rating"] = round(avg, 1) if avg else 0
+        d["average_rating"] = round(float(avg), 1) if avg else 0
         d["review_count"] = cnt
     return d
 
