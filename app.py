@@ -2601,6 +2601,32 @@ def delete_account_page():
     return render_template("delete_account.html", lang=lang)
 
 
+@app.route("/setup-fix-chat-messages")
+def setup_fix_chat_messages():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    results = []
+    with db.engine.connect() as conn:
+        existing = conn.execute(text("SHOW COLUMNS FROM chat_messages")).fetchall()
+        existing_names = [row[0] for row in existing]
+        results.append(f"Safu zilizopo: {existing_names}")
+
+        if "service_request_id" not in existing_names:
+            conn.execute(text("ALTER TABLE chat_messages ADD COLUMN service_request_id INT"))
+            conn.commit()
+            results.append("Imeongeza safu 'service_request_id'.")
+
+            if "request_id" in existing_names:
+                conn.execute(text("UPDATE chat_messages SET service_request_id = request_id"))
+                conn.commit()
+                results.append("Data kutoka 'request_id' imehamishwa kwenda 'service_request_id'.")
+        else:
+            results.append("Safu 'service_request_id' tayari ipo - hakuna cha kufanya.")
+
+    return "<br>".join(results)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
