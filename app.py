@@ -2670,5 +2670,17 @@ def setup_fix_chat_messages_v2():
     return "<br>".join(results)
 
 
+@app.route("/setup-copy-text-to-message")
+def setup_copy_text_to_message():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        result = conn.execute(text("UPDATE chat_messages SET message = text WHERE message IS NULL OR message = ''"))
+        conn.commit()
+        return f"Imehamisha data kwa safu {result.rowcount} (kutoka 'text' kwenda 'message')."
+
+
 if __name__ == "__main__":
     app.run(debug=True)
