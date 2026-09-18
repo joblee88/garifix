@@ -943,6 +943,9 @@ def api_get_profile():
     data = user_to_dict(user)
     if user.role == "mechanic" and user.mechanic_profile:
         data["mechanic_profile"] = mechanic_to_dict(user.mechanic_profile)
+        # Pia weka juu kabisa (top-level) kwa urahisi wa Flutter (top bar)
+        data["average_rating"] = data["mechanic_profile"]["average_rating"]
+        data["review_count"] = data["mechanic_profile"]["review_count"]
     return jsonify({"status": "ok", "user": data}), 200
 
 
