@@ -2654,6 +2654,13 @@ def setup_fix_chat_messages_v2():
                 conn.execute(text(f"ALTER TABLE chat_messages ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
                 results.append(f"Imeongeza safu '{col_name}' ({col_type}).")
+
+                # 'message' safu ya zamani ilikuwa ikiitwa 'text' - hamisha
+                # data yake ili ujumbe wa zamani usipotee.
+                if col_name == "message" and "text" in existing_names:
+                    conn.execute(text("UPDATE chat_messages SET message = text"))
+                    conn.commit()
+                    results.append("Data kutoka 'text' imehamishwa kwenda 'message'.")
             else:
                 results.append(f"Safu '{col_name}' tayari ipo.")
 
