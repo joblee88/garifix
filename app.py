@@ -2654,6 +2654,13 @@ def setup_fix_chat_messages_v2():
                 conn.execute(text(f"ALTER TABLE chat_messages ADD COLUMN {col_name} {col_type}"))
                 conn.commit()
                 results.append(f"Imeongeza safu '{col_name}' ({col_type}).")
+
+                # 'message' safu ya zamani ilikuwa ikiitwa 'text' - hamisha
+                # data yake ili ujumbe wa zamani usipotee.
+                if col_name == "message" and "text" in existing_names:
+                    conn.execute(text("UPDATE chat_messages SET message = text"))
+                    conn.commit()
+                    results.append("Data kutoka 'text' imehamishwa kwenda 'message'.")
             else:
                 results.append(f"Safu '{col_name}' tayari ipo.")
 
@@ -2661,6 +2668,18 @@ def setup_fix_chat_messages_v2():
         results.append(f"Safu zilizopo BAADA: {[row[0] for row in existing_after]}")
 
     return "<br>".join(results)
+
+
+@app.route("/setup-copy-text-to-message")
+def setup_copy_text_to_message():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        result = conn.execute(text("UPDATE chat_messages SET message = text WHERE message IS NULL OR message = ''"))
+        conn.commit()
+        return f"Imehamisha data kwa safu {result.rowcount} (kutoka 'text' kwenda 'message')."
 
 
 if __name__ == "__main__":
