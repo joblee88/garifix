@@ -2698,5 +2698,38 @@ def setup_fix_conversation_id():
         return f"Safu 'conversation_id' ({col_type}) sasa ni hiari (nullable) - ujumbe mpya utaweza kuongezwa."
 
 
+@app.route("/setup-nullify-legacy-columns")
+def setup_nullify_legacy_columns():
+    """Inafanya SAFU ZOTE za 'chat_messages' ambazo si sehemu ya model
+    yetu ya sasa (mabaki ya muundo wa zamani, mfano 'text',
+    'conversation_id') kuwa HIARI (nullable) kwa pamoja - badala ya
+    kuzirekebisha moja moja kila ikijitokeza."""
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+
+    # Safu HALISI zinazotumiwa na ChatMessage model ya sasa - zote NYINGINE
+    # zilizopo kwenye jedwali ni "mabaki" (legacy) na ni salama kuzifanya
+    # ziwe hiari.
+    current_model_columns = {"id", "service_request_id", "sender_id", "message", "is_read", "created_at"}
+
+    results = []
+    with db.engine.connect() as conn:
+        all_cols = conn.execute(text("SHOW COLUMNS FROM chat_messages")).fetchall()
+        for row in all_cols:
+            col_name, col_type, is_nullable = row[0], row[1], row[2]
+            if col_name in current_model_columns:
+                continue
+            if is_nullable == "YES":
+                results.append(f"'{col_name}' tayari ni hiari - imerukwa.")
+                continue
+            conn.execute(text(f"ALTER TABLE chat_messages MODIFY COLUMN {col_name} {col_type} NULL"))
+            conn.commit()
+            results.append(f"'{col_name}' ({col_type}) sasa ni hiari.")
+
+    return "<br>".join(results) if results else "Hakuna safu za mabaki zilizopatikana."
+
+
 if __name__ == "__main__":
     app.run(debug=True)
