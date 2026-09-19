@@ -402,6 +402,85 @@ def api_google_login():
     }), 200
 
 
+@api_bp.route("/auth/phone", methods=["POST"])
+def api_phone_login():
+    """Mtumiaji ameshathibitisha namba yake ya simu kupitia Firebase Phone
+    Auth (OTP) upande wa Flutter - hapa tunathibitisha 'ID token' hiyo na
+    Firebase Admin SDK, kisha tunamwingiza (au kumsajili) sawa na
+    tulivyofanya kwa Google Sign-In."""
+    from firebase_admin import auth as firebase_auth
+
+    data = request.get_json(silent=True) or {}
+    id_token = data.get("id_token")
+    chosen_role = data.get("role")
+
+    if not id_token or chosen_role not in ("customer", "mechanic"):
+        return err("Taarifa hazitoshi (id_token/role).")
+
+    try:
+        decoded = firebase_auth.verify_id_token(id_token)
+    except Exception:
+        return err("Uthibitisho wa namba ya simu umeshindikana. Jaribu tena.", 401)
+
+    firebase_phone = decoded.get("phone_number")  # mfano '+255712345678'
+    if not firebase_phone:
+        return err("Namba ya simu haikupatikana kwenye uthibitisho.", 400)
+
+    # Sanifisha: '+255712345678' -> '0712345678' (muundo tunaoutumia kila
+    # mahali pengine kwenye app - tarakimu 10 zinazoanza na '0').
+    if firebase_phone.startswith("+255"):
+        local_phone = "0" + firebase_phone[4:]
+    elif firebase_phone.startswith("255"):
+        local_phone = "0" + firebase_phone[3:]
+    else:
+        local_phone = firebase_phone
+
+    user = User.query.filter_by(phone=local_phone).first()
+
+    if user:
+        if user.status == "blocked":
+            return err("Akaunti yako imezuiwa (blocked) na Admin.", 403)
+        if user.role != chosen_role:
+            return err(
+                f"Akaunti hii (namba {local_phone}) tayari imesajiliwa kama '{user.role}'. "
+                f"Tumia namba nyingine, au ingia kwenye jukumu sahihi.",
+                409,
+                error_code="role_mismatch",
+            )
+    else:
+        user = User(
+            phone=local_phone,
+            role=chosen_role,
+            status="pending" if chosen_role == "mechanic" else "active",
+            email_verified=True,  # namba ya simu tayari imethibitishwa na OTP
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    if chosen_role == "mechanic" and not user.mechanic_profile:
+        # Sawa na Google Sign-In: fundi mpya lazima akamilishe wasifu
+        # (kitambulisho, garage, n.k) kabla ya kupata token kamili.
+        pending_token = create_access_token(identity="pending", expires_delta=timedelta(minutes=30))
+        return jsonify({
+            "status": "ok",
+            "needs_mechanic_profile": True,
+            "pending_token": pending_token,
+            "phone": local_phone,
+        }), 200
+
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=3650))
+
+    return jsonify({
+        "status": "ok",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "needs_mechanic_profile": False,
+        "needs_phone": False,
+        "user": user_to_dict(user),
+    }), 200
+
+
 @api_bp.route("/auth/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def api_refresh():
