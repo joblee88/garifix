@@ -667,7 +667,7 @@ def api_forgot_password():
     user = User.query.filter_by(email=email).first()
     if user:
         reset_token = create_access_token(identity=f"reset:{user.id}", expires_delta=timedelta(hours=1))
-        reset_url = f"https://garifix.com/reset-password?token={reset_token}"
+        reset_url = f"https://garifix.com/api/v1/auth/reset-password-page?token={reset_token}"
         send_email(
             email, user.full_name, "Badilisha Password Yako - GariFix",
             _email_html(
@@ -683,9 +683,15 @@ def api_forgot_password():
 @api_bp.route("/auth/reset-password-page", methods=["GET"])
 def api_reset_password_page():
     token = request.args.get("token", "")
+    app_link = f"garifix://reset-password?token={token}"
     return render_template_string('''
         <div style="font-family:Arial;max-width:400px;margin:60px auto;padding:24px;background:#f7f7f7;border-radius:12px;">
             <h2 style="color:#14432E;">Weka Password Mpya</h2>
+            <div style="text-align:center;margin-bottom:20px;">
+                <a href="{{ app_link }}" style="display:inline-block;background:#14432E;color:white;padding:14px 28px;
+                   border-radius:8px;text-decoration:none;font-weight:bold;">📱 Fungua kwenye GariFix App</a>
+            </div>
+            <p style="text-align:center;color:#888;font-size:13px;margin:16px 0;">- au weka password hapa chini -</p>
             <form method="POST" action="/api/v1/auth/reset-password">
                 <input type="hidden" name="token" value="{{ token }}">
                 <input type="password" name="new_password" placeholder="Password mpya (angalau herufi 6)" minlength="6" required
@@ -694,7 +700,13 @@ def api_reset_password_page():
                         border-radius:8px;font-weight:bold;cursor:pointer;">Badilisha Password</button>
             </form>
         </div>
-    ''', token=token), 200
+        <script>
+            // Jaribu kufungua app moja kwa moja mara ukurasa unapofunguka
+            // (kama app ipo, itafunguka; kama haipo, mtumiaji anabaki hapa
+            // kwenye fomu ya wavuti hapo juu).
+            window.location.href = "{{ app_link }}";
+        </script>
+    ''', token=token, app_link=app_link), 200
 
 
 # ============= RESET PASSWORD (submit) =============
