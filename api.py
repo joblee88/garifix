@@ -565,7 +565,7 @@ def api_email_register():
     db.session.commit()
 
     verify_token = create_access_token(identity=f"verify:{user.id}", expires_delta=timedelta(hours=24))
-    verify_url = f"https://garifix.com/verify-email?token={verify_token}"
+    verify_url = f"https://garifix.com/api/v1/auth/verify-email?token={verify_token}"
     send_email(
         email, full_name, "Thibitisha Akaunti Yako ya GariFix",
         _email_html(
@@ -619,7 +619,7 @@ def api_resend_verification():
     user = User.query.filter_by(email=email).first()
     if user and not user.email_verified:
         verify_token = create_access_token(identity=f"verify:{user.id}", expires_delta=timedelta(hours=24))
-        verify_url = f"https://garifix.com/verify-email?token={verify_token}"
+        verify_url = f"https://garifix.com/api/v1/auth/verify-email?token={verify_token}"
         send_email(
             email, user.full_name, "Thibitisha Akaunti Yako ya GariFix",
             _email_html("Thibitisha Akaunti Yako", "Bonyeza kitufe hapa chini kuthibitisha barua pepe yako.", "Thibitisha Akaunti", verify_url),
