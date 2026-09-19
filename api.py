@@ -27,10 +27,10 @@ import secrets
 import uuid
 from datetime import timedelta, datetime
 
-from flask import Blueprint, request, jsonify, current_app, redirect, send_from_directory
+from flask import Blueprint, request, jsonify, current_app, redirect, send_from_directory, render_template_string
 from flask_jwt_extended import (
     create_access_token, create_refresh_token, jwt_required,
-    get_jwt_identity, get_jwt, verify_jwt_in_request,
+    get_jwt_identity, get_jwt, verify_jwt_in_request, decode_token,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -479,6 +479,264 @@ def api_phone_login():
         "needs_phone": False,
         "user": user_to_dict(user),
     }), 200
+
+
+
+def send_email(to_email, to_name, subject, html_content):
+    """Inatuma barua pepe kupitia Brevo API. Inarudisha True/False."""
+    try:
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "accept": "application/json",
+                "api-key": os.environ.get("BREVO_API_KEY"),
+                "content-type": "application/json",
+            },
+            json={
+                "sender": {"name": "GariFix", "email": "noreply@garifix.com"},
+                "to": [{"email": to_email, "name": to_name or to_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+            },
+            timeout=10,
+        )
+        return resp.status_code == 201
+    except Exception:
+        return False
+
+
+def _email_html(title, body_html, button_text=None, button_url=None):
+    button_html = ""
+    if button_text and button_url:
+        button_html = f'''
+        <div style="text-align:center;margin:28px 0;">
+            <a href="{button_url}" style="background:#14432E;color:#ffffff;padding:14px 28px;
+               border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">
+               {button_text}
+            </a>
+        </div>'''
+    return f'''
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+        <div style="background:#14432E;padding:20px;border-radius:12px 12px 0 0;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:24px;">GariFix</h1>
+        </div>
+        <div style="background:#f7f7f7;padding:24px;border-radius:0 0 12px 12px;">
+            <h2 style="color:#14432E;">{title}</h2>
+            <p style="color:#333;line-height:1.6;">{body_html}</p>
+            {button_html}
+            <p style="color:#999;font-size:12px;margin-top:24px;">
+                Kama hukuomba hili, puuza barua pepe hii.
+            </p>
+        </div>
+    </div>'''
+
+
+# ============= REGISTER =============
+@api_bp.route("/auth/register", methods=["POST"])
+def api_email_register():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    full_name = (data.get("full_name") or "").strip()
+    chosen_role = data.get("role")
+
+    if not email or "@" not in email:
+        return err("Weka barua pepe sahihi.")
+    if len(password) < 6:
+        return err("Password lazima iwe na angalau herufi 6.")
+    if not full_name:
+        return err("Weka jina lako kamili.")
+    if chosen_role not in ("customer", "mechanic"):
+        return err("Jukumu (role) si sahihi.")
+
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        return err("Barua pepe hii tayari imesajiliwa. Jaribu 'Ingia' badala yake.", 409, error_code="email_taken")
+
+    user = User(
+        email=email,
+        password=generate_password_hash(password),
+        full_name=full_name,
+        role=chosen_role,
+        status="pending" if chosen_role == "mechanic" else "active",
+        email_verified=False,
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    verify_token = create_access_token(identity=f"verify:{user.id}", expires_delta=timedelta(hours=24))
+    verify_url = f"https://garifix.com/verify-email?token={verify_token}"
+    send_email(
+        email, full_name, "Thibitisha Akaunti Yako ya GariFix",
+        _email_html(
+            "Karibu GariFix!",
+            f"Habari {full_name}, bonyeza kitufe hapa chini kuthibitisha barua pepe yako na kukamilisha usajili. Kiungo hiki kinaisha baada ya masaa 24.",
+            "Thibitisha Akaunti", verify_url,
+        ),
+    )
+
+    return jsonify({
+        "status": "ok",
+        "message": "Usajili umefanikiwa. Tafadhali angalia barua pepe yako kuthibitisha akaunti.",
+        "needs_email_verification": True,
+    }), 201
+
+
+# ============= VERIFY EMAIL =============
+@api_bp.route("/auth/verify-email", methods=["GET"])
+def api_verify_email():
+    token = request.args.get("token")
+    if not token:
+        return "Kiungo si sahihi.", 400
+    try:
+        decoded = decode_token(token)
+        identity = decoded["sub"]
+        if not identity.startswith("verify:"):
+            return "Kiungo si sahihi.", 400
+        user_id = int(identity.split(":")[1])
+    except Exception:
+        return "Kiungo hiki kimeisha muda au si sahihi. Omba kiungo kipya kutoka kwenye app.", 400
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return "Akaunti haipatikani.", 404
+
+    user.email_verified = True
+    db.session.commit()
+    return render_template_string('''
+        <div style="font-family:Arial;text-align:center;padding:60px 20px;background:#14432E;min-height:100vh;color:white;">
+            <h1>✅ Akaunti Imethibitishwa!</h1>
+            <p>Sasa unaweza kuingia (login) kwenye app ya GariFix.</p>
+        </div>
+    '''), 200
+
+
+# ============= RESEND VERIFICATION =============
+@api_bp.route("/auth/resend-verification", methods=["POST"])
+def api_resend_verification():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    user = User.query.filter_by(email=email).first()
+    if user and not user.email_verified:
+        verify_token = create_access_token(identity=f"verify:{user.id}", expires_delta=timedelta(hours=24))
+        verify_url = f"https://garifix.com/verify-email?token={verify_token}"
+        send_email(
+            email, user.full_name, "Thibitisha Akaunti Yako ya GariFix",
+            _email_html("Thibitisha Akaunti Yako", "Bonyeza kitufe hapa chini kuthibitisha barua pepe yako.", "Thibitisha Akaunti", verify_url),
+        )
+    # Jibu LILE LILE kila wakati (email ipo au haipo) - kuzuia watu
+    # kutumia hii 'kupima' kama barua pepe fulani imesajiliwa.
+    return jsonify({"status": "ok", "message": "Kama barua pepe hiyo ipo, kiungo kipya kimetumwa."}), 200
+
+
+# ============= LOGIN (email + password) =============
+@api_bp.route("/auth/login", methods=["POST"])
+def api_email_login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.password or not check_password_hash(user.password, password):
+        return err("Barua pepe au password si sahihi.", 401, error_code="invalid_credentials")
+
+    if user.status == "blocked":
+        return err("Akaunti yako imezuiwa (blocked) na Admin.", 403)
+
+    if not user.email_verified:
+        return err("Bado hujathibitisha barua pepe yako. Angalia barua pepe yako.", 403, error_code="email_not_verified")
+
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=3650))
+
+    return jsonify({
+        "status": "ok",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "needs_mechanic_profile": user.role == "mechanic" and not user.mechanic_profile,
+        "needs_phone": user.role == "customer" and not user.phone,
+        "user": user_to_dict(user),
+    }), 200
+
+
+# ============= FORGOT PASSWORD =============
+@api_bp.route("/auth/forgot-password", methods=["POST"])
+def api_forgot_password():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    user = User.query.filter_by(email=email).first()
+    if user:
+        reset_token = create_access_token(identity=f"reset:{user.id}", expires_delta=timedelta(hours=1))
+        reset_url = f"https://garifix.com/reset-password?token={reset_token}"
+        send_email(
+            email, user.full_name, "Badilisha Password Yako - GariFix",
+            _email_html(
+                "Umesahau Password?",
+                "Bonyeza kitufe hapa chini kuweka password mpya. Kiungo hiki kinaisha baada ya saa 1.",
+                "Badilisha Password", reset_url,
+            ),
+        )
+    return jsonify({"status": "ok", "message": "Kama barua pepe hiyo ipo, kiungo cha kubadilisha password kimetumwa."}), 200
+
+
+# ============= RESET PASSWORD PAGE (fomu) =============
+@api_bp.route("/auth/reset-password-page", methods=["GET"])
+def api_reset_password_page():
+    token = request.args.get("token", "")
+    return render_template_string('''
+        <div style="font-family:Arial;max-width:400px;margin:60px auto;padding:24px;background:#f7f7f7;border-radius:12px;">
+            <h2 style="color:#14432E;">Weka Password Mpya</h2>
+            <form method="POST" action="/api/v1/auth/reset-password">
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="password" name="new_password" placeholder="Password mpya (angalau herufi 6)" minlength="6" required
+                       style="width:100%;padding:12px;margin:10px 0;border-radius:8px;border:1px solid #ccc;box-sizing:border-box;">
+                <button type="submit" style="width:100%;padding:14px;background:#14432E;color:white;border:none;
+                        border-radius:8px;font-weight:bold;cursor:pointer;">Badilisha Password</button>
+            </form>
+        </div>
+    ''', token=token), 200
+
+
+# ============= RESET PASSWORD (submit) =============
+@api_bp.route("/auth/reset-password", methods=["POST"])
+def api_reset_password():
+    # Inakubali JSON (kutoka app) AU form-data (kutoka fomu ya wavuti hapo juu)
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        token = data.get("token")
+        new_password = data.get("new_password") or ""
+    else:
+        token = request.form.get("token")
+        new_password = request.form.get("new_password") or ""
+
+    if len(new_password) < 6:
+        return err("Password lazima iwe na angalau herufi 6.")
+
+    try:
+        decoded = decode_token(token)
+        identity = decoded["sub"]
+        if not identity.startswith("reset:"):
+            raise ValueError()
+        user_id = int(identity.split(":")[1])
+    except Exception:
+        return "Kiungo hiki kimeisha muda au si sahihi. Omba kiungo kipya.", 400
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return "Akaunti haipatikani.", 404
+
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+
+    if request.is_json:
+        return jsonify({"status": "ok", "message": "Password imebadilishwa. Sasa unaweza kuingia."}), 200
+
+    return render_template_string('''
+        <div style="font-family:Arial;text-align:center;padding:60px 20px;background:#14432E;min-height:100vh;color:white;">
+            <h1>✅ Password Imebadilishwa!</h1>
+            <p>Sasa unaweza kuingia kwenye app ya GariFix na password yako mpya.</p>
+        </div>
+    '''), 200
 
 
 @api_bp.route("/auth/refresh", methods=["POST"])
