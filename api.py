@@ -1756,3 +1756,55 @@ def setup_add_id_document_back_column():
         conn.commit()
         return "Imeongeza safu 'id_document_back' kwenye 'mechanics'."
 
+
+@api_bp.route("/setup-find-user")
+def setup_find_user():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    email = request.args.get("email", "").strip().lower()
+    if not email:
+        return "Weka ?email=... kwenye URL.", 400
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"Hakuna mtumiaji mwenye email '{email}' kwenye database - HAIPO KABISA."
+    has_profile = user.mechanic_profile is not None
+    return (
+        f"IMEPATIKANA: id={user.id}, email={user.email}, phone={user.phone}, "
+        f"role={user.role}, status={user.status}, ana_mechanic_profile={has_profile}, "
+        f"email_verified={user.email_verified}, created_at={user.created_at}"
+    )
+
+
+@api_bp.route("/setup-force-delete-user")
+def setup_force_delete_user():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    email = request.args.get("email", "").strip().lower()
+    if not email:
+        return "Weka ?email=... kwenye URL.", 400
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return f"Hakuna mtumiaji mwenye email '{email}' - haihitaji kufutwa."
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        # Futa kila kitu kinachohusiana naye moja kwa moja kwa SQL (kuepuka
+        # matatizo yoyote ya 'foreign key' ambayo ORM cascade ingeweza
+        # kuyakosa).
+        conn.execute(text("DELETE FROM chat_messages WHERE sender_id = :uid"), {"uid": user.id})
+        conn.execute(text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": user.id})
+        mech = conn.execute(text("SELECT id FROM mechanics WHERE user_id = :uid"), {"uid": user.id}).fetchone()
+        if mech:
+            mech_id = mech[0]
+            conn.execute(text("DELETE FROM chat_messages WHERE service_request_id IN (SELECT id FROM service_requests WHERE mechanic_id = :mid)"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM reviews WHERE mechanic_id = :mid"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM service_requests WHERE mechanic_id = :mid"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM mechanics WHERE id = :mid"), {"mid": mech_id})
+        conn.execute(text("DELETE FROM service_requests WHERE customer_id = :uid"), {"uid": user.id})
+        conn.execute(text("DELETE FROM reviews WHERE customer_id = :uid"), {"uid": user.id})
+        conn.execute(text("DELETE FROM users WHERE id = :uid"), {"uid": user.id})
+        conn.commit()
+    return f"Amefutwa KABISA: {email} (id={user.id})."
+
+
