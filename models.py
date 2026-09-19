@@ -55,7 +55,8 @@ class Mechanic(db.Model):
 
     # --- Kitambulisho cha Fundi (kwa ukaguzi wa Admin) ---
     id_document_type = db.Column(db.String(30), nullable=True)   # "NIDA", "Leseni", "Kadi ya Mpiga Kura"
-    id_document = db.Column(db.String(255), nullable=True)       # jina la faili lililopakiwa
+    id_document = db.Column(db.String(255), nullable=True)       # jina la faili lililopakiwa (upande wa MBELE)
+    id_document_back = db.Column(db.String(255), nullable=True)  # jina la faili lililopakiwa (upande wa NYUMA)
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
