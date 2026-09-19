@@ -538,6 +538,7 @@ def api_email_register():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     full_name = (data.get("full_name") or "").strip()
+    phone = (data.get("phone") or "").strip()
     chosen_role = data.get("role")
 
     if not email or "@" not in email:
@@ -546,6 +547,8 @@ def api_email_register():
         return err("Password lazima iwe na angalau herufi 6.")
     if not full_name:
         return err("Weka jina lako kamili.")
+    if len(phone) != 10 or not phone.isdigit():
+        return err("Weka namba sahihi ya simu (tarakimu 10).")
     if chosen_role not in ("customer", "mechanic"):
         return err("Jukumu (role) si sahihi.")
 
@@ -553,10 +556,15 @@ def api_email_register():
     if existing:
         return err("Barua pepe hii tayari imesajiliwa. Jaribu 'Ingia' badala yake.", 409, error_code="email_taken")
 
+    existing_phone = User.query.filter_by(phone=phone).first()
+    if existing_phone:
+        return err("Namba hii ya simu tayari imesajiliwa.", 409, error_code="phone_taken")
+
     user = User(
         email=email,
         password=generate_password_hash(password),
         full_name=full_name,
+        phone=phone,
         role=chosen_role,
         status="pending" if chosen_role == "mechanic" else "active",
         email_verified=False,
@@ -595,20 +603,34 @@ def api_verify_email():
             return "Kiungo si sahihi.", 400
         user_id = int(identity.split(":")[1])
     except Exception:
+        if request.args.get("app") == "1":
+            return jsonify({"status": "error", "message": "Kiungo kimeisha muda."}), 400
         return "Kiungo hiki kimeisha muda au si sahihi. Omba kiungo kipya kutoka kwenye app.", 400
 
     user = db.session.get(User, user_id)
     if not user:
+        if request.args.get("app") == "1":
+            return jsonify({"status": "error", "message": "Akaunti haipatikani."}), 404
         return "Akaunti haipatikani.", 404
 
     user.email_verified = True
     db.session.commit()
+
+    # 'app=1' - hii ni simu ikitengeneza ombi baada ya 'deep link' (JSON) -
+    # vinginevyo ni kivinjari (HTML).
+    if request.args.get("app") == "1":
+        return jsonify({"status": "ok", "email": user.email, "role": user.role}), 200
+
+    app_link = f"garifix://verify-email?token={token}"
     return render_template_string('''
         <div style="font-family:Arial;text-align:center;padding:60px 20px;background:#14432E;min-height:100vh;color:white;">
             <h1>✅ Akaunti Imethibitishwa!</h1>
             <p>Sasa unaweza kuingia (login) kwenye app ya GariFix.</p>
+            <a href="{{ app_link }}" style="display:inline-block;margin-top:20px;background:white;color:#14432E;
+               padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">📱 Fungua App</a>
         </div>
-    '''), 200
+        <script>window.location.href = "{{ app_link }}";</script>
+    ''', app_link=app_link), 200
 
 
 # ============= RESEND VERIFICATION =============
@@ -823,7 +845,12 @@ def api_mechanic_complete_profile():
         reapplying_user = db.session.get(User, int(uid))
         if not reapplying_user or reapplying_user.role != "mechanic":
             return err("Huna ruhusa ya kufanya hivi.", 403)
-        if not reapplying_user.mechanic_profile or reapplying_user.mechanic_profile.verified != "rejected":
+        # MUHIMU: mtumiaji halisi (email-registered) anaweza asiwe na
+        # 'mechanic_profile' KABISA bado (usajili wa kwanza) - hii SI kosa,
+        # ni sawa na 'pending' (Google/Phone). Tunazuia TU kama profile
+        # tayari IPO na haijakataliwa (yaani inasubiri idhini au tayari
+        # imeidhinishwa).
+        if reapplying_user.mechanic_profile and reapplying_user.mechanic_profile.verified != "rejected":
             return err("Wasifu wako tayari upo/unasubiri idhini.", 409)
         email = reapplying_user.email
         full_name_from_google = reapplying_user.full_name
@@ -855,21 +882,26 @@ def api_mechanic_complete_profile():
     if not id_document_type:
         return err("Chagua aina ya kitambulisho.")
 
-    id_doc_file = request.files.get("id_document")
-    if not reapplying_user and (not id_doc_file or id_doc_file.filename == ""):
-        return err("Kitambulisho (id_document) kinahitajika.")
+    id_doc_front_file = request.files.get("id_document_front") or request.files.get("id_document")
+    id_doc_back_file = request.files.get("id_document_back")
+    if not reapplying_user and (not id_doc_front_file or id_doc_front_file.filename == ""):
+        return err("Picha ya mbele ya kitambulisho inahitajika.")
+    if not reapplying_user and (not id_doc_back_file or id_doc_back_file.filename == ""):
+        return err("Picha ya nyuma ya kitambulisho inahitajika.")
 
     existing_phone = User.query.filter(User.phone == phone).first()
     if existing_phone and (not reapplying_user or existing_phone.id != reapplying_user.id):
         return err("Namba hii ya simu tayari imesajiliwa.", 409, error_code="phone_taken")
 
     try:
-        id_document_filename = save_uploaded_image(id_doc_file, folder_hint="id_documents", private=True) if id_doc_file and id_doc_file.filename else None
+        id_document_filename = save_uploaded_image(id_doc_front_file, folder_hint="id_documents", private=True) if id_doc_front_file and id_doc_front_file.filename else None
+        id_document_back_filename = save_uploaded_image(id_doc_back_file, folder_hint="id_documents", private=True) if id_doc_back_file and id_doc_back_file.filename else None
         profile_photo_filename = save_uploaded_image(request.files.get("profile_photo"), folder_hint="profiles")
     except InvalidImageError as e:
         return err(str(e))
 
-    if reapplying_user:
+    if reapplying_user and reapplying_user.mechanic_profile:
+        # Kesi HALISI ya 'reapply' - profile ilikataliwa awali, sasisha hiyo hiyo.
         user = reapplying_user
         user.full_name = full_name
         user.phone = phone
@@ -885,9 +917,36 @@ def api_mechanic_complete_profile():
         m.id_document_type = id_document_type
         if id_document_filename:
             m.id_document = id_document_filename
+        if id_document_back_filename:
+            m.id_document_back = id_document_back_filename
         if profile_photo_filename:
             m.profile_photo = profile_photo_filename
         m.verified = "pending"
+        db.session.commit()
+    elif reapplying_user:
+        # Mtumiaji HALISI (aliyejisajili kwa email, kwa mfano) lakini bado
+        # HANA 'mechanic_profile' kabisa - tengeneza MPYA (usimtengenezee
+        # 'User' mpya - tayari yupo).
+        user = reapplying_user
+        user.full_name = full_name
+        user.phone = phone
+        m = Mechanic(
+            user_id=user.id,
+            garage_name=garage_name,
+            region=region,
+            district=district,
+            ward=ward,
+            street=street,
+            specialization=specialization,
+            experience=experience,
+            description=description,
+            profile_photo=profile_photo_filename,
+            id_document_type=id_document_type,
+            id_document=id_document_filename,
+            id_document_back=id_document_back_filename,
+            verified="pending",
+        )
+        db.session.add(m)
         db.session.commit()
     else:
         user = User(
@@ -915,6 +974,7 @@ def api_mechanic_complete_profile():
             profile_photo=profile_photo_filename,
             id_document_type=id_document_type,
             id_document=id_document_filename,
+            id_document_back=id_document_back_filename,
             verified="pending",
         )
         db.session.add(m)
@@ -1541,14 +1601,16 @@ def api_admin_id_document(mechanic_id):
     if error:
         return error
     mechanic = Mechanic.query.get_or_404(mechanic_id)
-    if not mechanic.id_document:
+    side = request.args.get("side", "front")
+    filename = mechanic.id_document_back if side == "back" else mechanic.id_document
+    if not filename:
         return err("Hakuna kitambulisho kilichopakiwa.", 404)
     if _cloudinary_configured():
         import cloudinary.utils
-        url = cloudinary.utils.private_download_url(mechanic.id_document, "jpg", resource_type="image", type="private")
+        url = cloudinary.utils.private_download_url(filename, "jpg", resource_type="image", type="private")
         return redirect(url)
     folder = current_app.config.get("PRIVATE_UPLOAD_FOLDER") or "private_uploads"
-    return send_from_directory(folder, mechanic.id_document)
+    return send_from_directory(folder, filename)
 
 
 @api_bp.route("/admin/mechanics/<int:mechanic_id>/approve", methods=["POST"])
@@ -1678,3 +1740,19 @@ def api_admin_delete_user(user_id):
     db.session.delete(target)
     db.session.commit()
     return jsonify({"status": "ok"}), 200
+
+
+@api_bp.route("/setup-add-id-document-back-column")
+def setup_add_id_document_back_column():
+    key = request.args.get("key")
+    if key != os.environ.get("ADMIN_SETUP_KEY"):
+        return "Hairuhusiwi.", 403
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        existing = [row[0] for row in conn.execute(text("SHOW COLUMNS FROM mechanics")).fetchall()]
+        if "id_document_back" in existing:
+            return "Safu 'id_document_back' tayari ipo."
+        conn.execute(text("ALTER TABLE mechanics ADD COLUMN id_document_back VARCHAR(255)"))
+        conn.commit()
+        return "Imeongeza safu 'id_document_back' kwenye 'mechanics'."
+
