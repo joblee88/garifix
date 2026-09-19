@@ -1736,9 +1736,28 @@ def api_admin_delete_user(user_id):
     target = User.query.get_or_404(user_id)
     if target.role == "admin":
         return err("Huwezi kumfuta Admin mwingine.", 403)
-    Notification.query.filter_by(user_id=target.id).delete()
-    db.session.delete(target)
-    db.session.commit()
+
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        # Futa KILA KITU kinachohusiana naye kwa SQL moja kwa moja - hii
+        # inaepuka matatizo ya 'foreign key' ambayo 'cascade' ya ORM
+        # ingeweza kuyakosa (mfano ChatMessage.sender_id, ambayo haina
+        # 'cascade' iliyowekwa kwenye model).
+        conn.execute(text("DELETE FROM chat_messages WHERE sender_id = :uid"), {"uid": target.id})
+        conn.execute(text("DELETE FROM notifications WHERE user_id = :uid"), {"uid": target.id})
+        mech = conn.execute(text("SELECT id FROM mechanics WHERE user_id = :uid"), {"uid": target.id}).fetchone()
+        if mech:
+            mech_id = mech[0]
+            conn.execute(text("DELETE FROM chat_messages WHERE service_request_id IN (SELECT id FROM service_requests WHERE mechanic_id = :mid)"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM reviews WHERE mechanic_id = :mid"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM service_requests WHERE mechanic_id = :mid"), {"mid": mech_id})
+            conn.execute(text("DELETE FROM mechanics WHERE id = :mid"), {"mid": mech_id})
+        conn.execute(text("DELETE FROM chat_messages WHERE service_request_id IN (SELECT id FROM service_requests WHERE customer_id = :uid)"), {"uid": target.id})
+        conn.execute(text("DELETE FROM reviews WHERE customer_id = :uid"), {"uid": target.id})
+        conn.execute(text("DELETE FROM service_requests WHERE customer_id = :uid"), {"uid": target.id})
+        conn.execute(text("DELETE FROM users WHERE id = :uid"), {"uid": target.id})
+        conn.commit()
+
     return jsonify({"status": "ok"}), 200
 
 
